@@ -5,7 +5,7 @@
 
 <PageTitle>Time logs</PageTitle>
 
-<h1>Where timelogs will be entered and viewed</h1>
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Time Logs</MudText>
 
 @if (timeLogs == null)
 {
@@ -13,32 +13,79 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Description. (C)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var aTimeLog in timeLogs)
-            {
-                <tr>
-                    <td>@aTimeLog.Date.ToShortDateString()</td>
-                    <td>@aTimeLog.Description</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="d-inline-flex">
+            <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore" OnClick="@PrevDay"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.NavigateNext" Disabled="@_forbidNextDay" OnClick="@NextDay"></MudIconButton>
+        </MudButtonGroup>
+
+        <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
+            <MudButton StartIcon="@Icons.Material.Filled.PostAdd">Add Log</MudButton>
+        </MudButtonGroup>
+    </MudPaper>
+
+    <MudPaper Class="d-inline-flex ml-2 pa-4">
+        <MudText>Total for @_selectedDay.ToLongDateString(): xxxx</MudText>
+    </MudPaper>
+    <MudPaper Class="d-inline-flex pa-4">
+        <MudText>Total for the week: xxxx</MudText>
+    </MudPaper>
+
+    <MudDataGrid T="TimeLog" Items="@AllTimeLogs.Take(4)" Bordered="true" Dense="true" Class="ml-2 mr-2 mt-4">
+        <Columns>
+            <Column T="TimeLog" Field="Date" Title="Start Date" />
+            <Column T="TimeLog" Field="Description" />
+            <Column T="TimeLog" CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" OnClick="@EditItem" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@RemoveItem" />
+                </CellTemplate>
+            </Column>
+        </Columns>
+    </MudDataGrid>
+
 }
 
 
 
 @code {
     private TimeLog[]? timeLogs;
+    private IEnumerable<TimeLog> AllTimeLogs = new List<TimeLog>();
+    private DateOnly _selectedDay = DateOnly.FromDateTime(DateTime.Now);
+    private bool _forbidNextDay = true;
 
     protected override async Task OnInitializedAsync()
     {
         timeLogs = await TimeLogsService.GetTimeLogsAsync(DateTime.Now);
+        AllTimeLogs = timeLogs.ToList();
+    }
+
+    void AddItem()
+    {
+       // _items.Add(new Model("New Person", 44, Severity.Warning, 85_000.00M, new DateTime(2022, 1, 1), true));
+    }
+
+    void RemoveItem()
+    {
+       // _items.RemoveAt(0);
+    }
+
+    void EditItem()
+    {
+
+    }
+
+    void PrevDay()
+    {
+        _selectedDay = _selectedDay.AddDays(-1);
+        _forbidNextDay = false;
+    }
+
+    void NextDay()
+    {
+        _selectedDay = _selectedDay.AddDays(1);
+
+        DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        _forbidNextDay = (_selectedDay >= today);
     }
 }
