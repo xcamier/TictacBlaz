@@ -1,9 +1,44 @@
 ﻿@page "/"
 
+@using tictacApp.Data
+@inject TimeLogsService TimeLogsService
+
 <PageTitle>Time logs</PageTitle>
 
 <h1>Where timelogs will be entered and viewed</h1>
 
-Enter timelogs 
+@if (timeLogs == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description. (C)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var aTimeLog in timeLogs)
+            {
+                <tr>
+                    <td>@aTimeLog.Date.ToShortDateString()</td>
+                    <td>@aTimeLog.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 
+
+@code {
+    private TimeLog[]? timeLogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        timeLogs = await TimeLogsService.GetTimeLogsAsync(DateTime.Now);
+    }
+}
