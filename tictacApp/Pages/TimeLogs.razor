@@ -1,13 +1,14 @@
 ﻿@page "/"
 
 @using tictacApp.Data
+@using tictacApp.Services
 @inject TimeLogsService TimeLogsService
 
 <PageTitle>Time logs</PageTitle>
 
 <MudText Class="ml-2 mb-4" Typo="Typo.h5">Time Logs</MudText>
 
-@if (timeLogs == null)
+@if (_timeLogs == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -15,8 +16,8 @@ else
 {
     <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
         <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="d-inline-flex">
-            <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore" OnClick="@PrevDay"></MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.NavigateNext" Disabled="@_forbidNextDay" OnClick="@NextDay"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore" OnClick="@PrevDayAsync"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.NavigateNext" Disabled="@_forbidNextDay" OnClick="@NextDayAsync"></MudIconButton>
         </MudButtonGroup>
 
         <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
@@ -31,9 +32,9 @@ else
         <MudText>Total for the week: xxxx</MudText>
     </MudPaper>
 
-    <MudDataGrid T="TimeLog" Items="@AllTimeLogs.Take(4)" Bordered="true" Dense="true" Class="ml-2 mr-2 mt-4">
+    <MudDataGrid T="TimeLog" Items="@_timeLogs" Bordered="true" Dense="true" Class="ml-2 mr-2 mt-4">
         <Columns>
-            <Column T="TimeLog" Field="Date" Title="Start Date" />
+            <Column T="TimeLog" Field="StartDate" Title="Start Date" />
             <Column T="TimeLog" Field="Description" />
             <Column T="TimeLog" CellClass="d-flex justify-end">
                 <CellTemplate>
@@ -49,15 +50,14 @@ else
 
 
 @code {
-    private TimeLog[]? timeLogs;
-    private IEnumerable<TimeLog> AllTimeLogs = new List<TimeLog>();
+    private TimeLog[]? _timeLogs;
+
     private DateOnly _selectedDay = DateOnly.FromDateTime(DateTime.Now);
     private bool _forbidNextDay = true;
 
     protected override async Task OnInitializedAsync()
     {
-        timeLogs = await TimeLogsService.GetTimeLogsAsync(DateTime.Now);
-        AllTimeLogs = timeLogs.ToList();
+        await GetTimeLogsAsync();
     }
 
     void AddItem()
@@ -75,17 +75,25 @@ else
 
     }
 
-    void PrevDay()
+    private async Task PrevDayAsync()
     {
         _selectedDay = _selectedDay.AddDays(-1);
         _forbidNextDay = false;
+        await GetTimeLogsAsync();
     }
 
-    void NextDay()
+    private async Task NextDayAsync()
     {
         _selectedDay = _selectedDay.AddDays(1);
 
         DateOnly today = DateOnly.FromDateTime(DateTime.Now);
         _forbidNextDay = (_selectedDay >= today);
+
+        await GetTimeLogsAsync();
+    }
+
+    private async Task GetTimeLogsAsync()
+    {
+        _timeLogs = await TimeLogsService.GetTimeLogsAsync(_selectedDay);
     }
 }

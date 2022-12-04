@@ -1,14 +1,22 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using tictacApp.Data;
 using MudBlazor.Services;
+using tictacApp.Services;
+using tictacApp.DataAccess;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddMudServices();          //MudBlazor
+///MudBlazor
+builder.Services.AddMudServices();       
+
+///efcore specitic initialization for a blazor server app
+builder.Services.AddDbContextFactory<TictacDBContext>(opt => opt.UseSqlite(@"Data Source=tictacDB.db"));
+builder.Services.AddDbContext<TictacDBContext>(opt => opt.UseSqlite(@"Data Source=tictacDB.db"));
+
 builder.Services.AddSingleton<TimeLogsService>();
 
 var app = builder.Build();
