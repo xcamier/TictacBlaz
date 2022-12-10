@@ -1,0 +1,98 @@
+@page "/addTag"
+
+@using Data
+@using tictacApp.Services
+
+@inject TagsService TagsService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+@if (_tag is not null)
+{
+    <TagForm Busy="@_busy" 
+                Tag="@_tag" 
+                IsAdd="true"
+                CancelRequest="Cancel"
+                ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+
+    @if (_error)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    private Tag? _tag { get; set; }
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _tag = new Tag();
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to add the tag", Severity.Warning);
+
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await TagsService.AddTagAsync(_tag);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Tag added successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the tag", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        Navigation.NavigateTo($"/tags");
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

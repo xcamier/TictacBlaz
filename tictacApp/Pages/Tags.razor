@@ -1,0 +1,116 @@
+@page "/tags"
+
+@using tictacApp.Services
+@using tictacApp.Data
+
+@inject TagsService TagsService
+@inject ISnackbar Snackbar
+
+
+<PageTitle>Tags</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Tags</MudText>
+
+@if (_tags == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    Href="addTag" Class="d-inline-flex">Add Tag</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_tags" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4">
+        <ColGroup>
+            <col />
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Label</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" HRef="@($"editTag/{context.Id}")" />
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@(async () => await DeleteTagAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    private Tag[]? _tags;
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTagsAsync();
+    }
+
+    private async Task GetTagsAsync()
+    {
+        try
+        {
+            _loading = true;
+            _tags = await TagsService.GetTagsAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteTagAsync(Tag tagToRemove)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await TagsService.DeleteTagAsync(tagToRemove);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Tag deleted successfully", Severity.Success);
+                await GetTagsAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when deleting the tag", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

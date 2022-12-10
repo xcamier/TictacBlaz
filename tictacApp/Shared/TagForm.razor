@@ -1,0 +1,100 @@
+@using tictacApp.Data
+@using FluentValidation
+@using tictacApp.Services
+@inject TagsService TagsService
+
+<MudForm Model="@Tag" 
+    @ref="@form" Validation="@(tagValidator.ValidateValue)" ValidationDelay="0">
+
+    <MudGrid Justify="Justify.Center" Class="mt-2">
+        <MudItem xs="6" >
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@Mode Tag</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                @if (Tag is not null)
+                {
+                    <MudCardContent>                        
+                        <MudTextField T="string" Label="Label" Variant="Variant.Text" 
+                                        @bind-Value="Tag.Label" For="@(() => Tag.Label)" 
+                                        Immediate="true"/>
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">                                
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary"  
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">Submit</MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+                    </MudCardActions>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public Tag? Tag { get; set; }
+
+    /// </summary>
+    [Parameter]
+    public Tag? DbTag { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+    private MudForm form;
+    private TagModelFluentValidator tagValidator = new TagModelFluentValidator();
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            return ValidationResult.InvokeAsync(true);
+        }
+
+        return ValidationResult.InvokeAsync(false);
+    }
+
+    //Local class for the fluent validator
+    public class TagModelFluentValidator : AbstractValidator<Tag>
+    {
+        public TagModelFluentValidator()
+        {
+            DateTime now = DateTime.Now;
+            RuleFor(timeLog => timeLog.Label).
+                            NotNull().
+                            MaximumLength(15).
+                            MinimumLength(3);
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Tag>.CreateWithOptions((Tag)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}
