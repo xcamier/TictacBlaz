@@ -1,0 +1,98 @@
+@page "/addGrade"
+
+@using Data
+@using tictacApp.Services
+
+@inject GradesService GradesService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+@if (_grade is not null)
+{
+    <GradeForm Busy="@_busy" 
+                Grade="@_grade" 
+                IsAdd="true"
+                CancelRequest="Cancel"
+                ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+
+    @if (_error)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    private Grade? _grade { get; set; }
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _grade = new Grade();
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to add the grade", Severity.Warning);
+
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await GradesService.AddGradeAsync(_grade);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Grade added successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the grade", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        Navigation.NavigateTo($"/grades");
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

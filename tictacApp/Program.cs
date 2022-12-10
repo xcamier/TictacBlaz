@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor.Services;
 using tictacApp.Services;
 using tictacApp.DataAccess;
@@ -34,6 +32,7 @@ builder.Services.AddDbContext<TictacDBContext>(opt => opt.UseSqlite(@"Data Sourc
 
 builder.Services.AddSingleton<TimeLogsService>();
 builder.Services.AddSingleton<TagsService>();
+builder.Services.AddSingleton<GradesService>();
 
 var app = builder.Build();
 

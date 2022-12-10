@@ -1,4 +1,4 @@
-namespace tictacApp.Formatters;
+namespace tictacApp.Helpers;
 
 public class FormattersHelper
 {

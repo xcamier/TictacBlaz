@@ -1,0 +1,173 @@
+@page "/editGrade/{GradeId:int}"
+
+@using Microsoft.EntityFrameworkCore
+@using tictacApp.Data
+@using tictacApp.Services
+@using tictacApp.DataAccess
+
+@inject NavigationManager Navigation
+@inject GradesService GradesService
+@inject ISnackbar Snackbar
+
+@if (_grade is null && !_busy)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">Could not find the grade for id: @GradeId</MudAlert>
+}
+else
+{
+    <GradeForm Busy="@_busy" 
+                 Grade="@_grade"
+                 IsAdd="false"
+                 CancelRequest="Cancel"
+                 ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@if (_error)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+}
+
+@code {
+    [Parameter]
+    public int GradeId { get; set; }
+
+    private Grade? _grade { get; set; } = new Grade();
+
+    private Grade _dbGrade { get; set; } = new Grade();
+
+    private TictacDBContext? _dbContext;
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+    private bool _concurrencyError = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _busy = true;
+            ResetErrorMessage();
+
+            //persists until the component is destroyed as we have to keep the connection until we save or dismiss
+            _dbContext  = GradesService.GetDBContext(); 
+
+            Grade? grade = await GradesService.FindGradeFromIdAsync(_dbContext, GradeId);
+            if (grade != null)
+            {
+                _grade = grade;
+            }
+            else
+            {
+                _error = true;
+                _errorMessage = $"Unable to find the grade with id: {GradeId}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to modify the grade", Severity.Warning);
+
+            _concurrencyError = false;
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true; 
+
+            ResetErrorMessage();
+
+            bool savingRes = false;
+            if (_dbContext is not null)
+            {
+                savingRes = await _dbContext.SaveChangesAsync() > 0;
+            }
+
+            if (savingRes )
+            {
+                Snackbar.Add("Grade modified successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when modifying the grade", Severity.Warning);
+            }
+        }
+        catch (DbUpdateConcurrencyException dbex)
+        {
+            // concurrency issues!
+            _concurrencyError = true;
+
+            // get values from database
+            var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+            if (dbValues is null)
+            {
+                // deleted - show contact not found
+                Snackbar.Add("The grade could not be updated and is not found in DB. It was probably deleted before you saved.", Severity.Warning);
+                GoBackToList();
+                return;
+            }
+
+            // bind to show labels on form
+            _grade = (Grade)dbValues.ToObject();
+
+            // move to original so second submit works (unless there is another concurrent edit)
+            dbex.Entries[0].OriginalValues.SetValues(dbValues);
+            ResetErrorMessage();
+            _busy = false;
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        Navigation.NavigateTo($"/grades");
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+
+    public void Dispose()
+    {
+        _dbContext?.Dispose();
+    }
+}

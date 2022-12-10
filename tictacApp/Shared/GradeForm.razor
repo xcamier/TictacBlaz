@@ -3,25 +3,25 @@
 @using tictacApp.Services
 @using tictacApp.Helpers
 
-@inject TagsService TagsService
+@inject GradesService GradesService
 
-<MudForm Model="@Tag" 
-    @ref="@form" Validation="@(tagValidator.ValidateValue)" ValidationDelay="0">
+<MudForm Model="@Grade" 
+    @ref="@form" Validation="@(gradeValidator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6" >
             <MudCard>
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">@Mode Tag</MudText>
+                        <MudText Typo="Typo.h6">@Mode Grade</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
 
-                @if (Tag is not null)
+                @if (Grade is not null)
                 {
                     <MudCardContent>                        
                         <MudTextField T="string" Label="Label" Variant="Variant.Text" 
-                                        @bind-Value="Tag.Label" For="@(() => Tag.Label)" 
+                                        @bind-Value="Grade.Label" For="@(() => Grade.Label)" 
                                         Immediate="true"/>
                     </MudCardContent>
                     <MudCardActions Class="d-flex justify-space-between">                                
@@ -50,18 +50,18 @@
     public bool IsAdd { get; set; }
 
     [Parameter]
-    public Tag? Tag { get; set; }
+    public Grade? Grade { get; set; }
 
     /// </summary>
     [Parameter]
-    public Tag? DbTag { get; set; }
+    public Grade? DbGrade { get; set; }
 
     [Parameter]
     public bool Busy { get; set; }
 
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
-    private TagModelFluentValidator tagValidator = new TagModelFluentValidator();
+    private GradeModelFluentValidator gradeValidator = new GradeModelFluentValidator();
 
     private Task CancelAsync()
     {
@@ -80,19 +80,19 @@
     }
 
     //Local class for the fluent validator
-    public class TagModelFluentValidator : AbstractValidator<Tag>
+    public class GradeModelFluentValidator : AbstractValidator<Grade>
     {
-        public TagModelFluentValidator()
+        public GradeModelFluentValidator()
         {
-            RuleFor(timeLog => timeLog.Label).
+            RuleFor(grade => grade.Label).
                             NotNull().
                             MaximumLength(Constants.LabelShortLength).
-                            MinimumLength(Constants.LabelMinLength);
+                            MinimumLength(Constants.Label1CharLength);
 		}
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<Tag>.CreateWithOptions((Tag)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<Grade>.CreateWithOptions((Grade)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);
