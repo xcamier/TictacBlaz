@@ -2,7 +2,10 @@
 
 @using tictacApp.Data
 @using tictacApp.Services
+
+@inject ISnackbar Snackbar
 @inject TimeLogsService TimeLogsService
+
 
 <PageTitle>Time logs</PageTitle>
 
@@ -10,7 +13,7 @@
 
 @if (_timeLogs == null)
 {
-    <p><em>Loading...</em></p>
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
 }
 else
 {
@@ -21,7 +24,7 @@ else
         </MudButtonGroup>
 
         <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
-            <MudButton StartIcon="@Icons.Material.Filled.PostAdd">Add Log</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Href="addLog">Add Log</MudButton>
         </MudButtonGroup>
     </MudPaper>
 
@@ -38,13 +41,17 @@ else
             <Column T="TimeLog" Field="Description" />
             <Column T="TimeLog" CellClass="d-flex justify-end">
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" OnClick="@EditItem" />
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@RemoveItem" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" HRef="@($"editLog/{context.Item.Id}")" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context.Item))" />
                 </CellTemplate>
             </Column>
         </Columns>
     </MudDataGrid>
 
+    @if (_error)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
 }
 
 
@@ -54,20 +61,49 @@ else
 
     private DateOnly _selectedDay = DateOnly.FromDateTime(DateTime.Now);
     private bool _forbidNextDay = true;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         await GetTimeLogsAsync();
     }
 
-    void AddItem()
+    private async Task DeleteTimeLogAsync(TimeLog timeLogToRemove)
     {
-       // _items.Add(new Model("New Person", 44, Severity.Warning, 85_000.00M, new DateTime(2022, 1, 1), true));
-    }
+        if (_busy)
+        {
+            return;
+        }
 
-    void RemoveItem()
-    {
-       // _items.RemoveAt(0);
+        try
+        {
+            _busy = true;
+
+            bool res = await TimeLogsService.DeleteTimeLogAsync(timeLogToRemove);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Timelog deleted successfully", Severity.Success);
+                await GetTimeLogsAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when deleting the timelog", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     void EditItem()
@@ -95,5 +131,11 @@ else
     private async Task GetTimeLogsAsync()
     {
         _timeLogs = await TimeLogsService.GetTimeLogsAsync(_selectedDay);
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
     }
 }

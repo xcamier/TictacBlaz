@@ -1,0 +1,170 @@
+@using tictacApp.Data
+@using FluentValidation
+@using tictacApp.Services
+@inject TagsService TagsService
+
+<MudForm Model="@TimeLog"
+    @ref="@form" Validation="@(timeLogValidator.ValidateValue)" ValidationDelay="0">
+
+    <MudGrid >
+        <MudItem Class="d-flex align-center justify-center mud-width-full" xs="12">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@Mode Time Log</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                @if (TimeLog is not null && _tags is not null)
+                {
+                    <MudCardContent>
+                        <div class="d-flex align-center">
+                            <MudDatePicker Label="Date of the log" Placeholder="Select Date"
+                                            Editable="true" DisableToolbar="true"
+                                            @bind-Date="TimeLog.StartDate" For="@(() => TimeLog.StartDate)" />
+
+                            <MudTimePicker Label="Time of the log" Placeholder="Select Time"
+                                            Editable="true" DisableToolbar="true" Class = "ml-2"
+                                            @bind-Time="TimeLog.TimeSpan" For="@(() => TimeLog.TimeSpan)" />
+                        </div>
+                        <MudTextField Label="Time spent" 
+                                        Adornment="Adornment.End" AdornmentText="min"
+                                        @bind-Value="TimeLog.TimeSpentInMin"  For="@(() => TimeLog.TimeSpentInMin)"
+                                        Immediate="true"/>
+                        
+                        <MudTextField T="string" Label="Description" Variant="Variant.Text" Lines="3" 
+                                        @bind-Value="TimeLog.Description" For="@(() => TimeLog.Description)" 
+                                        Immediate="true"/>
+
+                        <MudGrid Class="mt-4">
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.DeviceHub" Class="mt-2">
+                                    @TimeLog.ProjectsAsText
+                                </MudButton>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Text" StartIcon="@Icons.Outlined.Lightbulb">
+                                    @TimeLog.ObjectivesAsText
+                                </MudButton>
+                            </MudItem>
+                            <MudItem xs="12">
+                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Anchor">
+                                    @TimeLog.CharacteristicsAsText
+                            </MudButton>
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudSelect Class="mt-4" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" MultiSelection="true" 
+                                    @bind-Value="value" @bind-SelectedValues="options" T="string" 
+                                    Label="Tags" AdornmentIcon="@Icons.Material.Filled.Search" AnchorOrigin="Origin.BottomCenter">
+                            @foreach (var tag in _tags)
+                            {
+                                <MudSelectItem T="string" Value="tag.Label">@tag.Label</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                    </MudCardContent>
+                    <MudCardActions>                                
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" Class="ml-auto" 
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">Submit</MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" Class="ml-auto" 
+                                    OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+                    </MudCardActions>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public TimeLog? TimeLog { get; set; }
+
+    /// </summary>
+    [Parameter]
+    public TimeLog? DbTimeLog { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+    private MudForm form;
+    private TimeLogModelFluentValidator timeLogValidator = new TimeLogModelFluentValidator();
+    private Tag[]? _tags = null;
+    private string value { get; set; } = "No tag selected";
+    private IEnumerable<string> options { get; set; } = new HashSet<string>() {  };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTagsAsync();
+    }
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            return ValidationResult.InvokeAsync(true);
+        }
+
+        return ValidationResult.InvokeAsync(false);
+    }
+
+    private async Task GetTagsAsync()
+    {
+        _tags = await TagsService.GetTagsAsync();
+    }
+    
+
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        //if (multiselectionTextChoice)
+        //{
+            return $"Selected tags{(selectedValues.Count > 1 ? "s" : "")}: {string.Join(", ", selectedValues.Select(x => x))}";
+        //}
+        /*else
+        {
+            return $"{selectedValues.Count} state{(selectedValues.Count > 1 ? "s have":" has")} been selected";
+        }*/
+    }    
+
+    //Local class for the fluent validator
+    public class TimeLogModelFluentValidator : AbstractValidator<TimeLog>
+    {
+        public TimeLogModelFluentValidator()
+        {
+            DateTime now = DateTime.Now;
+            RuleFor(timeLog => timeLog.StartDate).
+                            NotNull().
+                            GreaterThan(new DateTime(now.Year - 1, now.Month, now.Day, 0, 0, 0));
+
+            RuleFor(timeLog =>timeLog.TimeSpentInMin).GreaterThan(0);
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<TimeLog>.CreateWithOptions((TimeLog)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

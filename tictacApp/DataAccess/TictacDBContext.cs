@@ -56,14 +56,24 @@ public class TictacDBContext : DbContext
         timeLog.HasOne(t => t.Activity).WithMany(a => a.TimeLogs);
         timeLog.HasOne(t => t.Characteristic).WithMany(c => c.TimeLogs);
         timeLog.HasOne(t => t.Objective).WithMany(o => o.TimeLogs);
-        
+
+        //the many to many relationship with the tags entity could be implicit and created by ef
+        //but I want to control the name of the table
+        timeLog.HasMany(t => t.Tags).WithMany(t => t.TimeLogs).UsingEntity("TimeLogsTags");
+
+
         //For display only => not in DB
         timeLog.Ignore(t => t.TimeSpentInHHMM);
-    }
+        timeLog.Ignore(t => t.TimeSpan);
+        timeLog.Ignore(t => t.ProjectsAsText);
+        timeLog.Ignore(t => t.ObjectivesAsText);
+        timeLog.Ignore(t => t.CharacteristicsAsText);
+   }
 
-    public DbSet<Activity>? Categories { get; set; }
-    public DbSet<Activity>? Characteristics { get; set; }
-    public DbSet<Objective>? Objectives { get; set; }
-    public DbSet<TimeLog>? TimeLogs { get; set; }
+    public DbSet<Activity> Categories { get; set; }
+    public DbSet<Characteristic> Characteristics { get; set; }
+    public DbSet<Objective> Objectives { get; set; }
+    public DbSet<TimeLog> TimeLogs { get; set; }
+    public DbSet<Tag> Tags { get; set; }
 
 }

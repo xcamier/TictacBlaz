@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace tictacApp.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Activity",
+                name: "Categories",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
@@ -23,16 +23,16 @@ namespace tictacApp.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Activity", x => x.Id);
+                    table.PrimaryKey("PK_Categories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Activity_Activity_ParentActivityId",
+                        name: "FK_Categories_Categories_ParentActivityId",
                         column: x => x.ParentActivityId,
-                        principalTable: "Activity",
+                        principalTable: "Categories",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Characteristic",
+                name: "Characteristics",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
@@ -43,11 +43,11 @@ namespace tictacApp.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Characteristic", x => x.Id);
+                    table.PrimaryKey("PK_Characteristics", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Characteristic_Characteristic_ParentCharacteristicId",
+                        name: "FK_Characteristics_Characteristics_ParentCharacteristicId",
                         column: x => x.ParentCharacteristicId,
-                        principalTable: "Characteristic",
+                        principalTable: "Characteristics",
                         principalColumn: "Id");
                 });
 
@@ -72,6 +72,19 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Tags",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Label = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tags", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TimeLogs",
                 columns: table => new
                 {
@@ -88,14 +101,14 @@ namespace tictacApp.Migrations
                 {
                     table.PrimaryKey("PK_TimeLogs", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TimeLogs_Activity_ActivityId",
+                        name: "FK_TimeLogs_Categories_ActivityId",
                         column: x => x.ActivityId,
-                        principalTable: "Activity",
+                        principalTable: "Categories",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_TimeLogs_Characteristic_CharacteristicId",
+                        name: "FK_TimeLogs_Characteristics_CharacteristicId",
                         column: x => x.CharacteristicId,
-                        principalTable: "Characteristic",
+                        principalTable: "Characteristics",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TimeLogs_Objectives_ObjectiveId",
@@ -104,14 +117,38 @@ namespace tictacApp.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "TimeLogsTags",
+                columns: table => new
+                {
+                    TagsId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TimeLogsId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TimeLogsTags", x => new { x.TagsId, x.TimeLogsId });
+                    table.ForeignKey(
+                        name: "FK_TimeLogsTags_Tags_TagsId",
+                        column: x => x.TagsId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TimeLogsTags_TimeLogs_TimeLogsId",
+                        column: x => x.TimeLogsId,
+                        principalTable: "TimeLogs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
-                name: "IX_Activity_ParentActivityId",
-                table: "Activity",
+                name: "IX_Categories_ParentActivityId",
+                table: "Categories",
                 column: "ParentActivityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Characteristic_ParentCharacteristicId",
-                table: "Characteristic",
+                name: "IX_Characteristics_ParentCharacteristicId",
+                table: "Characteristics",
                 column: "ParentCharacteristicId");
 
             migrationBuilder.CreateIndex(
@@ -133,19 +170,30 @@ namespace tictacApp.Migrations
                 name: "IX_TimeLogs_ObjectiveId",
                 table: "TimeLogs",
                 column: "ObjectiveId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TimeLogsTags_TimeLogsId",
+                table: "TimeLogsTags",
+                column: "TimeLogsId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "TimeLogsTags");
+
+            migrationBuilder.DropTable(
+                name: "Tags");
+
+            migrationBuilder.DropTable(
                 name: "TimeLogs");
 
             migrationBuilder.DropTable(
-                name: "Activity");
+                name: "Categories");
 
             migrationBuilder.DropTable(
-                name: "Characteristic");
+                name: "Characteristics");
 
             migrationBuilder.DropTable(
                 name: "Objectives");
