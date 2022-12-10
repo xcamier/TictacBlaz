@@ -1,5 +1,6 @@
 ﻿@page "/"
 
+@using tictacApp.Formatters
 @using tictacApp.Data
 @using tictacApp.Services
 
@@ -21,6 +22,7 @@ else
         <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="d-inline-flex">
             <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore" OnClick="@PrevDayAsync"></MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.NavigateNext" Disabled="@_forbidNextDay" OnClick="@NextDayAsync"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Today" OnClick="@TodayAsync"></MudIconButton>
         </MudButtonGroup>
 
         <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
@@ -29,15 +31,16 @@ else
     </MudPaper>
 
     <MudPaper Class="d-inline-flex ml-2 pa-4">
-        <MudText>Total for @_selectedDay.ToLongDateString(): xxxx</MudText>
+        <MudText>Total for @_selectedDay.ToLongDateString(): @_totalForDay</MudText>
     </MudPaper>
     <MudPaper Class="d-inline-flex pa-4">
-        <MudText>Total for the week: xxxx</MudText>
+        <MudText>Total for the week: @_totalForWeek</MudText>
     </MudPaper>
 
     <MudDataGrid T="TimeLog" Items="@_timeLogs" Bordered="true" Dense="true" Class="ml-2 mr-2 mt-4">
         <Columns>
             <Column T="TimeLog" Field="StartDate" Title="Start Date" />
+            <Column T="TimeLog" Field="TimeSpentInHHMM" Title = "Time Spent" />
             <Column T="TimeLog" Field="Description" />
             <Column T="TimeLog" CellClass="d-flex justify-end">
                 <CellTemplate>
@@ -61,6 +64,8 @@ else
 
     private DateOnly _selectedDay = DateOnly.FromDateTime(DateTime.Now);
     private bool _forbidNextDay = true;
+    private string _totalForDay = "No data";
+    private string _totalForWeek = "No data";
     private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
@@ -106,15 +111,11 @@ else
         }
     }
 
-    void EditItem()
-    {
-
-    }
-
     private async Task PrevDayAsync()
     {
         _selectedDay = _selectedDay.AddDays(-1);
         _forbidNextDay = false;
+
         await GetTimeLogsAsync();
     }
 
@@ -122,8 +123,17 @@ else
     {
         _selectedDay = _selectedDay.AddDays(1);
 
-        DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
         _forbidNextDay = (_selectedDay >= today);
+
+        await GetTimeLogsAsync();
+    }
+
+    private async Task TodayAsync()
+    {
+        _selectedDay = DateOnly.FromDateTime(DateTime.Today);
+
+        _forbidNextDay = true;
 
         await GetTimeLogsAsync();
     }
@@ -131,6 +141,12 @@ else
     private async Task GetTimeLogsAsync()
     {
         _timeLogs = await TimeLogsService.GetTimeLogsAsync(_selectedDay);
+        _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToString(tl.TimeSpentInMin));  
+
+        _totalForDay = FormattersHelper.MinToString(_timeLogs.Sum(s => s.TimeSpentInMin));
+        
+        int totalForWeek = await TimeLogsService.GetTimeSpentInWeek(_selectedDay);
+        _totalForWeek = FormattersHelper.MinToString(totalForWeek);
     }
 
     private void ResetErrorMessage()
@@ -138,4 +154,6 @@ else
         _error = false;
         _errorMessage = string.Empty;
     }
+
+
 }
