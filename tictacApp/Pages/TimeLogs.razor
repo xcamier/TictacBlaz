@@ -37,19 +37,31 @@ else
         <MudText>Total for the week: @_totalForWeek</MudText>
     </MudPaper>
 
-    <MudDataGrid T="TimeLog" Items="@_timeLogs" Bordered="true" Dense="true" Class="ml-2 mr-2 mt-4">
-        <Columns>
-            <Column T="TimeLog" Field="StartDate" Title="Start Date" />
-            <Column T="TimeLog" Field="TimeSpentInHHMM" Title = "Time Spent" />
-            <Column T="TimeLog" Field="Description" />
-            <Column T="TimeLog" CellClass="d-flex justify-end">
-                <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" HRef="@($"editLog/{context.Item.Id}")" />
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context.Item))" />
-                </CellTemplate>
-            </Column>
-        </Columns>
-    </MudDataGrid>
+    <MudTable Items="@_timeLogs" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4">
+        <ColGroup>
+            <col />
+            <col />
+            <col style="width: 50%;"/>
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Start Date</MudTh>
+            <MudTh>Time Spent</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Start Date">@context.StartDate</MudTd>
+            <MudTd DataLabel="Time Spent">@context.TimeSpentInHHMM</MudTd>
+            <MudTd DataLabel="Time Spent">@context.Description</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" HRef="@($"editLog/{context.Id}")" />
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
 
     @if (_error)
     {
@@ -61,7 +73,7 @@ else
 
 @code {
     private TimeLog[]? _timeLogs;
-
+    private bool _loading = false;
     private DateOnly _selectedDay = DateOnly.FromDateTime(DateTime.Now);
     private bool _forbidNextDay = true;
     private string _totalForDay = "No data";
@@ -72,7 +84,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await GetTimeLogsAsync();
+        try
+        {
+            _loading = true;
+
+            await GetTimeLogsAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+
     }
 
     private async Task DeleteTimeLogAsync(TimeLog timeLogToRemove)
@@ -154,6 +176,4 @@ else
         _error = false;
         _errorMessage = string.Empty;
     }
-
-
 }
