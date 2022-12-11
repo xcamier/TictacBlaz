@@ -33,6 +33,7 @@ builder.Services.AddDbContext<TictacDBContext>(opt => opt.UseSqlite(@"Data Sourc
 builder.Services.AddSingleton<TimeLogsService>();
 builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<GradesService>();
+builder.Services.AddSingleton<ProjectsService>();
 
 var app = builder.Build();
 

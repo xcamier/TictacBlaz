@@ -1,0 +1,173 @@
+@page "/projects"
+@page "/projects/{ParentProjectId:int}"
+
+@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+
+@inject ProjectsService ProjectService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+<PageTitle>Projects</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Projects</MudText>
+<MudBreadcrumbs Items="_path">
+    <ItemTemplate Context="item">
+        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
+    </ItemTemplate>
+</MudBreadcrumbs>
+
+@if (_projects == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                   OnClick="@(() => @AddProject(@ParentProjectId))" Class="d-inline-flex">Add Project</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_projects" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4">
+        <ColGroup>
+            <col />
+            <col />
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Label</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
+            <MudTd DataLabel="Label">@context.Description</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => @GoToSubProject(context.Id))" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/project/{context.Id}/editProject")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteProjectAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    [Parameter]
+    public int? ParentProjectId { get; set; } = null;
+
+    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
+    private Project[]? _projects;
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await BuildBreadcrumb();
+        await GetProjectsAsync();
+    }
+
+    private async Task BuildBreadcrumb()
+    {
+        BreadcrumbItem root = new BreadcrumbItem("Projects", href: "/projects", icon: AppIcons.Project);
+        _path.Add(root);
+
+        if (ParentProjectId.HasValue)
+        {
+            KeyValuePair<int, string?>[] parentProjects = await ProjectService.GetParentProjects(ParentProjectId.Value);
+            foreach (KeyValuePair<int, string?> proj in parentProjects)
+            {
+                BreadcrumbItem item = new BreadcrumbItem(proj.Value, href: $"/projects/{proj.Key}");
+                _path.Add(item);
+            }
+        }
+    }
+
+    private async Task GetProjectsAsync()
+    {
+        try
+        {
+            _loading = true;
+            _projects = await ProjectService.GetProjectsAsync(ParentProjectId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteProjectAsync(Project projectToRemove)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await ProjectService.DeleteProjectAsync(projectToRemove);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Project deleted successfully", Severity.Success);
+                await GetProjectsAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when deleting the project", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+
+    private void GoToSubProject(int subProjectId)
+    {
+        GoToSubProject($"/projects/{subProjectId}");
+    }
+
+    private void GoToSubProject(string url)
+    {
+        Navigation.NavigateTo(url, true);
+    }
+
+    private void AddProject(int? parentProjectId)
+    {
+        string url = string.Empty;
+        if (parentProjectId.HasValue)
+        {
+            url = $"/project/{parentProjectId}/addProject";
+        }
+        else
+        {
+            url = "/project/addProject";
+        }
+        Navigation.NavigateTo(url);
+    }
+}

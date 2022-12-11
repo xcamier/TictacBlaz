@@ -12,43 +12,16 @@ namespace tictacApp.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Categories",
+                name: "Grades",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
-                    ParentActivityId = table.Column<int>(type: "INTEGER", nullable: true)
+                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Categories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Categories_Categories_ParentActivityId",
-                        column: x => x.ParentActivityId,
-                        principalTable: "Categories",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Characteristics",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
-                    ParentCharacteristicId = table.Column<int>(type: "INTEGER", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Characteristics", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Characteristics_Characteristics_ParentCharacteristicId",
-                        column: x => x.ParentCharacteristicId,
-                        principalTable: "Characteristics",
-                        principalColumn: "Id");
+                    table.PrimaryKey("PK_Grades", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -72,16 +45,65 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Projects",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
+                    IsClosed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsFinalized = table.Column<bool>(type: "INTEGER", nullable: false),
+                    FinalizationDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ParentProjectId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Projects", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Projects_Projects_ParentProjectId",
+                        column: x => x.ParentProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tags",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", nullable: true)
+                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tags", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Characteristics",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
+                    GradeId = table.Column<int>(type: "INTEGER", nullable: true),
+                    ParentCharacteristicId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Characteristics", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Characteristics_Characteristics_ParentCharacteristicId",
+                        column: x => x.ParentCharacteristicId,
+                        principalTable: "Characteristics",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Characteristics_Grades_GradeId",
+                        column: x => x.GradeId,
+                        principalTable: "Grades",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -93,18 +115,13 @@ namespace tictacApp.Migrations
                     StartDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     TimeSpentInMin = table.Column<int>(type: "INTEGER", nullable: false),
                     Description = table.Column<string>(type: "TEXT", maxLength: 140, nullable: true),
-                    ActivityId = table.Column<int>(type: "INTEGER", nullable: true),
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true),
                     ObjectiveId = table.Column<int>(type: "INTEGER", nullable: true),
                     CharacteristicId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TimeLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TimeLogs_Categories_ActivityId",
-                        column: x => x.ActivityId,
-                        principalTable: "Categories",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TimeLogs_Characteristics_CharacteristicId",
                         column: x => x.CharacteristicId,
@@ -114,6 +131,11 @@ namespace tictacApp.Migrations
                         name: "FK_TimeLogs_Objectives_ObjectiveId",
                         column: x => x.ObjectiveId,
                         principalTable: "Objectives",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_TimeLogs_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
                         principalColumn: "Id");
                 });
 
@@ -142,9 +164,9 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Categories_ParentActivityId",
-                table: "Categories",
-                column: "ParentActivityId");
+                name: "IX_Characteristics_GradeId",
+                table: "Characteristics",
+                column: "GradeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Characteristics_ParentCharacteristicId",
@@ -157,9 +179,9 @@ namespace tictacApp.Migrations
                 column: "ParentObjectiveId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TimeLogs_ActivityId",
-                table: "TimeLogs",
-                column: "ActivityId");
+                name: "IX_Projects_ParentProjectId",
+                table: "Projects",
+                column: "ParentProjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TimeLogs_CharacteristicId",
@@ -170,6 +192,11 @@ namespace tictacApp.Migrations
                 name: "IX_TimeLogs_ObjectiveId",
                 table: "TimeLogs",
                 column: "ObjectiveId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TimeLogs_ProjectId",
+                table: "TimeLogs",
+                column: "ProjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TimeLogsTags_TimeLogsId",
@@ -190,13 +217,16 @@ namespace tictacApp.Migrations
                 name: "TimeLogs");
 
             migrationBuilder.DropTable(
-                name: "Categories");
-
-            migrationBuilder.DropTable(
                 name: "Characteristics");
 
             migrationBuilder.DropTable(
                 name: "Objectives");
+
+            migrationBuilder.DropTable(
+                name: "Projects");
+
+            migrationBuilder.DropTable(
+                name: "Grades");
         }
     }
 }

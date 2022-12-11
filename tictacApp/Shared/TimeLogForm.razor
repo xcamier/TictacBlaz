@@ -1,6 +1,8 @@
 @using tictacApp.Data
 @using FluentValidation
 @using tictacApp.Services
+@using tictacApp.Helpers
+
 @inject TagsService TagsService
 
 <MudForm Model="@TimeLog"
@@ -38,7 +40,7 @@
 
                         <MudGrid Class="mt-4">
                             <MudItem xs="12">
-                                <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.DeviceHub" Class="mt-2">
+                                <MudButton Variant="Variant.Text" StartIcon="@AppIcons.Project" Class="mt-2">
                                     @TimeLog.ProjectsAsText
                                 </MudButton>
                             </MudItem>

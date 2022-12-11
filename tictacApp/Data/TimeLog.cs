@@ -6,7 +6,7 @@ public class TimeLog
     public DateTime? StartDate { get; set; }
     public int TimeSpentInMin { get; set; }
     public string? Description { get; set; }
-    public Activity? Activity { get; set; }
+    public Project? Project { get; set; }
     public Objective? Objective { get; set; }
     public Characteristic? Characteristic { get; set; }
     public ICollection<Tag>? Tags { get; set; }

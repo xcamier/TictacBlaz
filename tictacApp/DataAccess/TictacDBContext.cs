@@ -24,12 +24,12 @@ public class TictacDBContext : DbContext
  
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var activity = modelBuilder.Entity<Activity>();
-        activity.HasKey(a => a.Id);
-        activity.Property(a => a.Label).IsRequired();
-        activity.Property(a => a.Label).HasMaxLength(Constants.LabelStandardLength);
-        activity.Property(a => a.Description).HasMaxLength(Constants.DescriptionStandardLength);
-        activity.HasOne(a => a.ParentActivity).WithMany(a => a.SubActivities);
+        var project = modelBuilder.Entity<Project>();
+        project.HasKey(p => p.Id);
+        project.Property(p => p.Label).IsRequired();
+        project.Property(p => p.Label).HasMaxLength(Constants.LabelStandardLength);
+        project.Property(p => p.Description).HasMaxLength(Constants.DescriptionStandardLength);
+        project.HasOne(p => p.ParentProject).WithMany(p => p.SubProjects).HasForeignKey(p => p.ParentProjectId);;
 
         var characterstic = modelBuilder.Entity<Characteristic>();
         characterstic.HasKey(c => c.Id);
@@ -51,7 +51,7 @@ public class TictacDBContext : DbContext
         timeLog.Property(t => t.StartDate).IsRequired();
         timeLog.Property(t => t.TimeSpentInMin).IsRequired();
         timeLog.Property(t => t.Description).HasMaxLength(Constants.DescriptionMidLength);
-        timeLog.HasOne(t => t.Activity).WithMany(a => a.TimeLogs);
+        timeLog.HasOne(t => t.Project).WithMany(a => a.TimeLogs);
         timeLog.HasOne(t => t.Characteristic).WithMany(c => c.TimeLogs);
         timeLog.HasOne(t => t.Objective).WithMany(o => o.TimeLogs);
 
@@ -75,7 +75,7 @@ public class TictacDBContext : DbContext
         grade.Property(t => t.Label).HasMaxLength(Constants.LabelShortLength);
    }
 
-    public DbSet<Activity> Categories { get; set; }
+    public DbSet<Project> Projects { get; set; }
     public DbSet<Characteristic> Characteristics { get; set; }
     public DbSet<Objective> Objectives { get; set; }
     public DbSet<TimeLog> TimeLogs { get; set; }
