@@ -26,7 +26,7 @@ else
         </MudButtonGroup>
 
         <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
-            <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Href="addLog">Add Log</MudButton>
+            <MudButton StartIcon="@AppIcons.Add" Href="logs/addLog">Add Log</MudButton>
         </MudButtonGroup>
     </MudPaper>
 
@@ -56,8 +56,8 @@ else
             <MudTd DataLabel="Time Spent">@context.TimeSpentInHHMM</MudTd>
             <MudTd DataLabel="Time Spent">@context.Description</MudTd>
             <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" HRef="@($"editLog/{context.Id}")" />
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context))" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/logs/{context.Id}/editLog")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context))" />
             </MudTd>
         </RowTemplate>
     </MudTable>

@@ -26,7 +26,7 @@
 else
 {
     <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
-        <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
                    OnClick="@(() => @AddProject(@ParentProjectId))" Class="d-inline-flex">Add Project</MudButton>
     </MudPaper>
 
@@ -47,7 +47,7 @@ else
             <MudTd DataLabel="Label">@context.Description</MudTd>
             <MudTd DataLabel="Actions">
                 <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => @GoToSubProject(context.Id))" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/project/{context.Id}/editProject")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/projects/{context.Id}/editProject")" />
                 <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteProjectAsync(context))" />
             </MudTd>
         </RowTemplate>
@@ -162,11 +162,11 @@ else
         string url = string.Empty;
         if (parentProjectId.HasValue)
         {
-            url = $"/project/{parentProjectId}/addProject";
+            url = $"/projects/{parentProjectId}/addProject";
         }
         else
         {
-            url = "/project/addProject";
+            url = "/projects/addProject";
         }
         Navigation.NavigateTo(url);
     }

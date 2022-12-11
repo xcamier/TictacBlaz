@@ -2,6 +2,7 @@
 
 @using tictacApp.Services
 @using tictacApp.Data
+@using tictacApp.Helpers
 
 @inject GradesService GradesService
 @inject ISnackbar Snackbar
@@ -18,8 +19,8 @@
 else
 {
     <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
-        <MudButton StartIcon="@Icons.Material.Filled.PostAdd" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                    Href="addGrade" Class="d-inline-flex">Add Grade</MudButton>
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    Href="/grades/addGrade" Class="d-inline-flex">Add Grade</MudButton>
     </MudPaper>
 
     <MudTable Items="@_grades" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
@@ -35,8 +36,8 @@ else
         <RowTemplate>
             <MudTd DataLabel="Label">@context.Label</MudTd>
             <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" HRef="@($"editGrade/{context.Id}")" />
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="@(async () => await DeleteGradeAsync(context))" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/grades/{context.Id}/editGrade")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteGradeAsync(context))" />
             </MudTd>
         </RowTemplate>
     </MudTable>

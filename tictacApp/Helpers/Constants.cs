@@ -18,4 +18,5 @@ public static class AppIcons
     public const string Edit = @Icons.Outlined.Edit;
     public const string Delete = @Icons.Outlined.Delete;
     public const string View = @Icons.Outlined.Pageview;
+    public const string Add = @Icons.Material.Filled.PostAdd;
 }
