@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject ProjectsService ProjectService
+@inject ProjectsService ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -55,7 +55,7 @@ else
 
     @if (_error)
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
     }
 }
 
@@ -83,7 +83,7 @@ else
 
         if (ParentProjectId.HasValue)
         {
-            KeyValuePair<int, string?>[] parentProjects = await ProjectService.GetParentProjects(ParentProjectId.Value);
+            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentProjects(ParentProjectId.Value);
             foreach (KeyValuePair<int, string?> proj in parentProjects)
             {
                 BreadcrumbItem item = new BreadcrumbItem(proj.Value, href: $"/projects/{proj.Key}");
@@ -97,7 +97,7 @@ else
         try
         {
             _loading = true;
-            _projects = await ProjectService.GetProjectsAsync(ParentProjectId);
+            _projects = await ProjectsService.GetProjectsAsync(ParentProjectId);
         }
         finally
         {
@@ -116,7 +116,7 @@ else
         {
             _busy = true;
 
-            bool res = await ProjectService.DeleteProjectAsync(projectToRemove);
+            bool res = await ProjectsService.DeleteProjectAsync(projectToRemove);
 
             ResetErrorMessage();
 

@@ -25,7 +25,7 @@ public class ProjectsService
         if (parentId.HasValue)
         {
             return await context.Projects.
-                                    Where(p => p.ParentProject != null && p.ParentProject.Id == parentId).
+                                    Where(p => p.ParentProject != null && p.ParentProjectId == parentId).
                                     OrderBy(t => t.Label).ToArrayAsync();
         }
         else
@@ -35,13 +35,6 @@ public class ProjectsService
                                     OrderBy(t => t.Label).ToArrayAsync();
         }
     }
-
-   /*public async Task<Project?> FindProjectFromIdAsync(int projectId)
-    {   
-        using var context = _dbFactory.CreateDbContext();
-
-        return await FindProjectFromIdAsync(context, projectId);
-    }*/
 
     public async Task<Project?> FindProjectFromIdAsync(TictacDBContext? dbContext, int projectId)
     {    
