@@ -5,6 +5,12 @@ public class Objective
     public int Id { get; set; }
     public string? Label { get; set; }
     public string? Description { get; set; }
+    public DateTime? TargetDate { get; set; }
+    public bool IsClosed { get; set; }
+    public bool IsFinalized { get; set; }
+    public DateTime? FinalizationDate { get; set; }
+
+    public int? ParentObjectiveId { get; set; }
     public Objective? ParentObjective { get; set; }
 
     public ICollection<Objective>? SubObjectives { get; set; }

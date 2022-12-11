@@ -1,0 +1,112 @@
+@page "/objectives/addObjective"
+@page "/objectives/{ObjectiveId:int}/addObjective"
+
+@using Data
+@using tictacApp.Services
+
+@inject ObjectivesService ObjectivesService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+@if (_objective is not null)
+{
+    <ObjectiveForm Busy="@_busy" 
+                   Objective="@_objective" 
+                   IsAdd="true"
+                   CancelRequest="Cancel"
+                   ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    [Parameter]
+    public int? ObjectiveId { get; set; } = null;
+    
+    private Objective? _objective { get; set; }
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _objective = new Objective();
+        _objective.ParentObjectiveId = ObjectiveId;
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to add the objective", Severity.Warning);
+
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await ObjectivesService.AddObjectiveAsync(_objective);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Objective added successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the objective", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        string url = string.Empty;
+        if (ObjectiveId.HasValue)
+        {
+            url = $"/objectives/{ObjectiveId}";
+        }
+        else
+        {
+            url = "/objectives";
+        }
+        Navigation.NavigateTo(url);
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

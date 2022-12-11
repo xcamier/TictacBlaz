@@ -17,7 +17,7 @@ namespace tictacApp.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: true)
+                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,8 +30,12 @@ namespace tictacApp.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
+                    Label = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
+                    TargetDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsClosed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsFinalized = table.Column<bool>(type: "INTEGER", nullable: false),
+                    FinalizationDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     ParentObjectiveId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
@@ -50,7 +54,7 @@ namespace tictacApp.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
+                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: false),
                     Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
                     IsClosed = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsFinalized = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -73,7 +77,7 @@ namespace tictacApp.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: true)
+                    Label = table.Column<string>(type: "TEXT", maxLength: 15, nullable: false)
                 },
                 constraints: table =>
                 {

@@ -1,0 +1,123 @@
+@using tictacApp.Data
+@using FluentValidation
+@using tictacApp.Helpers
+
+<MudForm Model="@Objective"
+    @ref="@form" Validation="@(objectiveValidator.ValidateValue)" ValidationDelay="0">
+
+    <MudGrid Justify="Justify.Center" Class="mt-2">
+        <MudItem xs="6">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@Mode Objective</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                @if (Objective is not null)
+                {
+                    <MudCardContent>  
+                        <MudTextField T="string" Label="Label" Variant="Variant.Text" 
+                                        @bind-Value="Objective.Label" For="@(() => Objective.Label)" 
+                                        Immediate="true"/>
+
+                        <MudTextField T="string" Label="Description" Variant="Variant.Text" Lines="3" 
+                                        @bind-Value="Objective.Description" For="@(() => Objective.Description)" 
+                                        Immediate="true"/>
+
+                        <MudDatePicker Label="Target date" Placeholder="Select Date"
+                                    Editable="true" DisableToolbar="true"
+                                    @bind-Date="Objective.TargetDate" For="@(() => Objective.TargetDate)" />
+
+                        <MudGrid Class="mt-4">
+                            <MudItem xs="6">
+                                <MudSwitch  Label="Finalized" Color="Color.Info" 
+                                            @bind-Checked="@Objective.IsFinalized" For="@(() => Objective.IsFinalized)"/>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudDatePicker Label="Finalization date" Placeholder="Select Date"
+                                            Editable="true" DisableToolbar="true"
+                                            @bind-Date="Objective.FinalizationDate" For="@(() => Objective.FinalizationDate)" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudSwitch  Label="Closed" Color="Color.Info" 
+                                            @bind-Checked="@Objective.IsClosed" For="@(() => Objective.IsClosed)"/>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">                                
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+                    </MudCardActions>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public Objective? Objective { get; set; }
+
+    [Parameter]
+    public Objective? DbObjective { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+    private MudForm form;
+    private ObjectiveModelFluentValidator objectiveValidator = new ObjectiveModelFluentValidator();
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            return ValidationResult.InvokeAsync(true);
+        }
+
+        return ValidationResult.InvokeAsync(false);
+    }
+
+    //Local class for the fluent validator
+    public class ObjectiveModelFluentValidator : AbstractValidator<Objective>
+    {
+        public ObjectiveModelFluentValidator()
+        {
+            RuleFor(o => o.Label).
+                            NotNull().
+                            MaximumLength(Constants.LabelLongLength).
+                            MinimumLength(Constants.LabelMinLength);
+
+            RuleFor(o =>o.Description).MaximumLength(Constants.DescriptionStandardLength);
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Objective>.CreateWithOptions((Objective)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

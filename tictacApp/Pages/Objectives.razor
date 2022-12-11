@@ -1,0 +1,176 @@
+@page "/objectives"
+@page "/objectives/{ParentObjectiveId:int}"
+
+@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+
+@inject ObjectivesService ObjectivesService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+<PageTitle>Objectives</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Objectives</MudText>
+<MudBreadcrumbs Items="_path">
+    <ItemTemplate Context="item">
+        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => GoToSubObjective(@item.Href))">@item.Text</MudButton>
+    </ItemTemplate>
+</MudBreadcrumbs>
+
+@if (_objectives == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                   OnClick="@(() => AddObjective(ParentObjectiveId))" Class="d-inline-flex">Add Objective</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_objectives" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4">
+        <ColGroup>
+            <col />
+            <col />
+            <col />
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Label</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Target</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
+            <MudTd DataLabel="Label">@context.Description</MudTd>
+            <MudTd DataLabel="Label">@context.TargetDate?.ToString("d")</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubObjective(context.Id))" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/objectives/{context.Id}/editObjective")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObjectiveAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    [Parameter]
+    public int? ParentObjectiveId { get; set; } = null;
+
+    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
+    private Objective[]? _objectives;
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await BuildBreadcrumb();
+        await GetObjectivesAsync();
+    }
+
+    private async Task BuildBreadcrumb()
+    {
+        BreadcrumbItem root = new BreadcrumbItem("Objectives", href: "/objectives", icon: AppIcons.Objective);
+        _path.Add(root);
+
+        if (ParentObjectiveId.HasValue)
+        {
+            KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentObjectives(ParentObjectiveId.Value);
+            foreach (KeyValuePair<int, string?> obj in parentObjectives)
+            {
+                BreadcrumbItem item = new BreadcrumbItem(obj.Value, href: $"/objectives/{obj.Key}");
+                _path.Add(item);
+            }
+        }
+    }
+
+    private async Task GetObjectivesAsync()
+    {
+        try
+        {
+            _loading = true;
+            _objectives = await ObjectivesService.GetObjectivesAsync(ParentObjectiveId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteObjectiveAsync(Objective objectiveToRemove)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await ObjectivesService.DeleteObjectiveAsync(objectiveToRemove);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Objective deleted successfully", Severity.Success);
+                await GetObjectivesAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when deleting the objective", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+
+    private void GoToSubObjective(int subProjectId)
+    {
+        GoToSubObjective($"/objectives/{subProjectId}");
+    }
+
+    private void GoToSubObjective(string url)
+    {
+        Navigation.NavigateTo(url, true);
+    }
+
+    private void AddObjective(int? parentObjectiveId)
+    {
+        string url = string.Empty;
+        if (parentObjectiveId.HasValue)
+        {
+            url = $"/objectives/{parentObjectiveId}/addObjective";
+        }
+        else
+        {
+            url = "/objectives/addObjective";
+        }
+        Navigation.NavigateTo(url);
+    }
+}

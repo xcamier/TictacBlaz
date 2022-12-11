@@ -34,6 +34,7 @@ builder.Services.AddSingleton<TimeLogsService>();
 builder.Services.AddSingleton<TagsService>();
 builder.Services.AddSingleton<GradesService>();
 builder.Services.AddSingleton<ProjectsService>();
+builder.Services.AddSingleton<ObjectivesService>();
 
 var app = builder.Build();
 

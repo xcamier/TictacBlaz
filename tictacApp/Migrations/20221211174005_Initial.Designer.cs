@@ -11,7 +11,7 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20221211134256_Initial")]
+    [Migration("20221211174005_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -72,6 +72,7 @@ namespace tictacApp.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Label")
+                        .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("TEXT");
 
@@ -90,13 +91,25 @@ namespace tictacApp.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FinalizationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsFinalized")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Label")
                         .IsRequired()
-                        .HasMaxLength(25)
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ParentObjectiveId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -126,7 +139,7 @@ namespace tictacApp.Migrations
 
                     b.Property<string>("Label")
                         .IsRequired()
-                        .HasMaxLength(25)
+                        .HasMaxLength(15)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ParentProjectId")
@@ -146,6 +159,7 @@ namespace tictacApp.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Label")
+                        .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("TEXT");
 
