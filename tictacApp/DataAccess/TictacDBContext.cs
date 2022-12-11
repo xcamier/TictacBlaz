@@ -68,11 +68,13 @@ public class TictacDBContext : DbContext
 
         var tag = modelBuilder.Entity<Tag>();
         tag.HasKey(t => t.Id);
+        tag.Property(t => t.Label).IsRequired();
         tag.Property(t => t.Label).HasMaxLength(Constants.LabelShortLength);
 
         var grade = modelBuilder.Entity<Grade>();
-        grade.HasKey(t => t.Id);
-        grade.Property(t => t.Label).HasMaxLength(Constants.LabelShortLength);
+        grade.HasKey(g => g.Id);
+        grade.Property(g => g.Label).IsRequired();
+        grade.Property(g => g.Label).HasMaxLength(Constants.LabelShortLength);
    }
 
     public DbSet<Project> Projects { get; set; }
