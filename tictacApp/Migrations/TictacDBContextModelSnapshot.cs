@@ -38,11 +38,48 @@ namespace tictacApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Description")
+                    b.Property<int?>("CharacteristicsGroupId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Color")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description1")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description2")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("GradeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ParentCharacteristicId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacteristicsGroupId");
+
+                    b.HasIndex("GradeId");
+
+                    b.HasIndex("ParentCharacteristicId");
+
+                    b.ToTable("Characteristics");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.CharacteristicsGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsClosed")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Label")
@@ -50,16 +87,9 @@ namespace tictacApp.Migrations
                         .HasMaxLength(25)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ParentCharacteristicId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("GradeId");
-
-                    b.HasIndex("ParentCharacteristicId");
-
-                    b.ToTable("Characteristics");
+                    b.ToTable("CharacteristicsGroups");
                 });
 
             modelBuilder.Entity("tictacApp.Data.Grade", b =>
@@ -219,6 +249,10 @@ namespace tictacApp.Migrations
 
             modelBuilder.Entity("tictacApp.Data.Characteristic", b =>
                 {
+                    b.HasOne("tictacApp.Data.CharacteristicsGroup", "CharacteristicsGroup")
+                        .WithMany("Characteristics")
+                        .HasForeignKey("CharacteristicsGroupId");
+
                     b.HasOne("tictacApp.Data.Grade", "Grade")
                         .WithMany("Characteristics")
                         .HasForeignKey("GradeId");
@@ -226,6 +260,8 @@ namespace tictacApp.Migrations
                     b.HasOne("tictacApp.Data.Characteristic", "ParentCharacteristic")
                         .WithMany("SubCharacteristics")
                         .HasForeignKey("ParentCharacteristicId");
+
+                    b.Navigation("CharacteristicsGroup");
 
                     b.Navigation("Grade");
 
@@ -276,6 +312,11 @@ namespace tictacApp.Migrations
                     b.Navigation("SubCharacteristics");
 
                     b.Navigation("TimeLogs");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.CharacteristicsGroup", b =>
+                {
+                    b.Navigation("Characteristics");
                 });
 
             modelBuilder.Entity("tictacApp.Data.Grade", b =>

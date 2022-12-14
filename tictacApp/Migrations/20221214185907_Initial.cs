@@ -12,6 +12,20 @@ namespace tictacApp.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "CharacteristicsGroups",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
+                    IsClosed = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CharacteristicsGroups", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Grades",
                 columns: table => new
                 {
@@ -90,14 +104,22 @@ namespace tictacApp.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Label = table.Column<string>(type: "TEXT", maxLength: 25, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
+                    Description1 = table.Column<string>(type: "TEXT", maxLength: 255, nullable: false),
+                    Description2 = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
+                    Color = table.Column<string>(type: "TEXT", nullable: true),
+                    IsClosed = table.Column<bool>(type: "INTEGER", nullable: false),
                     GradeId = table.Column<int>(type: "INTEGER", nullable: true),
+                    CharacteristicsGroupId = table.Column<int>(type: "INTEGER", nullable: true),
                     ParentCharacteristicId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Characteristics", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Characteristics_CharacteristicsGroups_CharacteristicsGroupId",
+                        column: x => x.CharacteristicsGroupId,
+                        principalTable: "CharacteristicsGroups",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Characteristics_Characteristics_ParentCharacteristicId",
                         column: x => x.ParentCharacteristicId,
@@ -168,6 +190,11 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Characteristics_CharacteristicsGroupId",
+                table: "Characteristics",
+                column: "CharacteristicsGroupId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Characteristics_GradeId",
                 table: "Characteristics",
                 column: "GradeId");
@@ -228,6 +255,9 @@ namespace tictacApp.Migrations
 
             migrationBuilder.DropTable(
                 name: "Projects");
+
+            migrationBuilder.DropTable(
+                name: "CharacteristicsGroups");
 
             migrationBuilder.DropTable(
                 name: "Grades");

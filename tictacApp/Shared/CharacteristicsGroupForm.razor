@@ -1,0 +1,106 @@
+@using tictacApp.Data
+@using FluentValidation
+@using tictacApp.Services
+@using tictacApp.Helpers
+
+@inject CharacteristicsGroupsService CharacteristicsGroupsService
+
+<MudForm Model="@CharacteristicsGroup" 
+    @ref="@form" Validation="@(characteristicsGroupValidator.ValidateValue)" ValidationDelay="0">
+
+    <MudGrid Justify="Justify.Center" Class="mt-2">
+        <MudItem xs="6" >
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@Mode Group of Characteristics</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                @if (CharacteristicsGroup is not null)
+                {
+                    <MudCardContent>                        
+                        <MudTextField T="string" Label="Label" Variant="Variant.Text" 
+                                        @bind-Value="CharacteristicsGroup.Label" For="@(() => CharacteristicsGroup.Label)" 
+                                        Immediate="true"/>
+                        <MudItem xs="12">
+                            <MudSwitch  Label="Closed" Color="Color.Info" 
+                                        @bind-Checked="@CharacteristicsGroup.IsClosed" For="@(() => CharacteristicsGroup.IsClosed)"/>
+                        </MudItem>
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">                                
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary"  
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+                    </MudCardActions>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public CharacteristicsGroup? CharacteristicsGroup { get; set; }
+
+    /// </summary>
+    [Parameter]
+    public CharacteristicsGroup? DbCharacteristicsGroup { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+    private MudForm form;
+    private CharacteristicsGroupModelFluentValidator characteristicsGroupValidator = new CharacteristicsGroupModelFluentValidator();
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            return ValidationResult.InvokeAsync(true);
+        }
+
+        return ValidationResult.InvokeAsync(false);
+    }
+
+    //Local class for the fluent validator
+    public class CharacteristicsGroupModelFluentValidator : AbstractValidator<CharacteristicsGroup>
+    {
+        public CharacteristicsGroupModelFluentValidator()
+        {
+            RuleFor(CharacteristicsGroup => CharacteristicsGroup.Label).
+                            NotNull().
+                            MaximumLength(Constants.LabelStandardLength).
+                            MinimumLength(Constants.Label1CharLength);
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<CharacteristicsGroup>.
+                            CreateWithOptions((CharacteristicsGroup)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

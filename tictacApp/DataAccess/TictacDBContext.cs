@@ -33,11 +33,17 @@ public class TictacDBContext : DbContext
 
         var characterstic = modelBuilder.Entity<Characteristic>();
         characterstic.HasKey(c => c.Id);
-        characterstic.Property(c => c.Label).IsRequired();
-        characterstic.Property(c => c.Label).HasMaxLength(Constants.LabelStandardLength);
-        characterstic.Property(c => c.Description).HasMaxLength(Constants.DescriptionStandardLength);
-        characterstic.HasOne(c => c.ParentCharacteristic).WithMany(c => c.SubCharacteristics);
-        characterstic.HasOne(c => c.Grade).WithMany(c => c.Characteristics);
+        characterstic.Property(c => c.Description1).IsRequired();
+        characterstic.Property(c => c.Description1).HasMaxLength(Constants.DescriptionStandardLength);
+        characterstic.Property(c => c.Description2).HasMaxLength(Constants.DescriptionStandardLength);
+        characterstic.HasOne(c => c.ParentCharacteristic).WithMany(c => c.SubCharacteristics).HasForeignKey(c => c.ParentCharacteristicId);
+        characterstic.HasOne(c => c.Grade).WithMany(c => c.Characteristics).HasForeignKey(c => c.GradeId);;
+        characterstic.HasOne(c => c.CharacteristicsGroup).WithMany(c => c.Characteristics).HasForeignKey(c => c.CharacteristicsGroupId);
+
+        var characteristicsGroup = modelBuilder.Entity<CharacteristicsGroup>();
+        characteristicsGroup.HasKey(g => g.Id);
+        characteristicsGroup.Property(g => g.Label).IsRequired();
+        characteristicsGroup.Property(g => g.Label).HasMaxLength(Constants.LabelStandardLength);
 
         var objective = modelBuilder.Entity<Objective>();
         objective.HasKey(o => o.Id);
@@ -79,6 +85,7 @@ public class TictacDBContext : DbContext
 
     public DbSet<Project> Projects { get; set; }
     public DbSet<Characteristic> Characteristics { get; set; }
+    public DbSet<CharacteristicsGroup> CharacteristicsGroups { get; set; }
     public DbSet<Objective> Objectives { get; set; }
     public DbSet<TimeLog> TimeLogs { get; set; }
     public DbSet<Tag> Tags { get; set; }
