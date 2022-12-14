@@ -37,6 +37,7 @@ builder.Services.AddSingleton<ProjectsService>();
 builder.Services.AddSingleton<ObjectivesService>();
 builder.Services.AddSingleton<CharacteristicsGroupsService>();
 builder.Services.AddSingleton<CharacteristicsService>();
+builder.Services.AddSingleton<ActorsService>();
 
 var app = builder.Build();
 

@@ -6,4 +6,5 @@ public class Grade
     public string? Label { get; set; }
 
     public ICollection<Characteristic>? Characteristics { get; set; }
+    public ICollection<Actor>? Actors { get; set; }
 }

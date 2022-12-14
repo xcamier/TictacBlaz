@@ -81,6 +81,12 @@ public class TictacDBContext : DbContext
         grade.HasKey(g => g.Id);
         grade.Property(g => g.Label).IsRequired();
         grade.Property(g => g.Label).HasMaxLength(Constants.LabelShortLength);
+
+        var actor = modelBuilder.Entity<Actor>();
+        actor.HasKey(a => a.Id);
+        actor.Property(a => a.Name).IsRequired();
+        actor.Property(a => a.Name).HasMaxLength(Constants.LabelShortLength);
+        actor.HasOne(a => a.DefaultGrade).WithMany(a => a.Actors).HasForeignKey(a => a.DefaultGradeId);
    }
 
     public DbSet<Project> Projects { get; set; }
@@ -90,4 +96,5 @@ public class TictacDBContext : DbContext
     public DbSet<TimeLog> TimeLogs { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<Grade> Grades { get; set; }
+    public DbSet<Actor> Actors { get; set; }
 }

@@ -11,7 +11,7 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20221214185907_Initial")]
+    [Migration("20221214203055_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -33,6 +33,30 @@ namespace tictacApp.Migrations
                     b.HasIndex("TimeLogsId");
 
                     b.ToTable("TimeLogsTags");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.Actor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DefaultGradeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsInactive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultGradeId");
+
+                    b.ToTable("Actors");
                 });
 
             modelBuilder.Entity("tictacApp.Data.Characteristic", b =>
@@ -250,6 +274,17 @@ namespace tictacApp.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("tictacApp.Data.Actor", b =>
+                {
+                    b.HasOne("tictacApp.Data.Grade", "DefaultGrade")
+                        .WithMany("Actors")
+                        .HasForeignKey("DefaultGradeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DefaultGrade");
+                });
+
             modelBuilder.Entity("tictacApp.Data.Characteristic", b =>
                 {
                     b.HasOne("tictacApp.Data.CharacteristicsGroup", "CharacteristicsGroup")
@@ -324,6 +359,8 @@ namespace tictacApp.Migrations
 
             modelBuilder.Entity("tictacApp.Data.Grade", b =>
                 {
+                    b.Navigation("Actors");
+
                     b.Navigation("Characteristics");
                 });
 

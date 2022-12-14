@@ -1,0 +1,98 @@
+@page "/actors/addActor"
+
+@using Data
+@using tictacApp.Services
+
+@inject ActorsService ActorsService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+@if (_actor is not null)
+{
+    <ActorForm Busy="@_busy" 
+                Actor="@_actor" 
+                IsAdd="true"
+                CancelRequest="Cancel"
+                ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    private Actor? _actor { get; set; }
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _actor = new Actor();
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to add the actor", Severity.Warning);
+
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await ActorsService.AddActorAsync(_actor);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Actor added successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the actor", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        Navigation.NavigateTo($"/actors");
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

@@ -1,0 +1,116 @@
+@using tictacApp.Data
+@using FluentValidation
+@using tictacApp.Services
+@using tictacApp.Helpers
+
+@inject ActorsService ActorsService
+@inject GradesService GradesService
+
+<MudForm Model="@Actor" 
+    @ref="@form" Validation="@(actorValidator.ValidateValue)" ValidationDelay="0">
+
+    <MudGrid Justify="Justify.Center" Class="mt-2">
+        <MudItem xs="6" >
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@Mode Actor</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                @if (Actor is not null)
+                {
+                    <MudCardContent>                        
+                        <MudTextField T="string" Label="Label" Variant="Variant.Text" 
+                                        @bind-Value="Actor.Name" For="@(() => Actor.Name)" 
+                                        Immediate="true"/>
+                        <MudSelect Label="Select a grade" HelperText="Grade"
+                                            @bind-Value="Actor.DefaultGradeId" For="@(() => Actor.DefaultGradeId)">
+                                @foreach (Grade grade in _grades)
+                                {
+                                    <MudSelectItem Value="@grade.Id">@grade.Label</MudSelectItem>
+                                }
+                        </MudSelect>
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">                                
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary"  
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+                    </MudCardActions>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public Actor? Actor { get; set; }
+
+    /// </summary>
+    [Parameter]
+    public Actor? DbActor { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+    private MudForm form;
+    private ActorModelFluentValidator actorValidator = new ActorModelFluentValidator();
+
+    private Grade[]? _grades;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _grades = await GradesService.GetGradesAsync();
+    }
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            return ValidationResult.InvokeAsync(true);
+        }
+
+        return ValidationResult.InvokeAsync(false);
+    }
+
+    //Local class for the fluent validator
+    public class ActorModelFluentValidator : AbstractValidator<Actor>
+    {
+        public ActorModelFluentValidator()
+        {
+            RuleFor(actor => actor.Name).
+                            NotNull().
+                            MaximumLength(Constants.LabelShortLength).
+                            MinimumLength(Constants.Label1CharLength);
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Actor>.CreateWithOptions((Actor)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

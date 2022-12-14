@@ -99,6 +99,27 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Actors",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 15, nullable: false),
+                    IsInactive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DefaultGradeId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Actors", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Actors_Grades_DefaultGradeId",
+                        column: x => x.DefaultGradeId,
+                        principalTable: "Grades",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Characteristics",
                 columns: table => new
                 {
@@ -190,6 +211,11 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Actors_DefaultGradeId",
+                table: "Actors",
+                column: "DefaultGradeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Characteristics_CharacteristicsGroupId",
                 table: "Characteristics",
                 column: "CharacteristicsGroupId");
@@ -238,6 +264,9 @@ namespace tictacApp.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Actors");
+
             migrationBuilder.DropTable(
                 name: "TimeLogsTags");
 

@@ -1,0 +1,117 @@
+@page "/actors"
+
+@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+
+@inject ActorsService ActorsService
+@inject ISnackbar Snackbar
+
+
+<PageTitle>Actors</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Actors</MudText>
+
+@if (_actors == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    Href="/actors/addActor" Class="d-inline-flex">Add Actor</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_actors" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4">
+        <ColGroup>
+            <col />
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/actors/{context.Id}/editActor")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteActorAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    private Actor[]? _actors;
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetActorsAsync();
+    }
+
+    private async Task GetActorsAsync()
+    {
+        try
+        {
+            _loading = true;
+            _actors = await ActorsService.GetActorsAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteActorAsync(Actor actorToRemove)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await ActorsService.DeleteActorAsync(actorToRemove);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Actor deleted successfully", Severity.Success);
+                await GetActorsAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when deleting the actor", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}
