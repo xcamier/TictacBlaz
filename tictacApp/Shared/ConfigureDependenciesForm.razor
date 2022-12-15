@@ -1,0 +1,15 @@
+
+@foreach (Tuple<string, string> dependency in Dependencies)
+{
+    <MudAlert Class="mt-2 ml-2 mr-2" Severity="Severity.Info" Variant="Variant.Outlined">
+       You need to configure <MudLink Href="@dependency.Item2">@dependency.Item1</MudLink> before adding @Target
+    </MudAlert>    
+}
+
+@code {
+    [Parameter]
+    public Tuple<string, string>[] Dependencies { get; set; } = new Tuple<string, string>[0];
+
+    [Parameter]
+    public string Target { get; set; } = string.Empty;
+}

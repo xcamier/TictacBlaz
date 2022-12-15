@@ -1,6 +1,7 @@
 @page "/actors/addActor"
 
 @using Data
+@using Helpers
 @using tictacApp.Services
 
 @inject ActorsService ActorsService
@@ -8,7 +9,7 @@
 @inject ISnackbar Snackbar
 
 
-@if (_actor is not null)
+@if (_actor is not null && _areDependenciesOk)
 {
     <ActorForm Busy="@_busy" 
                 Actor="@_actor" 
@@ -20,7 +21,14 @@
     {
         <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
     }
+} 
+else if (!_areDependenciesOk) 
+{
+    <ConfigureDependenciesForm
+        Dependencies="@_dependencies"
+        Target="Actors" />
 }
+
 
 @code {
     private Actor? _actor { get; set; }
@@ -28,11 +36,22 @@
     private bool _error;
     private string _errorMessage = string.Empty;
 
-    protected override Task OnInitializedAsync()
-    {
-        _actor = new Actor();
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
 
-        return base.OnInitializedAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckDependencies();
+
+        _actor = new Actor();
+    }
+
+    private async Task CheckDependencies()
+    {
+        DependenciesChecker checker = new DependenciesChecker(ActorsService);
+        await checker.CheckGradesDependecy();
+        _areDependenciesOk = checker.AreDependenciesOk;
+        _dependencies = checker.GetUnsatisfiedDependencies();
     }
 
     private async Task ValidationResultAsync(bool success)

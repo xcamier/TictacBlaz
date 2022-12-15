@@ -4,13 +4,10 @@ using tictacApp.DataAccess;
 
 namespace tictacApp.Services;
 
-public class ActorsService
+public class ActorsService: CommonService
 {
-    IDbContextFactory<TictacDBContext> _dbFactory;
-
-    public ActorsService(IDbContextFactory<TictacDBContext> dbFactory)
+    public ActorsService(IDbContextFactory<TictacDBContext> dbFactory): base(dbFactory)
     {
-        _dbFactory = dbFactory;
     }
 
     public TictacDBContext? GetDBContext()

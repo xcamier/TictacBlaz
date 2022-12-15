@@ -2,6 +2,7 @@
 @page "/characteristics/{CharacteristicId:int}/addCharacteristic"
 
 @using Data
+@using Helpers
 @using tictacApp.Services
 
 @inject CharacteristicsService CharacteristicsService
@@ -9,7 +10,7 @@
 @inject ISnackbar Snackbar
 
 
-@if (_characteristic is not null)
+@if (_characteristic is not null && _areDependenciesOk)
 {
     <CharacteristicForm Busy="@_busy" 
                 Characteristic="@_characteristic" 
@@ -22,6 +23,12 @@
         <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
     }
 }
+else if (!_areDependenciesOk) 
+{
+    <ConfigureDependenciesForm
+        Dependencies="@_dependencies"
+        Target="Characteristics" />
+}
 
 @code {
     [Parameter]
@@ -32,12 +39,25 @@
     private bool _error;
     private string _errorMessage = string.Empty;
 
-    protected override Task OnInitializedAsync()
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
+
+
+    protected override async Task OnInitializedAsync()
     {
+        await CheckDependencies();
+
         _characteristic = new Characteristic();
         _characteristic.ParentCharacteristicId = CharacteristicId;
+    }
 
-        return base.OnInitializedAsync();
+    private async Task CheckDependencies()
+    {
+        DependenciesChecker checker = new DependenciesChecker(CharacteristicsService);
+        await checker.CheckGradesDependecy();
+        await checker.CheckGroupOfCharacteristicssDependecy();
+        _areDependenciesOk = checker.AreDependenciesOk;
+        _dependencies = checker.GetUnsatisfiedDependencies();
     }
 
     private async Task ValidationResultAsync(bool success)
