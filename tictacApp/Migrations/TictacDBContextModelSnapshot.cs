@@ -49,6 +49,9 @@ namespace tictacApp.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("UseAsDefault")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DefaultGradeId");

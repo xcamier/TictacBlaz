@@ -11,7 +11,7 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20221214203055_Initial")]
+    [Migration("20221215102556_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -51,6 +51,9 @@ namespace tictacApp.Migrations
                         .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("UseAsDefault")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

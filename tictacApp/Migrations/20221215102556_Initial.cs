@@ -105,6 +105,7 @@ namespace tictacApp.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 15, nullable: false),
+                    UseAsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsInactive = table.Column<bool>(type: "INTEGER", nullable: false),
                     DefaultGradeId = table.Column<int>(type: "INTEGER", nullable: false)
                 },

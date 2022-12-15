@@ -63,4 +63,11 @@ public class GradesService
 
         return false;
     }
+
+    public async Task<Grade?> GetFirstGrade()
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Grades.FirstOrDefaultAsync();
+    }
 }

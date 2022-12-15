@@ -60,4 +60,13 @@ public class ActorsService: CommonService
 
         return false;
     }
+
+    public async Task<Actor?> GetActorByDefaultForTimelogs()
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        Actor? actor = await context.Actors.FirstOrDefaultAsync(a => a.UseAsDefault == true);
+
+        return actor;
+    }
 }

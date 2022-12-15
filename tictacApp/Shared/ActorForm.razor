@@ -31,6 +31,19 @@
                                     <MudSelectItem Value="@grade.Id">@grade.Label</MudSelectItem>
                                 }
                         </MudSelect>
+                        <MudItem>
+                            <MudSwitch Label="Default user for the timelogs" Color="Color.Info" Disabled="@_hasAlreadyADefaultWhichIsNotThisUser"
+                                        @bind-Checked="@Actor.UseAsDefault" For="@(() => Actor.UseAsDefault)"/>
+                        </MudItem>
+                        @if (@_hasAlreadyADefaultWhichIsNotThisUser)
+                        {
+                            <MudText Typo="Typo.body2">@_nameOfActorWhoIsDefault is already the default user</MudText>
+                        }
+
+                        <MudItem Class="mt-4">
+                            <MudSwitch  Label="Inactive" Color="Color.Info" 
+                                        @bind-Checked="@Actor.IsInactive" For="@(() => Actor.IsInactive)"/>
+                        </MudItem>
                     </MudCardContent>
                     <MudCardActions Class="d-flex justify-space-between">                                
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
@@ -72,10 +85,17 @@
     private ActorModelFluentValidator actorValidator = new ActorModelFluentValidator();
 
     private Grade[]? _grades;
+    private bool _hasAlreadyADefaultWhichIsNotThisUser;
+    private string _nameOfActorWhoIsDefault = string.Empty;
+
 
     protected override async Task OnInitializedAsync()
     {
         _grades = await GradesService.GetGradesAsync();
+
+        Actor? defaultActor = await ActorsService.GetActorByDefaultForTimelogs();
+        _hasAlreadyADefaultWhichIsNotThisUser = (defaultActor is not null) && defaultActor.Id != Actor.Id;
+        _nameOfActorWhoIsDefault = defaultActor?.Name;
     }
 
     private Task CancelAsync()
