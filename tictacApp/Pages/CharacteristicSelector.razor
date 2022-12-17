@@ -1,0 +1,168 @@
+@page "/characteristicSelector"
+@page "/characteristicSelector/{ParentCharacteristicId:int}"
+
+@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+
+@inject CharacteristicsService CharacteristicsService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ItemSelectionService<Characteristic> ItemSelectionService;
+
+
+<PageTitle>Characteristic Selection</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Characteristic Selection</MudText>
+<MudBreadcrumbs Items="_path">
+    <ItemTemplate Context="item">
+        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => GoToSubCharacteristic(@item.Href))">@item.Text</MudButton>
+    </ItemTemplate>
+</MudBreadcrumbs>
+
+@if (_characteristics == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">        
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    OnClick="OnCancel">Cancel</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_characteristics" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4" Hover="true" Breakpoint="Breakpoint.Sm" >
+        <ColGroup>
+            <col />
+            @if (_canGoOneLevelAbove)
+            {
+                <col />
+            }
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Primary Description</MudTh>
+            @if (_canGoOneLevelAbove)
+            {
+                <MudTh>Secondary Description</MudTh>
+            }
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Label">@context.Description1</MudTd>
+            @if (_canGoOneLevelAbove)
+            {
+                <MudTd DataLabel="Label">@context.Description2</MudTd>
+            }
+            <MudTd DataLabel="Actions">
+                @if (_canGoOneLevelAbove)
+                {
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubCharacteristic(context.Id))" />
+                }
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+    [Parameter]
+    public int? ParentCharacteristicId { get; set; } = null;
+
+    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
+    private Characteristic[]? _characteristics;
+    private bool _loading = false;
+    //private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    private bool _canGoOneLevelAbove = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ItemSelectionService.ComesFromSelection = true;
+        await BuildBreadcrumb();
+        await GetCharacteristicsAsync();
+    }
+
+    private async Task BuildBreadcrumb()
+    {
+        BreadcrumbItem root = new BreadcrumbItem("Characteristics", href: "/characteristicSelector", icon: AppIcons.Objective);
+        _path.Add(root);
+
+        if (ParentCharacteristicId.HasValue)
+        {
+            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentCharacteristics(ParentCharacteristicId.Value);
+            foreach (KeyValuePair<int, string?> charact in parentCharacteristics)
+            {
+                string itemStr = FormatStringForBreadcrumb(charact.Value);
+                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/characteristicSelector/{charact.Key}");
+                _path.Add(item);
+            }
+
+            _canGoOneLevelAbove = _path.Count < 3;
+        }
+    }
+
+    private async Task GetCharacteristicsAsync()
+    {
+        try
+        {
+            _loading = true;
+            _characteristics = await CharacteristicsService.GetCharacteristicsAsync(ParentCharacteristicId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void GoToSubCharacteristic(int subCharacteristicId)
+    {
+        GoToSubCharacteristic($"/characteristicSelector/{subCharacteristicId}");
+    }
+
+    private void GoToSubCharacteristic(string url)
+    {
+        Navigation.NavigateTo(url, true);
+    }
+
+    private void Select(Characteristic selectedCharacteristic)
+    {
+        ItemSelectionService.HasSelected = true;
+        ItemSelectionService.Selection.Add(selectedCharacteristic);
+
+        NavigateBackToCaller();
+    }
+
+    private void OnCancel()
+    {
+        ItemSelectionService.HasSelected = false;
+
+        NavigateBackToCaller();     
+    }
+
+    private void NavigateBackToCaller()
+    {
+        string url = ItemSelectionService.IsAdd ? 
+                        "/logs/addLogFromCharacteristicSelection" : 
+                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromCharacteristicSelection";
+        Navigation.NavigateTo(url);
+    }
+
+    private string FormatStringForBreadcrumb(string str)
+    {
+        if (str.Length > 15)
+        {
+            return $"{str.Substring(0, 15)}...";
+        }
+
+        return str;
+    }
+}

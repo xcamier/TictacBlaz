@@ -57,14 +57,12 @@ public class TictacDBContext : DbContext
         timeLog.Property(t => t.StartDate).IsRequired();
         timeLog.Property(t => t.TimeSpentInMin).IsRequired();
         timeLog.Property(t => t.Description).HasMaxLength(Constants.DescriptionMidLength);
-        timeLog.HasOne(t => t.Project).WithMany(a => a.TimeLogs);
-        timeLog.HasOne(t => t.Characteristic).WithMany(c => c.TimeLogs);
-        timeLog.HasOne(t => t.Objective).WithMany(o => o.TimeLogs);
-
-        //the many to many relationship with the tags entity could be implicit and created by ef
-        //but I want to control the name of the table
+        timeLog.HasOne(t => t.Project).WithMany(t => t.TimeLogs).HasForeignKey(t => t.ProjectId);
+        timeLog.HasOne(t => t.Objective).WithMany(o => o.TimeLogs).HasForeignKey(t => t.ObjectiveId);
+        //the many to many relationships intermediate entity could be implicit and created by ef
+        //but I want to control the name of the table in db
+        timeLog.HasMany(t => t.Characteristics).WithMany(c => c.TimeLogs).UsingEntity("TimeLogsCharacteristics");
         timeLog.HasMany(t => t.Tags).WithMany(t => t.TimeLogs).UsingEntity("TimeLogsTags");
-
         //For display only => not in DB
         timeLog.Ignore(t => t.TimeSpentInHHMM);
         timeLog.Ignore(t => t.TimeSpan);

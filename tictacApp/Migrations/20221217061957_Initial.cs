@@ -164,17 +164,11 @@ namespace tictacApp.Migrations
                     TimeSpentInMin = table.Column<int>(type: "INTEGER", nullable: false),
                     Description = table.Column<string>(type: "TEXT", maxLength: 140, nullable: true),
                     ProjectId = table.Column<int>(type: "INTEGER", nullable: true),
-                    ObjectiveId = table.Column<int>(type: "INTEGER", nullable: true),
-                    CharacteristicId = table.Column<int>(type: "INTEGER", nullable: true)
+                    ObjectiveId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TimeLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TimeLogs_Characteristics_CharacteristicId",
-                        column: x => x.CharacteristicId,
-                        principalTable: "Characteristics",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TimeLogs_Objectives_ObjectiveId",
                         column: x => x.ObjectiveId,
@@ -185,6 +179,30 @@ namespace tictacApp.Migrations
                         column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TimeLogsCharacteristics",
+                columns: table => new
+                {
+                    CharacteristicsId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TimeLogsId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TimeLogsCharacteristics", x => new { x.CharacteristicsId, x.TimeLogsId });
+                    table.ForeignKey(
+                        name: "FK_TimeLogsCharacteristics_Characteristics_CharacteristicsId",
+                        column: x => x.CharacteristicsId,
+                        principalTable: "Characteristics",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TimeLogsCharacteristics_TimeLogs_TimeLogsId",
+                        column: x => x.TimeLogsId,
+                        principalTable: "TimeLogs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -242,11 +260,6 @@ namespace tictacApp.Migrations
                 column: "ParentProjectId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TimeLogs_CharacteristicId",
-                table: "TimeLogs",
-                column: "CharacteristicId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TimeLogs_ObjectiveId",
                 table: "TimeLogs",
                 column: "ObjectiveId");
@@ -255,6 +268,11 @@ namespace tictacApp.Migrations
                 name: "IX_TimeLogs_ProjectId",
                 table: "TimeLogs",
                 column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TimeLogsCharacteristics_TimeLogsId",
+                table: "TimeLogsCharacteristics",
+                column: "TimeLogsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TimeLogsTags_TimeLogsId",
@@ -269,7 +287,13 @@ namespace tictacApp.Migrations
                 name: "Actors");
 
             migrationBuilder.DropTable(
+                name: "TimeLogsCharacteristics");
+
+            migrationBuilder.DropTable(
                 name: "TimeLogsTags");
+
+            migrationBuilder.DropTable(
+                name: "Characteristics");
 
             migrationBuilder.DropTable(
                 name: "Tags");
@@ -278,19 +302,16 @@ namespace tictacApp.Migrations
                 name: "TimeLogs");
 
             migrationBuilder.DropTable(
-                name: "Characteristics");
+                name: "CharacteristicsGroups");
+
+            migrationBuilder.DropTable(
+                name: "Grades");
 
             migrationBuilder.DropTable(
                 name: "Objectives");
 
             migrationBuilder.DropTable(
                 name: "Projects");
-
-            migrationBuilder.DropTable(
-                name: "CharacteristicsGroups");
-
-            migrationBuilder.DropTable(
-                name: "Grades");
         }
     }
 }

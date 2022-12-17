@@ -3,6 +3,7 @@ using tictacApp.Services;
 using tictacApp.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
+using tictacApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,9 @@ builder.Services.AddSingleton<ObjectivesService>();
 builder.Services.AddSingleton<CharacteristicsGroupsService>();
 builder.Services.AddSingleton<CharacteristicsService>();
 builder.Services.AddSingleton<ActorsService>();
+builder.Services.AddSingleton<ItemSelectionService<Project>>();
+builder.Services.AddSingleton<ItemSelectionService<Objective>>();
+builder.Services.AddSingleton<ItemSelectionService<Characteristic>>();
 
 var app = builder.Build();
 

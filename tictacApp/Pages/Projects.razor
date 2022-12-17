@@ -86,7 +86,8 @@ else
             KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentProjects(ParentProjectId.Value);
             foreach (KeyValuePair<int, string?> proj in parentProjects)
             {
-                BreadcrumbItem item = new BreadcrumbItem(proj.Value, href: $"/projects/{proj.Key}");
+                string itemStr = FormatStringForBreadcrumb(proj.Value);
+                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/projects/{proj.Key}");
                 _path.Add(item);
             }
         }
@@ -169,5 +170,15 @@ else
             url = "/projects/addProject";
         }
         Navigation.NavigateTo(url);
+    }
+
+    private string FormatStringForBreadcrumb(string str)
+    {
+        if (str.Length > 15)
+        {
+            return $"{str.Substring(0, 15)}...";
+        }
+
+        return str;
     }
 }

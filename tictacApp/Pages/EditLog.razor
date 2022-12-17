@@ -1,5 +1,9 @@
 @page "/logs/{TimeLogId:int}/editLog"
+@page "/logs/{TimeLogId:int}/editLogFromProjectSelection"
+@page "/logs/{TimeLogId:int}/editLogFromObjectiveSelection"
+@page "/logs/{TimeLogId:int}/editLogFromCharacteristicSelection"
 
+@using Helpers
 @using Microsoft.EntityFrameworkCore
 @using tictacApp.Data
 @using tictacApp.Services
@@ -7,6 +11,12 @@
 
 @inject NavigationManager Navigation
 @inject TimeLogsService TimeLogsService
+@inject ProjectsService ProjectsService
+@inject ObjectivesService ObjectivesService
+@inject CharacteristicsService CharacteristicssService
+@inject ItemSelectionService<Project> ProjectSelectionService;
+@inject ItemSelectionService<Objective> ObjectiveSelectionService;
+@inject ItemSelectionService<Data.Characteristic> CharacteristicSelectionService;
 @inject ISnackbar Snackbar
 
 @if (_timeLog is null && !_busy)
@@ -52,16 +62,98 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = TimeLogsService.GetDBContext(); 
 
-            TimeLog? timeLog = await TimeLogsService.FindTimeLogFromIdAsync(_dbContext, TimeLogId);
-            if (timeLog != null)
+            if (ComesFromSelection() == SelectionSource.Project)
             {
-                _timeLog = timeLog;
+                _timeLog = ProjectSelectionService.EntityBackup;
+
+                _dbContext.Attach(_timeLog);
+
+                if (ProjectSelectionService.HasSelected && ProjectSelectionService.Selection.Any())
+                {
+                    _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
+                }
+
+                ProjectSelectionService.Reset();
+            }
+            else if (ComesFromSelection() == SelectionSource.Objective)
+            {
+                _timeLog = ObjectiveSelectionService.EntityBackup;
+
+                _dbContext.Attach(_timeLog);
+
+                if (ObjectiveSelectionService.HasSelected && ObjectiveSelectionService.Selection.Any())
+                {
+                    _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
+                }
+
+                ObjectiveSelectionService.Reset();
+            }
+            else if (ComesFromSelection() == SelectionSource.Characteristic)
+            {
+                _timeLog = CharacteristicSelectionService.EntityBackup;
+
+                _dbContext.Attach(_timeLog);
+
+                if (CharacteristicSelectionService.HasSelected && CharacteristicSelectionService.Selection.Any())
+                {
+                    foreach (Characteristic charact in CharacteristicSelectionService.Selection)
+                    {
+                        _timeLog.Characteristics.Add(charact);
+                    }
+                }
+
+                CharacteristicSelectionService.Reset();
             }
             else
             {
-                _error = true;
-                _errorMessage = $"Unable to find the timelog with id: {TimeLogId}";
+                TimeLog? timeLog = await TimeLogsService.FindTimeLogFromIdAsync(_dbContext, TimeLogId);
+                if (timeLog != null)
+                {
+                    _timeLog = timeLog;
+                }
+                else
+                {
+                    _error = true;
+                    _errorMessage = $"Unable to find the timelog with id: {TimeLogId}";
+                }
             }
+
+            if (_timeLog.ProjectId.HasValue)
+            {
+                KeyValuePair<int, string?>[] parents = await ProjectsService.GetParentProjects(_timeLog.ProjectId.Value);
+                string asText = string.Empty;
+                foreach (var pair in parents)
+                {
+                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+                }
+                _timeLog.ProjectsAsText = asText;
+            }
+
+            if (_timeLog.ObjectiveId.HasValue)
+            {
+                KeyValuePair<int, string?>[] parents = await ObjectivesService.GetParentObjectives(_timeLog.ObjectiveId.Value);
+                string asText = string.Empty;
+                foreach (var pair in parents)
+                {
+                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+                }
+                _timeLog.ObjectivesAsText = asText;
+            }
+            if (_timeLog.Characteristics.Any())
+            {
+                _timeLog.CharacteristicsAsText.Clear();
+                foreach (var characteristic in _timeLog.Characteristics)
+                {
+                    KeyValuePair<int, string?>[] parents = await CharacteristicssService.GetParentCharacteristics(characteristic.Id);
+                    string asText = string.Empty;
+                    foreach (var pair in parents)
+                    {
+                        asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+                    }
+                    _timeLog.CharacteristicsAsText.Add(new KeyValuePair<int, string>(characteristic.Id, asText));
+                }
+            }
+
         }
         catch (Exception ex)
         {
@@ -76,6 +168,24 @@ else
         await base.OnInitializedAsync();
     }
 
+    private SelectionSource ComesFromSelection()
+    {   
+        if (Navigation.Uri.EndsWith("addLogFromProjectSelection"))
+        {
+            return SelectionSource.Project;
+        }
+        else if (Navigation.Uri.EndsWith("addLogFromObjectiveSelection"))
+        {
+            return SelectionSource.Objective;
+        }
+        else if (Navigation.Uri.EndsWith("addLogFromCharacteristicSelection"))
+        {
+            return SelectionSource.Characteristic;
+        }
+
+        return SelectionSource.None;
+    }
+    
     private async Task ValidationResultAsync(bool success)
     {
         if (_busy)
@@ -101,6 +211,17 @@ else
             bool savingRes = false;
             if (_dbContext is not null)
             {
+                //Management of the many to many relationships, to prevent modification of the entities themselves
+                //while we want to update only the many to many intermediate db table
+                foreach (Data.Characteristic charToAttach in _timeLog.Characteristics)
+                {
+                    _dbContext.Entry(charToAttach).State = EntityState.Unchanged;
+                }
+                foreach (Tag tagToAttach in _timeLog.Tags)
+                {
+                    _dbContext.Entry(tagToAttach).State = EntityState.Unchanged;
+                }
+
                 savingRes = await _dbContext.SaveChangesAsync() > 0;
             }
 

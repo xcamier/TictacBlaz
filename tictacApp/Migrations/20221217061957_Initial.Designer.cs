@@ -11,7 +11,7 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20221215102556_Initial")]
+    [Migration("20221217061957_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -19,6 +19,21 @@ namespace tictacApp.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.0");
+
+            modelBuilder.Entity("TimeLogsCharacteristics", b =>
+                {
+                    b.Property<int>("CharacteristicsId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TimeLogsId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("CharacteristicsId", "TimeLogsId");
+
+                    b.HasIndex("TimeLogsId");
+
+                    b.ToTable("TimeLogsCharacteristics");
+                });
 
             modelBuilder.Entity("TimeLogsTags", b =>
                 {
@@ -231,9 +246,6 @@ namespace tictacApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("CharacteristicId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Description")
                         .HasMaxLength(140)
                         .HasColumnType("TEXT");
@@ -253,13 +265,26 @@ namespace tictacApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CharacteristicId");
-
                     b.HasIndex("ObjectiveId");
 
                     b.HasIndex("ProjectId");
 
                     b.ToTable("TimeLogs");
+                });
+
+            modelBuilder.Entity("TimeLogsCharacteristics", b =>
+                {
+                    b.HasOne("tictacApp.Data.Characteristic", null)
+                        .WithMany()
+                        .HasForeignKey("CharacteristicsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("tictacApp.Data.TimeLog", null)
+                        .WithMany()
+                        .HasForeignKey("TimeLogsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TimeLogsTags", b =>
@@ -329,10 +354,6 @@ namespace tictacApp.Migrations
 
             modelBuilder.Entity("tictacApp.Data.TimeLog", b =>
                 {
-                    b.HasOne("tictacApp.Data.Characteristic", "Characteristic")
-                        .WithMany("TimeLogs")
-                        .HasForeignKey("CharacteristicId");
-
                     b.HasOne("tictacApp.Data.Objective", "Objective")
                         .WithMany("TimeLogs")
                         .HasForeignKey("ObjectiveId");
@@ -340,8 +361,6 @@ namespace tictacApp.Migrations
                     b.HasOne("tictacApp.Data.Project", "Project")
                         .WithMany("TimeLogs")
                         .HasForeignKey("ProjectId");
-
-                    b.Navigation("Characteristic");
 
                     b.Navigation("Objective");
 
@@ -351,8 +370,6 @@ namespace tictacApp.Migrations
             modelBuilder.Entity("tictacApp.Data.Characteristic", b =>
                 {
                     b.Navigation("SubCharacteristics");
-
-                    b.Navigation("TimeLogs");
                 });
 
             modelBuilder.Entity("tictacApp.Data.CharacteristicsGroup", b =>

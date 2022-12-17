@@ -1,14 +1,24 @@
 @page "/logs/addLog"
+@page "/logs/addLogFromProjectSelection"
+@page "/logs/addLogFromObjectiveSelection"
+@page "/logs/addLogFromCharacteristicSelection"
 
 @using Data
+@using Helpers
 @using tictacApp.Services
 
 @inject TimeLogsService TimeLogsService
+@inject ProjectsService ProjectsService
+@inject ObjectivesService ObjectivesService
+@inject CharacteristicsService CharacteristicsService
+@inject ItemSelectionService<Project> ProjectSelectionService;
+@inject ItemSelectionService<Objective> ObjectiveSelectionService;
+@inject ItemSelectionService<Data.Characteristic> CharacteristicSelectionService;
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
 
-@if (_timeLog is not null)
+@if (_timeLog is not null && _areDependenciesOk)
 {
     <TimeLogForm Busy="@_busy" 
                    TimeLog="@_timeLog" 
@@ -21,6 +31,13 @@
         <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
     }
 }
+else if (!_areDependenciesOk) 
+{
+    <ConfigureDependenciesForm
+        Dependencies="@_dependencies"
+        Target="Time logs" />
+}
+
 
 @code {
     private TimeLog? _timeLog { get; set; }
@@ -28,17 +45,115 @@
     private bool _error;
     private string _errorMessage = string.Empty;
 
-    protected override Task OnInitializedAsync()
-    {
-        DateTime now = DateTime.Now;
-        _timeLog = new TimeLog
-        {
-            StartDate = now,
-            TimeSpan = now.TimeOfDay
-        };
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
 
-        return base.OnInitializedAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckDependencies();
+
+        if (ComesFromSelection() == SelectionSource.Project)
+        {
+            _timeLog = ProjectSelectionService.EntityBackup;
+
+            if (ProjectSelectionService.HasSelected && ProjectSelectionService.Selection.Any())
+            {
+                _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
+
+                KeyValuePair<int, string?>[] parents = await ProjectsService.GetParentProjects(_timeLog.ProjectId.Value);
+                string asText = string.Empty;
+                foreach (var pair in parents)
+                {
+                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+                }
+                _timeLog.ProjectsAsText = asText;
+            }
+            
+            ProjectSelectionService.Reset();
+        }
+        else if (ComesFromSelection() == SelectionSource.Objective)
+        {
+            _timeLog = ObjectiveSelectionService.EntityBackup;
+
+            if (ObjectiveSelectionService.HasSelected && ObjectiveSelectionService.Selection.Any())
+            {
+                _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
+
+                KeyValuePair<int, string?>[] parents = await ObjectivesService.GetParentObjectives(_timeLog.ObjectiveId.Value);
+                string asText = string.Empty;
+                foreach (var pair in parents)
+                {
+                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+                }
+                _timeLog.ObjectivesAsText = asText;
+            }  
+
+            ObjectiveSelectionService.Reset();
+        }
+        else if (ComesFromSelection() == SelectionSource.Characteristic)
+        {
+            _timeLog = CharacteristicSelectionService.EntityBackup;
+
+            if (CharacteristicSelectionService.HasSelected && CharacteristicSelectionService.Selection.Any())
+            {
+                var selectedChar = CharacteristicSelectionService.Selection.Single();
+                if (_timeLog.Characteristics is null)
+                {
+                    _timeLog.Characteristics = new List<Characteristic>();
+                }
+
+                _timeLog.Characteristics.Add(selectedChar);
+
+                KeyValuePair<int, string?>[] parents = await CharacteristicsService.GetParentCharacteristics(selectedChar.Id);
+                string asText = string.Empty;
+                foreach (var pair in parents)
+                {
+                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+                }
+
+                _timeLog.CharacteristicsAsText.Add(new KeyValuePair<int, string>(selectedChar.Id, asText));
+            }  
+
+            CharacteristicSelectionService.Reset();
+        }
+        else
+        {
+            DateTime now = DateTime.Now;
+            _timeLog = new TimeLog
+            {
+                StartDate = now,
+                TimeSpan = now.TimeOfDay
+            };
+        }
     }
+
+    private SelectionSource ComesFromSelection()
+    {   
+        if (Navigation.Uri.EndsWith("addLogFromProjectSelection"))
+        {
+            return SelectionSource.Project;
+        }
+        else if (Navigation.Uri.EndsWith("addLogFromObjectiveSelection"))
+        {
+            return SelectionSource.Objective;
+        }
+        else if (Navigation.Uri.EndsWith("addLogFromCharacteristicSelection"))
+        {
+            return SelectionSource.Characteristic;
+        }
+
+        return SelectionSource.None;
+    }
+
+    private async Task CheckDependencies()
+    {
+        /*DependenciesChecker checker = new DependenciesChecker(TimeLogsService);
+        await checker.CheckActorDependency();
+        _areDependenciesOk = checker.AreDependenciesOk;
+        _dependencies = checker.GetUnsatisfiedDependencies();*/
+        _areDependenciesOk = true;
+    }
+
 
     private async Task ValidationResultAsync(bool success)
     {

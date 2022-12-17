@@ -3,7 +3,11 @@
 @using tictacApp.Services
 @using tictacApp.Helpers
 
+@inject NavigationManager Navigation
 @inject TagsService TagsService
+@inject ItemSelectionService<Project> ProjectSelectionService;
+@inject ItemSelectionService<Objective> ObjectiveSelectionService;
+@inject ItemSelectionService<Characteristic> CharacteristicSelectionService;
 
 <MudForm Model="@TimeLog"
     @ref="@form" Validation="@(timeLogValidator.ValidateValue)" ValidationDelay="0">
@@ -20,51 +24,93 @@
                 @if (TimeLog is not null && _tags is not null)
                 {
                     <MudCardContent>
-                        <div class="d-flex align-center">
-                            <MudDatePicker Label="Date of the log" Placeholder="Select Date"
-                                            Editable="true" DisableToolbar="true"
-                                            @bind-Date="TimeLog.StartDate" For="@(() => TimeLog.StartDate)" />
-
-                            <MudTimePicker Label="Time of the log" Placeholder="Select Time"
-                                            Editable="true" DisableToolbar="true" Class = "ml-2"
-                                            @bind-Time="TimeLog.TimeSpan" For="@(() => TimeLog.TimeSpan)" />
-                        </div>
-                        <MudTextField Label="Time spent" 
-                                        Adornment="Adornment.End" AdornmentText="min"
-                                        @bind-Value="TimeLog.TimeSpentInMin"  For="@(() => TimeLog.TimeSpentInMin)"
-                                        Immediate="true"/>
-                        
-                        <MudTextField T="string" Label="Description" Variant="Variant.Text" Lines="3" 
-                                        @bind-Value="TimeLog.Description" For="@(() => TimeLog.Description)" 
-                                        Immediate="true"/>
-
-                        <MudGrid Class="mt-4">
-                            <MudItem xs="12">
-                                <MudButton Variant="Variant.Text" StartIcon="@AppIcons.Project" Class="mt-2">
-                                    @TimeLog.ProjectsAsText
-                                </MudButton>
+                        <MudGrid>
+                            <MudItem xs="4">
+                                <MudDatePicker Label="Date of the log" Placeholder="Select Date"
+                                                Editable="true" DisableToolbar="true"
+                                                @bind-Date="TimeLog.StartDate" For="@(() => TimeLog.StartDate)" />                                
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudTimePicker Label="Time of the log" Placeholder="Select Time"
+                                                Editable="true" DisableToolbar="true" Class = "ml-2"
+                                                @bind-Time="TimeLog.TimeSpan" For="@(() => TimeLog.TimeSpan)" />                                
+                            </MudItem>
+                            <MudItem xs="4">
+                                <MudTextField Label="Time spent" 
+                                                Adornment="Adornment.End" AdornmentText="min"
+                                                @bind-Value="TimeLog.TimeSpentInMin"  For="@(() => TimeLog.TimeSpentInMin)"
+                                                Immediate="true"/>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudButton Variant="Variant.Text" StartIcon="@AppIcons.Objective">
-                                    @TimeLog.ObjectivesAsText
-                                </MudButton>
-                            </MudItem>
-                            <MudItem xs="12">
-                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Anchor">
-                                    @TimeLog.CharacteristicsAsText
-                            </MudButton>
+                                <MudTextField T="string" Label="Description" Variant="Variant.Text" Lines="3" 
+                                                @bind-Value="TimeLog.Description" For="@(() => TimeLog.Description)" 
+                                                Immediate="true"/>
                             </MudItem>
                         </MudGrid>
 
-                        <MudSelect Class="mt-4" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" MultiSelection="true" 
-                                    @bind-Value="value" @bind-SelectedValues="options" T="string" 
-                                    Label="Tags" AdornmentIcon="@Icons.Material.Filled.Search" AnchorOrigin="Origin.BottomCenter">
-                            @foreach (var tag in _tags)
-                            {
-                                <MudSelectItem T="string" Value="tag.Label">@tag.Label</MudSelectItem>
-                            }
-                        </MudSelect>
-
+                        <MudGrid Class="mt-4">
+                            <MudItem xs="12">
+                                @if (TimeLog.ProjectId.HasValue)
+                                {
+                                    <MudChip Icon="@AppIcons.Project" 
+                                                OnClick="SelectProject" OnClose="UnselectProject">
+                                        @TimeLog.ProjectsAsText
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text" StartIcon="@AppIcons.Project" 
+                                                OnClick="SelectProject">
+                                        Select Project...
+                                    </MudButton>
+                                }
+                            </MudItem>
+                            <MudItem xs="12">
+                                @if (TimeLog.ObjectiveId.HasValue)
+                                {
+                                    <MudChip Icon="@AppIcons.Objective" 
+                                                OnClick="SelectObjective" OnClose="UnselectObjective">
+                                        @TimeLog.ObjectivesAsText
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text" StartIcon="@AppIcons.Project" 
+                                                OnClick="SelectObjective">
+                                        Select Objective...
+                                    </MudButton>
+                                }
+                            </MudItem>
+                            <MudItem xs="12">
+                                @if (TimeLog.CharacteristicsAsText.Any())
+                                {
+                                    <MudChipSet AllClosable="true" OnClose="UnselectCharacteristic">
+                                        @foreach (var charact in TimeLog.CharacteristicsAsText)
+                                        {
+                                            <MudChip Tag="@charact.Key" Text="@charact.Value"></MudChip>
+                                        }
+                                    </MudChipSet>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="SelectCharacteristic"></MudIconButton>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Anchor"
+                                                OnClick="SelectCharacteristic">
+                                            Select Characteristic...
+                                    </MudButton>
+                                }
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudSelect Class="mt-4"  MultiSelection="true" 
+                                            @bind-SelectedValues="_selectedTags" T="Tag" Text="@_valToDisplay" OnClose="OnCloseTag"
+                                            Label="Tags" AdornmentIcon="@Icons.Material.Filled.Search" AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var tag in _tags)
+                                    {
+                                        <MudSelectItem Value="@tag">@tag.Label</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
                     </MudCardContent>
                     <MudCardActions Class="d-flex justify-space-between">                                
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
@@ -105,13 +151,38 @@
     private MudForm form;
     private TimeLogModelFluentValidator timeLogValidator = new TimeLogModelFluentValidator();
     private Tag[]? _tags = null;
-    private string value { get; set; } = "No tag selected";
-    private IEnumerable<string> options { get; set; } = new HashSet<string>() {  };
+    //private Tag value { get; set; } //= "No tag selected";
+    
+    private IEnumerable<Tag> _selectedTags { get; set; } = new HashSet<Tag>();
+    private string _valToDisplay = string.Empty;
 
 
     protected override async Task OnInitializedAsync()
-    {
+    { 
         await GetTagsAsync();
+
+        if (TimeLog is not null && TimeLog.StartDate.HasValue)
+        {
+            TimeLog.TimeSpan = TimeLog.StartDate.Value.TimeOfDay;
+
+            HashSet<Tag> selectionHashSet = new HashSet<Tag>();
+            foreach (Tag tag in TimeLog.Tags)
+            {
+                var tmp = _tags.Single(t => t.Id == tag.Id);
+                selectionHashSet.Add(tmp);
+            }
+            _selectedTags = selectionHashSet;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        //Required to force the tags list to display the right string
+        if (_selectedTags.Count() > 0 && firstRender)
+        {
+            OnCloseTag();            
+            StateHasChanged();
+        }
     }
 
     private Task CancelAsync()
@@ -124,8 +195,33 @@
         await form.Validate();
         if (form.IsValid)
         {
+            int value = _selectedTags.Count();
+
+            if (TimeLog.StartDate.HasValue)
+            {
+                TimeLog.StartDate = TimeLog.StartDate.Value.Date + TimeLog.TimeSpan;
+            }
+
+            if (_selectedTags.Any())
+            {
+                var tagsToRemove = TimeLog.Tags.Where(tl => _selectedTags.All(st => st.Id != tl.Id));
+                var tagsToAdd = _selectedTags.Where(st => TimeLog.Tags.All(tl => tl.Id != st.Id));
+
+                foreach (Tag tag in tagsToRemove)
+                {
+                    TimeLog.Tags.Remove(tag);
+                }
+
+                foreach (Tag tag in tagsToAdd)
+                {
+                    TimeLog.Tags.Add(tag);
+                }
+            }
+
+
             return ValidationResult.InvokeAsync(true);
         }
+ 
 
         return ValidationResult.InvokeAsync(false);
     }
@@ -135,18 +231,58 @@
         _tags = await TagsService.GetTagsAsync();
     }
     
-
-    private string GetMultiSelectionText(List<string> selectedValues)
+    private void SelectProject()
     {
-        //if (multiselectionTextChoice)
-        //{
-            return $"Selected tags{(selectedValues.Count > 1 ? "s" : "")}: {string.Join(", ", selectedValues.Select(x => x))}";
-        //}
-        /*else
-        {
-            return $"{selectedValues.Count} state{(selectedValues.Count > 1 ? "s have":" has")} been selected";
-        }*/
-    }    
+        ProjectSelectionService.EntityBackup = TimeLog;
+        ProjectSelectionService.IsAdd = IsAdd;
+
+        Navigation.NavigateTo("/projectSelector");
+    }
+
+    private void UnselectProject()
+    {
+        TimeLog.Project = null;
+        TimeLog.ProjectId = null;
+        TimeLog.ProjectsAsText = string.Empty;
+    }
+
+    private void SelectObjective()
+    {
+        ObjectiveSelectionService.EntityBackup = TimeLog;
+        ObjectiveSelectionService.IsAdd = IsAdd;
+        
+
+        Navigation.NavigateTo("/objectiveSelector");
+    }
+
+    private void UnselectObjective()
+    {
+        TimeLog.Objective = null;
+        TimeLog.ObjectiveId = null;
+        TimeLog.ObjectivesAsText = string.Empty;
+    }
+
+    private void SelectCharacteristic()
+    {
+        CharacteristicSelectionService.EntityBackup = TimeLog;
+        CharacteristicSelectionService.IsAdd = IsAdd;
+    
+        Navigation.NavigateTo("/characteristicSelector");
+    }
+
+    private void UnselectCharacteristic(MudChip chip)
+    {
+        var dbElement = TimeLog.Characteristics.Single(c => c.Id == (int)chip.Tag);
+        TimeLog.Characteristics.Remove(dbElement);
+
+        var txtElement = TimeLog.CharacteristicsAsText.Single(c => c.Key == (int)chip.Tag);
+        TimeLog.CharacteristicsAsText.Remove(txtElement);
+    }
+
+    private void OnCloseTag()
+    {
+        _valToDisplay = $"Selected tag{(_selectedTags.Count() > 1 ? "s" : "")}: {string.Join(", ", _selectedTags.Select(x => x.Label))}";
+    }
 
     //Local class for the fluent validator
     public class TimeLogModelFluentValidator : AbstractValidator<TimeLog>

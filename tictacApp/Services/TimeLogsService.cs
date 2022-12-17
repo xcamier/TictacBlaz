@@ -50,7 +50,10 @@ public class TimeLogsService
     {    
         if (dbContext is not null && dbContext.TimeLogs is not null)
         {
-            return await dbContext.TimeLogs.SingleOrDefaultAsync(c => c.Id == timeLogId); 
+            return await dbContext.TimeLogs.
+                                Include(t => t.Characteristics).
+                                Include(t => t.Tags).
+                                SingleOrDefaultAsync(c => c.Id == timeLogId); 
         }
 
         return null;
@@ -61,8 +64,17 @@ public class TimeLogsService
         if (timeLogToAdd != null)
         {
             using var context = _dbFactory.CreateDbContext();
-            
+        
             context.TimeLogs?.Add(timeLogToAdd);
+            //makes sure ef core doesn't try to add the characteristic to the collection of characteristics
+            foreach (Data.Characteristic charToAttach in timeLogToAdd.Characteristics)
+            {
+                context.Entry(charToAttach).State = EntityState.Unchanged;
+            }
+            foreach (Tag tagToAttach in timeLogToAdd.Tags)
+            {
+                context.Entry(tagToAttach).State = EntityState.Unchanged;
+            }
 
             return await context.SaveChangesAsync() > 0;
         }

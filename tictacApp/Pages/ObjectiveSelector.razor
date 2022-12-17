@@ -1,0 +1,155 @@
+@page "/objectiveSelector"
+@page "/objectiveSelector/{ParentObjectiveId:int}"
+
+@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+
+@inject ObjectivesService ObjectivesService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ItemSelectionService<Objective> ItemSelectionService;
+
+
+<PageTitle>Objective Selection</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Objective Selection</MudText>
+<MudBreadcrumbs Items="_path">
+    <ItemTemplate Context="item">
+        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
+    </ItemTemplate>
+</MudBreadcrumbs>
+
+@if (_objectives == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    OnClick="OnCancel">Cancel</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_objectives"  Loading="@_loading" LoadingProgressColor="Color.Info"
+                Hover="true" Class="ml-2 mr-2 mt-4" Breakpoint="Breakpoint.Sm">
+        <ColGroup>
+            <col />
+            <col />
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Label</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
+            <MudTd DataLabel="Label">@context.Description</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubObjective(context.Id))" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+
+
+    [Parameter]
+    public int? ParentObjectiveId { get; set; } = null;
+
+    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
+    private Objective[]? _objectives;
+    private bool _loading = false;
+    //private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        ItemSelectionService.ComesFromSelection = true;
+        await BuildBreadcrumb();
+        await GetObjectivesAsync();
+    }
+
+    private async Task BuildBreadcrumb()
+    {
+        BreadcrumbItem root = new BreadcrumbItem("Objectives", href: "/objectiveSelector", icon: AppIcons.Project);
+        _path.Add(root);
+
+        if (ParentObjectiveId.HasValue)
+        {
+            KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentObjectives(ParentObjectiveId.Value);
+            foreach (KeyValuePair<int, string?> objective in parentObjectives)
+            {
+                string itemStr = FormatStringForBreadcrumb(objective.Value);
+                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/objectiveSelector/{objective.Key}");
+                _path.Add(item);
+            }
+        }
+    }
+
+    private async Task GetObjectivesAsync()
+    {
+        try
+        {
+            _loading = true;
+            _objectives = await ObjectivesService.GetObjectivesAsync(ParentObjectiveId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void GoToSubObjective(int subObjectiveId)
+    {
+        GoToSubProject($"/objectiveSelector/{subObjectiveId}");
+    }
+
+    private void GoToSubProject(string url)
+    {
+        Navigation.NavigateTo(url, true);
+    }
+
+    private void Select(Objective selectedObjective)
+    {
+        ItemSelectionService.HasSelected = true;
+        ItemSelectionService.Selection.Add(selectedObjective);
+
+        NavigateBackToCaller();
+    }
+
+    private void OnCancel()
+    {
+        ItemSelectionService.HasSelected = false;
+
+        NavigateBackToCaller();     
+    }
+
+    private void NavigateBackToCaller()
+    {
+        string url = ItemSelectionService.IsAdd ? 
+                        "/logs/addLogFromObjectiveSelection" : 
+                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromObjectiveSelection";
+        Navigation.NavigateTo(url);
+    }
+
+    private string FormatStringForBreadcrumb(string str)
+    {
+        if (str.Length > 15)
+        {
+            return $"{str.Substring(0, 15)}...";
+        }
+
+        return str;
+    }
+}

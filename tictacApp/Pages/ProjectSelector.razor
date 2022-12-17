@@ -1,0 +1,187 @@
+@page "/projectSelector"
+@page "/projectSelector/{ParentProjectId:int}"
+
+@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+
+@inject ProjectsService ProjectsService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ItemSelectionService<Project> ItemSelectionService;
+
+
+<PageTitle>Project Selection</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Project Selection</MudText>
+<MudBreadcrumbs Items="_path">
+    <ItemTemplate Context="item">
+        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
+    </ItemTemplate>
+</MudBreadcrumbs>
+
+@if (_projects == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    OnClick="OnCancel">Cancel</MudButton>
+    </MudPaper>
+
+    <MudTable Items="@_projects"  Loading="@_loading" LoadingProgressColor="Color.Info"
+                Hover="true" Class="ml-2 mr-2 mt-4" Breakpoint="Breakpoint.Sm">
+        <ColGroup>
+            <col />
+            <col />
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Label</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
+            <MudTd DataLabel="Label">@context.Description</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => @GoToSubProject(context.Id))" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+
+@code {
+
+
+    [Parameter]
+    public int? ParentProjectId { get; set; } = null;
+
+    /*private MudTable<Project> mudTable;
+    private HashSet<Project> selectedItems1 = new HashSet<Project>();
+    private int selectedRowNumber = -1;*/
+
+    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
+    private Project[]? _projects;
+    private bool _loading = false;
+    //private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    /*private bool _disableSelectionButton = true;*/
+
+    protected override async Task OnInitializedAsync()
+    {
+        ItemSelectionService.ComesFromSelection = true;
+        await BuildBreadcrumb();
+        await GetProjectsAsync();
+    }
+
+    /*private void RowClickEvent(TableRowClickEventArgs<Project> tableRowClickEventArgs)
+    {
+        if (selectedItems1.Count > 1)
+        {
+            selectedItems1.Clear();
+            selectedItems1.Add(tableRowClickEventArgs.Item);
+        }
+    }*/
+
+    private async Task BuildBreadcrumb()
+    {
+        BreadcrumbItem root = new BreadcrumbItem("Projects", href: "/projectSelector", icon: AppIcons.Project);
+        _path.Add(root);
+
+        if (ParentProjectId.HasValue)
+        {
+            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentProjects(ParentProjectId.Value);
+            foreach (KeyValuePair<int, string?> proj in parentProjects)
+            {
+                BreadcrumbItem item = new BreadcrumbItem(proj.Value, href: $"/projectSelector/{proj.Key}");
+                _path.Add(item);
+            }
+        }
+    }
+
+    private async Task GetProjectsAsync()
+    {
+        try
+        {
+            _loading = true;
+            _projects = await ProjectsService.GetProjectsAsync(ParentProjectId);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    /*private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }*/
+
+    private void GoToSubProject(int subProjectId)
+    {
+        GoToSubProject($"/projectSelector/{subProjectId}");
+    }
+
+    private void GoToSubProject(string url)
+    {
+        Navigation.NavigateTo(url, true);
+    }
+
+    private void Select(Project selectedProject)
+    {
+        ItemSelectionService.HasSelected = true;
+        ItemSelectionService.Selection.Add(selectedProject);
+
+        NavigateBackToCaller();
+    }
+
+    private void OnCancel()
+    {
+        ItemSelectionService.HasSelected = false;
+
+        NavigateBackToCaller();     
+    }
+
+    private void NavigateBackToCaller()
+    {
+        string url = ItemSelectionService.IsAdd ? 
+                        "/logs/addLogFromProjectSelection" : 
+                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromProjectSelection";
+        Navigation.NavigateTo(url);
+    }
+
+    /*private string SelectedRowClassFunc(Project project, int rowNumber)
+    {
+        if (selectedRowNumber == rowNumber)
+        {
+            selectedRowNumber = -1;
+            ItemSelectionService.Selection.Clear();
+
+            return string.Empty;
+        }
+        else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(project))
+        {
+            selectedRowNumber = rowNumber;
+            ItemSelectionService.Selection.Clear();
+            ItemSelectionService.Selection.Add(project);
+
+            return "selected";
+        }
+        else
+        {
+            return string.Empty;
+        }
+    }*/
+}

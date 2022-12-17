@@ -89,7 +89,8 @@ else
             KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentObjectives(ParentObjectiveId.Value);
             foreach (KeyValuePair<int, string?> obj in parentObjectives)
             {
-                BreadcrumbItem item = new BreadcrumbItem(obj.Value, href: $"/objectives/{obj.Key}");
+                string itemStr = FormatStringForBreadcrumb(obj.Value);
+                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/objectives/{obj.Key}");
                 _path.Add(item);
             }
         }
@@ -172,5 +173,15 @@ else
             url = "/objectives/addObjective";
         }
         Navigation.NavigateTo(url);
+    }
+
+    private string FormatStringForBreadcrumb(string str)
+    {
+        if (str.Length > 15)
+        {
+            return $"{str.Substring(0, 15)}...";
+        }
+
+        return str;
     }
 }
