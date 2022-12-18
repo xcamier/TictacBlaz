@@ -3,8 +3,8 @@
 @using tictacApp.Services
 @using tictacApp.Helpers
 
-@inject ActorsService ActorsService
-@inject GradesService GradesService
+@inject GenericCRUDService<Actor> ActorsService
+@inject GenericCRUDService<Grade> GradesService
 
 <MudForm Model="@Actor" 
     @ref="@form" Validation="@(actorValidator.ValidateValue)" ValidationDelay="0">
@@ -91,9 +91,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _grades = await GradesService.GetGradesAsync();
+        _grades = await GradesService.GetAllAsync();
 
-        Actor? defaultActor = await ActorsService.GetActorByDefaultForTimelogs();
+        Actor? defaultActor = await ActorsServiceHelper.GetActorByDefaultForTimelogs(ActorsService);
         _hasAlreadyADefaultWhichIsNotThisUser = (defaultActor is not null) && defaultActor.Id != Actor.Id;
         _nameOfActorWhoIsDefault = defaultActor?.Name;
     }

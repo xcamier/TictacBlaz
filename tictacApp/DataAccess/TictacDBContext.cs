@@ -29,14 +29,14 @@ public class TictacDBContext : DbContext
         project.Property(p => p.Label).IsRequired();
         project.Property(p => p.Label).HasMaxLength(Constants.LabelShortLength);
         project.Property(p => p.Description).HasMaxLength(Constants.DescriptionStandardLength);
-        project.HasOne(p => p.ParentProject).WithMany(p => p.SubProjects).HasForeignKey(p => p.ParentProjectId);
+        project.HasOne(p => p.ParentProject).WithMany(p => p.SubProjects).HasForeignKey(p => p.ParentId);
 
         var characterstic = modelBuilder.Entity<Characteristic>();
         characterstic.HasKey(c => c.Id);
-        characterstic.Property(c => c.Description1).IsRequired();
-        characterstic.Property(c => c.Description1).HasMaxLength(Constants.DescriptionStandardLength);
-        characterstic.Property(c => c.Description2).HasMaxLength(Constants.DescriptionStandardLength);
-        characterstic.HasOne(c => c.ParentCharacteristic).WithMany(c => c.SubCharacteristics).HasForeignKey(c => c.ParentCharacteristicId);
+        characterstic.Property(c => c.Label).IsRequired();
+        characterstic.Property(c => c.Label).HasMaxLength(Constants.DescriptionStandardLength);
+        characterstic.Property(c => c.Description).HasMaxLength(Constants.DescriptionStandardLength);
+        characterstic.HasOne(c => c.ParentCharacteristic).WithMany(c => c.SubCharacteristics).HasForeignKey(c => c.ParentId);
         characterstic.HasOne(c => c.Grade).WithMany(c => c.Characteristics).HasForeignKey(c => c.GradeId);;
         characterstic.HasOne(c => c.CharacteristicsGroup).WithMany(c => c.Characteristics).HasForeignKey(c => c.CharacteristicsGroupId);
 
@@ -50,7 +50,7 @@ public class TictacDBContext : DbContext
         objective.Property(o => o.Label).IsRequired();
         objective.Property(o => o.Label).HasMaxLength(Constants.LabelLongLength);
         objective.Property(o => o.Description).HasMaxLength(Constants.DescriptionStandardLength);
-        objective.HasOne(o => o.ParentObjective).WithMany(o => o.SubObjectives).HasForeignKey(o => o.ParentObjectiveId);
+        objective.HasOne(o => o.ParentObjective).WithMany(o => o.SubObjectives).HasForeignKey(o => o.ParentId);
 
         var timeLog = modelBuilder.Entity<TimeLog>();
         timeLog.HasKey(t => t.Id);

@@ -1,11 +1,11 @@
 @using tictacApp.Data
-@using FluentValidation
 @using tictacApp.Helpers
 @using tictacApp.Services
+@using tictacApp.Validators
 
-@inject GradesService GradesService
-@inject CharacteristicsGroupsService CharacteristicsGroupsService
-@inject CharacteristicsService CharacteristicsService
+@inject GenericCRUDService<Grade> GradesService
+@inject GenericCRUDService<Data.CharacteristicsGroup> CharacteristicsGroupsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 
 <MudForm Model="@Characteristic"
     @ref="@form" Validation="@(characteristicValidator.ValidateValue)" ValidationDelay="0">
@@ -25,7 +25,7 @@
                         <MudGrid>
                             <MudItem xs="12">
                                 <MudTextField T="string" Label="Primary Description" Variant="Variant.Text" Lines="3" 
-                                                @bind-Value="Characteristic.Description1" For="@(() => Characteristic.Description1)" 
+                                                @bind-Value="Characteristic.Label" For="@(() => Characteristic.Label)" 
                                                 Immediate="true"/>
                             </MudItem>
 
@@ -33,12 +33,12 @@
                             {
                                 <MudItem xs="12">
                                     <MudTextField T="string" Label="Secondary Description" Variant="Variant.Text" Lines="3" 
-                                                    @bind-Value="Characteristic.Description2" For="@(() => Characteristic.Description2)" 
+                                                    @bind-Value="Characteristic.Description" For="@(() => Characteristic.Description)" 
                                                     Immediate="true"/>
                                 </MudItem>
                             }
 
-                            @if (Characteristic.ParentCharacteristicId is null)
+                            @if (Characteristic.ParentId is null)
                             {
                                 <MudItem xs="12">
                                     <MudSelect Label="Select a grade" HelperText="Grade"
@@ -64,7 +64,7 @@
                                 </MudItem>                                
                             }
 
-                            @if (Characteristic.ParentCharacteristicId is null)
+                            @if (Characteristic.ParentId is null)
                             {
                                 <MudItem xs="6">
                                     <MudTextField T="string" Label="Color" InputType="InputType.Color" 
@@ -115,7 +115,8 @@
 
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
-    private CharacteristicModelFluentValidator characteristicValidator = new CharacteristicModelFluentValidator();
+    private LabelAndDescriptionFluentValidator<Characteristic> characteristicValidator = 
+                    new LabelAndDescriptionFluentValidator<Characteristic>(Constants.LabelMinLength, Constants.DescriptionStandardLength, Constants.DescriptionStandardLength);
 
     private bool _hasTwoLevelsOfParents = false;
 
@@ -125,10 +126,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _hasTwoLevelsOfParents = await CharacteristicsService.HasTwoLevelsOfParents(Characteristic.ParentCharacteristicId);
+        _hasTwoLevelsOfParents = await CharacteristicsServiceHelper.
+                                            HasTwoLevelsOfParentsAsync(CharacteristicsService, Characteristic.ParentId);
         //Characteristic.GradeId = 0;
-        _grades = await GradesService.GetGradesAsync();
-        _groups = await CharacteristicsGroupsService.GetCharacteristicsGroupsAsync();
+        _grades = await GradesService.GetAllAsync();
+        _groups = await CharacteristicsGroupsService.GetAllAsync();
     }
 
     private Task CancelAsync()
@@ -154,16 +156,16 @@
     }
 
     //Local class for the fluent validator
-    public class CharacteristicModelFluentValidator : AbstractValidator<Characteristic>
+    /*public class CharacteristicModelFluentValidator : AbstractValidator<Characteristic>
     {
         public CharacteristicModelFluentValidator()
         {
-            RuleFor(c => c.Description1).
+            RuleFor(c => c.Label).
                             NotNull().
                             MaximumLength(Constants.DescriptionStandardLength).
                             MinimumLength(Constants.LabelMinLength);
 
-            RuleFor(c => c.Description2).
+            RuleFor(c => c.Description).
                             MaximumLength(Constants.DescriptionStandardLength);
 		}
 
@@ -174,5 +176,5 @@
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);
         };
-    }
+    }*/
 }

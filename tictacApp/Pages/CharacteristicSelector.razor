@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject CharacteristicsService CharacteristicsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ItemSelectionService<Characteristic> ItemSelectionService;
@@ -50,10 +50,10 @@ else
             <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Label">@context.Description1</MudTd>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
             @if (_canGoOneLevelAbove)
             {
-                <MudTd DataLabel="Label">@context.Description2</MudTd>
+                <MudTd DataLabel="Label">@context.Description</MudTd>
             }
             <MudTd DataLabel="Actions">
                 @if (_canGoOneLevelAbove)
@@ -78,7 +78,6 @@ else
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private Characteristic[]? _characteristics;
     private bool _loading = false;
-    //private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
 
@@ -86,28 +85,15 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        ItemSelectionService.ComesFromSelection = true;
         await BuildBreadcrumb();
         await GetCharacteristicsAsync();
     }
 
     private async Task BuildBreadcrumb()
     {
-        BreadcrumbItem root = new BreadcrumbItem("Characteristics", href: "/characteristicSelector", icon: AppIcons.Objective);
-        _path.Add(root);
-
-        if (ParentCharacteristicId.HasValue)
-        {
-            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentCharacteristics(ParentCharacteristicId.Value);
-            foreach (KeyValuePair<int, string?> charact in parentCharacteristics)
-            {
-                string itemStr = FormatStringForBreadcrumb(charact.Value);
-                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/characteristicSelector/{charact.Key}");
-                _path.Add(item);
-            }
-
-            _canGoOneLevelAbove = _path.Count < 3;
-        }
+        KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync(ParentCharacteristicId);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Characteristics", "characteristicSelector", parentCharacteristics);
+        _canGoOneLevelAbove = _path.Count < 3;
     }
 
     private async Task GetCharacteristicsAsync()
@@ -115,7 +101,7 @@ else
         try
         {
             _loading = true;
-            _characteristics = await CharacteristicsService.GetCharacteristicsAsync(ParentCharacteristicId);
+            _characteristics = await CharacteristicsService.GetAllAsync(ParentCharacteristicId);
         }
         finally
         {
@@ -154,15 +140,5 @@ else
                         "/logs/addLogFromCharacteristicSelection" : 
                         $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromCharacteristicSelection";
         Navigation.NavigateTo(url);
-    }
-
-    private string FormatStringForBreadcrumb(string str)
-    {
-        if (str.Length > 15)
-        {
-            return $"{str.Substring(0, 15)}...";
-        }
-
-        return str;
     }
 }

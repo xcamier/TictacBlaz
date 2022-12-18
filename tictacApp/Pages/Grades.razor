@@ -4,7 +4,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject GradesService GradesService
+@inject GenericCRUDService<Grade> GradesService
 @inject ISnackbar Snackbar
 
 
@@ -44,7 +44,7 @@ else
 
     @if (_error)
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
     }
 }
 
@@ -65,7 +65,7 @@ else
         try
         {
             _loading = true;
-            _grades = await GradesService.GetGradesAsync();
+            _grades = await GradesService.GetAllAsync();
         }
         finally
         {
@@ -84,7 +84,7 @@ else
         {
             _busy = true;
 
-            bool res = await GradesService.DeleteGradeAsync(gradeToRemove);
+            bool res = await GradesService.DeleteAsync(gradeToRemove);
 
             ResetErrorMessage();
 

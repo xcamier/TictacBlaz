@@ -1,18 +1,18 @@
 using tictacApp.Data;
 using tictacApp.Services;
+using tictacApp.Interfaces;
 
 namespace tictacApp.Helpers;
 
-public class DependenciesChecker
+public class DependenciesChecker<T> where T: class, IIdLabel
 {
     public bool AreDependenciesOk { get; set; } = true;
 
-    private CommonService _service;
-
     private List<Tuple<string, string>> deps = new List<Tuple<string, string>>();
     
+    private GenericCRUDService<T> _service;
 
-    public DependenciesChecker(CommonService service)
+    public DependenciesChecker(GenericCRUDService<T> service)
     {
         _service = service;
     }
@@ -32,7 +32,7 @@ public class DependenciesChecker
         await CheckDependency<CharacteristicsGroup>("Groups of Characteristics", "/characteristicsGroups");
     }
 
-    private async Task CheckDependency<T>(string element, string link) where T: class
+    private async Task CheckDependency<T>(string element, string link) where T: class, IIdLabel
     {
         bool isDepOk = await _service.HasAtLeastOneItem<T>();
         if (!isDepOk)

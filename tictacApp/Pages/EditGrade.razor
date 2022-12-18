@@ -6,7 +6,7 @@
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GradesService GradesService
+@inject GenericCRUDService<Grade> GradesService
 @inject ISnackbar Snackbar
 
 @if (_grade is null && !_busy)
@@ -50,9 +50,9 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = GradesService.GetDBContext(); 
+            _dbContext  = GradesService.GetNewDBContext(); 
 
-            Grade? grade = await GradesService.FindGradeFromIdAsync(_dbContext, GradeId);
+            Grade? grade = await GradesService.FindFromIdAsync(_dbContext, GradeId);
             if (grade != null)
             {
                 _grade = grade;

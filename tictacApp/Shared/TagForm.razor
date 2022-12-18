@@ -1,12 +1,9 @@
 @using tictacApp.Data
-@using FluentValidation
-@using tictacApp.Services
 @using tictacApp.Helpers
-
-@inject TagsService TagsService
+@using tictacApp.Validators
 
 <MudForm Model="@Tag" 
-    @ref="@form" Validation="@(tagValidator.ValidateValue)" ValidationDelay="0">
+    @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6" >
@@ -61,7 +58,8 @@
 
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
-    private TagModelFluentValidator tagValidator = new TagModelFluentValidator();
+    private LabelFluentValidator<Tag> validator = 
+                new LabelFluentValidator<Tag>(Constants.LabelMinLength, Constants.LabelShortLength);
 
     private Task CancelAsync()
     {
@@ -77,25 +75,5 @@
         }
 
         return ValidationResult.InvokeAsync(false);
-    }
-
-    //Local class for the fluent validator
-    public class TagModelFluentValidator : AbstractValidator<Tag>
-    {
-        public TagModelFluentValidator()
-        {
-            RuleFor(timeLog => timeLog.Label).
-                            NotNull().
-                            MaximumLength(Constants.LabelShortLength).
-                            MinimumLength(Constants.LabelMinLength);
-		}
-
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<Tag>.CreateWithOptions((Tag)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
     }
 }

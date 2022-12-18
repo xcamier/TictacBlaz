@@ -6,7 +6,7 @@
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject ActorsService ActorsService
+@inject GenericCRUDService<Actor> ActorsService
 @inject ISnackbar Snackbar
 
 @if (_actor is null && !_busy)
@@ -50,9 +50,9 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = ActorsService.GetDBContext(); 
+            _dbContext  = ActorsService.GetNewDBContext(); 
 
-            Actor? actor = await ActorsService.FindActorFromIdAsync(_dbContext, ActorId);
+            Actor? actor = await ActorsService.FindFromIdAsync(_dbContext, ActorId);
             if (actor != null)
             {
                 _actor = actor;

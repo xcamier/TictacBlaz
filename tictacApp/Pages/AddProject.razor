@@ -4,7 +4,7 @@
 @using Data
 @using tictacApp.Services
 
-@inject ProjectsService ProjectsService
+@inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -35,7 +35,7 @@
     protected override Task OnInitializedAsync()
     {
         _project = new Project();
-        _project.ParentProjectId = ProjectId;
+        _project.ParentId = ProjectId;
 
         return base.OnInitializedAsync();
     }
@@ -59,7 +59,7 @@
         {
             _busy = true;
 
-            bool res = await ProjectsService.AddProjectAsync(_project);
+            bool res = await ProjectsService.AddAsync(_project);
 
             ResetErrorMessage();
 

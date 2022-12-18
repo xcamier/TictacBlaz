@@ -1,6 +1,8 @@
+using tictacApp.Interfaces;
+
 namespace tictacApp.Data;
 
-public class Objective
+public class Objective: IIdLabel, IDescription, IParent
 {
     public int Id { get; set; }
     public string? Label { get; set; }
@@ -10,7 +12,7 @@ public class Objective
     public bool IsFinalized { get; set; }
     public DateTime? FinalizationDate { get; set; }
 
-    public int? ParentObjectiveId { get; set; }
+    public int? ParentId { get; set; }
     public Objective? ParentObjective { get; set; }
 
     public ICollection<Objective>? SubObjectives { get; set; }

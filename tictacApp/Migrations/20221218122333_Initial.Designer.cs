@@ -11,7 +11,7 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20221217061957_Initial")]
+    [Migration("20221218122333_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -89,12 +89,7 @@ namespace tictacApp.Migrations
                     b.Property<string>("Color")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Description1")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description2")
+                    b.Property<string>("Description")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
@@ -104,7 +99,12 @@ namespace tictacApp.Migrations
                     b.Property<bool>("IsClosed")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ParentCharacteristicId")
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -113,7 +113,7 @@ namespace tictacApp.Migrations
 
                     b.HasIndex("GradeId");
 
-                    b.HasIndex("ParentCharacteristicId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Characteristics");
                 });
@@ -177,7 +177,7 @@ namespace tictacApp.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ParentObjectiveId")
+                    b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("TargetDate")
@@ -185,7 +185,7 @@ namespace tictacApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentObjectiveId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Objectives");
                 });
@@ -214,12 +214,12 @@ namespace tictacApp.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ParentProjectId")
+                    b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentProjectId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Projects");
                 });
@@ -325,7 +325,7 @@ namespace tictacApp.Migrations
 
                     b.HasOne("tictacApp.Data.Characteristic", "ParentCharacteristic")
                         .WithMany("SubCharacteristics")
-                        .HasForeignKey("ParentCharacteristicId");
+                        .HasForeignKey("ParentId");
 
                     b.Navigation("CharacteristicsGroup");
 
@@ -338,7 +338,7 @@ namespace tictacApp.Migrations
                 {
                     b.HasOne("tictacApp.Data.Objective", "ParentObjective")
                         .WithMany("SubObjectives")
-                        .HasForeignKey("ParentObjectiveId");
+                        .HasForeignKey("ParentId");
 
                     b.Navigation("ParentObjective");
                 });
@@ -347,7 +347,7 @@ namespace tictacApp.Migrations
                 {
                     b.HasOne("tictacApp.Data.Project", "ParentProject")
                         .WithMany("SubProjects")
-                        .HasForeignKey("ParentProjectId");
+                        .HasForeignKey("ParentId");
 
                     b.Navigation("ParentProject");
                 });

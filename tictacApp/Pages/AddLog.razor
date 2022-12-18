@@ -8,9 +8,9 @@
 @using tictacApp.Services
 
 @inject TimeLogsService TimeLogsService
-@inject ProjectsService ProjectsService
-@inject ObjectivesService ObjectivesService
-@inject CharacteristicsService CharacteristicsService
+@inject GenericCRUDServiceWithParents<Project> ProjectsService
+@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 @inject ItemSelectionService<Project> ProjectSelectionService;
 @inject ItemSelectionService<Objective> ObjectiveSelectionService;
 @inject ItemSelectionService<Data.Characteristic> CharacteristicSelectionService;
@@ -60,7 +60,7 @@ else if (!_areDependenciesOk)
             {
                 _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
 
-                KeyValuePair<int, string?>[] parents = await ProjectsService.GetParentProjects(_timeLog.ProjectId.Value);
+                KeyValuePair<int, string?>[] parents = await ProjectsService.GetParentsAsync(_timeLog.ProjectId.Value);
                 string asText = string.Empty;
                 foreach (var pair in parents)
                 {
@@ -79,7 +79,7 @@ else if (!_areDependenciesOk)
             {
                 _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
 
-                KeyValuePair<int, string?>[] parents = await ObjectivesService.GetParentObjectives(_timeLog.ObjectiveId.Value);
+                KeyValuePair<int, string?>[] parents = await ObjectivesService.GetParentsAsync(_timeLog.ObjectiveId.Value);
                 string asText = string.Empty;
                 foreach (var pair in parents)
                 {
@@ -104,7 +104,7 @@ else if (!_areDependenciesOk)
 
                 _timeLog.Characteristics.Add(selectedChar);
 
-                KeyValuePair<int, string?>[] parents = await CharacteristicsService.GetParentCharacteristics(selectedChar.Id);
+                KeyValuePair<int, string?>[] parents = await CharacteristicsService.GetParentsAsync(selectedChar.Id);
                 string asText = string.Empty;
                 foreach (var pair in parents)
                 {

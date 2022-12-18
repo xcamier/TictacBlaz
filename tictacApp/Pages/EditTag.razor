@@ -6,7 +6,7 @@
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject TagsService TagsService
+@inject GenericCRUDService<Tag> TagsService
 @inject ISnackbar Snackbar
 
 @if (_tag is null && !_busy)
@@ -50,9 +50,9 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = TagsService.GetDBContext(); 
+            _dbContext  = TagsService.GetNewDBContext(); 
 
-            Tag? tag = await TagsService.FindTagFromIdAsync(_dbContext, TagId);
+            Tag? tag = await TagsService.FindFromIdAsync(_dbContext, TagId);
             if (tag != null)
             {
                 _tag = tag;

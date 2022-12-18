@@ -4,7 +4,7 @@
 @using tictacApp.Helpers
 
 @inject NavigationManager Navigation
-@inject TagsService TagsService
+@inject GenericCRUDService<Tag> TagsService
 @inject ItemSelectionService<Project> ProjectSelectionService;
 @inject ItemSelectionService<Objective> ObjectiveSelectionService;
 @inject ItemSelectionService<Characteristic> CharacteristicSelectionService;
@@ -228,7 +228,7 @@
 
     private async Task GetTagsAsync()
     {
-        _tags = await TagsService.GetTagsAsync();
+        _tags = await TagsService.GetAllAsync();
     }
     
     private void SelectProject()

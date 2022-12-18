@@ -4,7 +4,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject ActorsService ActorsService
+@inject GenericCRUDService<Actor> ActorsService
 @inject ISnackbar Snackbar
 
 
@@ -65,7 +65,7 @@ else
         try
         {
             _loading = true;
-            _actors = await ActorsService.GetActorsAsync();
+            _actors = await ActorsService.GetAllAsync();
         }
         finally
         {
@@ -84,7 +84,7 @@ else
         {
             _busy = true;
 
-            bool res = await ActorsService.DeleteActorAsync(actorToRemove);
+            bool res = await ActorsService.DeleteAsync(actorToRemove);
 
             ResetErrorMessage();
 

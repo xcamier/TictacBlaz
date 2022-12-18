@@ -1,9 +1,6 @@
 @using tictacApp.Data
 @using FluentValidation
-@using tictacApp.Services
 @using tictacApp.Helpers
-
-@inject CharacteristicsGroupsService CharacteristicsGroupsService
 
 <MudForm Model="@CharacteristicsGroup" 
     @ref="@form" Validation="@(characteristicsGroupValidator.ValidateValue)" ValidationDelay="0">

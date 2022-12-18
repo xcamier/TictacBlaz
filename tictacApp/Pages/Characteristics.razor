@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject CharacteristicsService CharacteristicsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -49,10 +49,10 @@ else
             <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Label">@context.Description1</MudTd>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
             @if (_canGoOneLevelAbove)
             {
-                <MudTd DataLabel="Label">@context.Description2</MudTd>
+                <MudTd DataLabel="Label">@context.Description</MudTd>
             }
             <MudTd DataLabel="Actions">
                 @if (_canGoOneLevelAbove)
@@ -97,7 +97,7 @@ else
 
         if (ParentCharacteristicId.HasValue)
         {
-            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentCharacteristics(ParentCharacteristicId.Value);
+            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync(ParentCharacteristicId.Value);
             foreach (KeyValuePair<int, string?> obj in parentCharacteristics)
             {
                 string itemStr = FormatStringForBreadcrumb(obj.Value);
@@ -114,7 +114,7 @@ else
         try
         {
             _loading = true;
-            _characteristics = await CharacteristicsService.GetCharacteristicsAsync(ParentCharacteristicId);
+            _characteristics = await CharacteristicsService.GetAllAsync(ParentCharacteristicId);
         }
         finally
         {
@@ -133,7 +133,7 @@ else
         {
             _busy = true;
 
-            bool res = await CharacteristicsService.DeleteCharacteristicAsync(CharacteristicToRemove);
+            bool res = await CharacteristicsService.DeleteAsync(CharacteristicToRemove);
 
             ResetErrorMessage();
 

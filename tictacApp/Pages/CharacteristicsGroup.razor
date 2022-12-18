@@ -1,10 +1,9 @@
 @page "/characteristicsGroups"
 
 @using tictacApp.Services
-@using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject CharacteristicsGroupsService CharacteristicsGroupsService
+@inject GenericCRUDService<Data.CharacteristicsGroup> CharacteristicsGroupsService
 @inject ISnackbar Snackbar
 
 
@@ -65,7 +64,7 @@ else
         try
         {
             _loading = true;
-            _characteristicsGroup = await CharacteristicsGroupsService.GetCharacteristicsGroupsAsync();
+            _characteristicsGroup = await CharacteristicsGroupsService.GetAllAsync();
         }
         finally
         {
@@ -84,7 +83,7 @@ else
         {
             _busy = true;
 
-            bool res = await CharacteristicsGroupsService.DeleteCharacteristicsGroupAsync(characteristicsGroupToRemove);
+            bool res = await CharacteristicsGroupsService.DeleteAsync(characteristicsGroupToRemove);
 
             ResetErrorMessage();
 

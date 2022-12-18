@@ -6,7 +6,7 @@
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject ProjectsService ProjectsService
+@inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject ISnackbar Snackbar
 
 @if (_project is null && !_busy)
@@ -50,9 +50,9 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = ProjectsService.GetDBContext(); 
+            _dbContext  = ProjectsService.GetNewDBContext(); 
 
-            Project? project = await ProjectsService.FindProjectFromIdAsync(_dbContext, ProjectId);
+            Project? project = await ProjectsService.FindFromIdAsync(_dbContext, ProjectId);
             if (project != null)
             {
                 _project = project;
@@ -158,9 +158,9 @@ else
     private void GoBackToList()
     {
         string url = string.Empty;
-        if (_project.ParentProjectId.HasValue)
+        if (_project.ParentId.HasValue)
         {
-            url = $"/projects/{_project.ParentProjectId}";
+            url = $"/projects/{_project.ParentId}";
         }
         else
         {

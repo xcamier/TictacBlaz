@@ -5,7 +5,7 @@
 @using Helpers
 @using tictacApp.Services
 
-@inject CharacteristicsService CharacteristicsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -48,12 +48,12 @@ else if (!_areDependenciesOk)
         await CheckDependencies();
 
         _characteristic = new Characteristic();
-        _characteristic.ParentCharacteristicId = CharacteristicId;
+        _characteristic.ParentId = CharacteristicId;
     }
 
     private async Task CheckDependencies()
     {
-        DependenciesChecker checker = new DependenciesChecker(CharacteristicsService);
+        DependenciesChecker<Characteristic> checker = new DependenciesChecker<Characteristic>(CharacteristicsService);
         await checker.CheckGradesDependecy();
         await checker.CheckGroupOfCharacteristicssDependecy();
         _areDependenciesOk = checker.AreDependenciesOk;
@@ -79,7 +79,7 @@ else if (!_areDependenciesOk)
         {
             _busy = true;
 
-            bool res = await CharacteristicsService.AddCharacteristicAsync(_characteristic);
+            bool res = await CharacteristicsService.AddAsync(_characteristic);
 
             ResetErrorMessage();
 

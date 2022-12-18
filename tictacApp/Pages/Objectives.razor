@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject ObjectivesService ObjectivesService
+@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -86,7 +86,7 @@ else
 
         if (ParentObjectiveId.HasValue)
         {
-            KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentObjectives(ParentObjectiveId.Value);
+            KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentsAsync(ParentObjectiveId.Value);
             foreach (KeyValuePair<int, string?> obj in parentObjectives)
             {
                 string itemStr = FormatStringForBreadcrumb(obj.Value);
@@ -101,7 +101,7 @@ else
         try
         {
             _loading = true;
-            _objectives = await ObjectivesService.GetObjectivesAsync(ParentObjectiveId);
+            _objectives = await ObjectivesService.GetAllAsync(ParentObjectiveId);
         }
         finally
         {
@@ -120,7 +120,7 @@ else
         {
             _busy = true;
 
-            bool res = await ObjectivesService.DeleteObjectiveAsync(objectiveToRemove);
+            bool res = await ObjectivesService.DeleteAsync(objectiveToRemove);
 
             ResetErrorMessage();
 

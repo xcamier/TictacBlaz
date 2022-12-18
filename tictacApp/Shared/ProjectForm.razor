@@ -1,10 +1,10 @@
+@using tictacApp.Validators
 @using tictacApp.Data
-@using FluentValidation
 @using tictacApp.Helpers
 
 
 <MudForm Model="@Project"
-    @ref="@form" Validation="@(projectValidator.ValidateValue)" ValidationDelay="0">
+    @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6">
@@ -78,7 +78,8 @@
 
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
-    private ProjectModelFluentValidator projectValidator = new ProjectModelFluentValidator();
+    private LabelAndDescriptionFluentValidator<Project> validator = 
+                new LabelAndDescriptionFluentValidator<Project>(Constants.LabelMinLength, Constants.LabelShortLength, Constants.DescriptionStandardLength);
 
     private Task CancelAsync()
     {
@@ -94,27 +95,5 @@
         }
 
         return ValidationResult.InvokeAsync(false);
-    }
-
-    //Local class for the fluent validator
-    public class ProjectModelFluentValidator : AbstractValidator<Project>
-    {
-        public ProjectModelFluentValidator()
-        {
-            RuleFor(p => p.Label).
-                            NotNull().
-                            MaximumLength(Constants.LabelShortLength).
-                            MinimumLength(Constants.LabelMinLength);
-
-            RuleFor(p =>p.Description).MaximumLength(Constants.DescriptionStandardLength);
-		}
-
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<Project>.CreateWithOptions((Project)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
     }
 }

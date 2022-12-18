@@ -3,7 +3,7 @@
 @using Data
 @using tictacApp.Services
 
-@inject TagsService TagsService
+@inject GenericCRUDService<Tag> TagsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -54,7 +54,7 @@
         {
             _busy = true;
 
-            bool res = await TagsService.AddTagAsync(_tag);
+            bool res = await TagsService.AddAsync(_tag);
 
             ResetErrorMessage();
 

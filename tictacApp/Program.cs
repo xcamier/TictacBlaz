@@ -32,13 +32,13 @@ builder.Services.AddDbContextFactory<TictacDBContext>(opt => opt.UseSqlite(@"Dat
 builder.Services.AddDbContext<TictacDBContext>(opt => opt.UseSqlite(@"Data Source=tictacDB.db"));
 
 builder.Services.AddSingleton<TimeLogsService>();
-builder.Services.AddSingleton<TagsService>();
-builder.Services.AddSingleton<GradesService>();
-builder.Services.AddSingleton<ProjectsService>();
-builder.Services.AddSingleton<ObjectivesService>();
-builder.Services.AddSingleton<CharacteristicsGroupsService>();
-builder.Services.AddSingleton<CharacteristicsService>();
-builder.Services.AddSingleton<ActorsService>();
+builder.Services.AddSingleton<GenericCRUDService<Tag>>();
+builder.Services.AddSingleton<GenericCRUDService<Grade>>();
+builder.Services.AddSingleton<GenericCRUDService<Actor>>();
+builder.Services.AddSingleton<GenericCRUDService<CharacteristicsGroup>>();
+builder.Services.AddSingleton<GenericCRUDServiceWithParents<Project>>();
+builder.Services.AddSingleton<GenericCRUDServiceWithParents<Objective>>();
+builder.Services.AddSingleton<GenericCRUDServiceWithParents<Characteristic>>();
 builder.Services.AddSingleton<ItemSelectionService<Project>>();
 builder.Services.AddSingleton<ItemSelectionService<Objective>>();
 builder.Services.AddSingleton<ItemSelectionService<Characteristic>>();

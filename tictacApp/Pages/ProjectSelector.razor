@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject ProjectsService ProjectsService
+@inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ItemSelectionService<Project> ItemSelectionService;
@@ -60,54 +60,26 @@ else
 }
 
 @code {
-
-
     [Parameter]
     public int? ParentProjectId { get; set; } = null;
-
-    /*private MudTable<Project> mudTable;
-    private HashSet<Project> selectedItems1 = new HashSet<Project>();
-    private int selectedRowNumber = -1;*/
 
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private Project[]? _projects;
     private bool _loading = false;
-    //private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
 
-    /*private bool _disableSelectionButton = true;*/
 
     protected override async Task OnInitializedAsync()
     {
-        ItemSelectionService.ComesFromSelection = true;
         await BuildBreadcrumb();
         await GetProjectsAsync();
     }
 
-    /*private void RowClickEvent(TableRowClickEventArgs<Project> tableRowClickEventArgs)
-    {
-        if (selectedItems1.Count > 1)
-        {
-            selectedItems1.Clear();
-            selectedItems1.Add(tableRowClickEventArgs.Item);
-        }
-    }*/
-
     private async Task BuildBreadcrumb()
     {
-        BreadcrumbItem root = new BreadcrumbItem("Projects", href: "/projectSelector", icon: AppIcons.Project);
-        _path.Add(root);
-
-        if (ParentProjectId.HasValue)
-        {
-            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentProjects(ParentProjectId.Value);
-            foreach (KeyValuePair<int, string?> proj in parentProjects)
-            {
-                BreadcrumbItem item = new BreadcrumbItem(proj.Value, href: $"/projectSelector/{proj.Key}");
-                _path.Add(item);
-            }
-        }
+        KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentsAsync(ParentProjectId);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Projects", "projectSelector", parentProjects);
     }
 
     private async Task GetProjectsAsync()
@@ -115,19 +87,13 @@ else
         try
         {
             _loading = true;
-            _projects = await ProjectsService.GetProjectsAsync(ParentProjectId);
+            _projects = await ProjectsService.GetAllAsync(ParentProjectId);
         }
         finally
         {
             _loading = false;
         }
     }
-
-    /*private void ResetErrorMessage()
-    {
-        _error = false;
-        _errorMessage = string.Empty;
-    }*/
 
     private void GoToSubProject(int subProjectId)
     {
@@ -161,27 +127,4 @@ else
                         $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromProjectSelection";
         Navigation.NavigateTo(url);
     }
-
-    /*private string SelectedRowClassFunc(Project project, int rowNumber)
-    {
-        if (selectedRowNumber == rowNumber)
-        {
-            selectedRowNumber = -1;
-            ItemSelectionService.Selection.Clear();
-
-            return string.Empty;
-        }
-        else if (mudTable.SelectedItem != null && mudTable.SelectedItem.Equals(project))
-        {
-            selectedRowNumber = rowNumber;
-            ItemSelectionService.Selection.Clear();
-            ItemSelectionService.Selection.Add(project);
-
-            return "selected";
-        }
-        else
-        {
-            return string.Empty;
-        }
-    }*/
 }

@@ -4,7 +4,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject TagsService TagsService
+@inject GenericCRUDService<Tag> TagsService
 @inject ISnackbar Snackbar
 
 
@@ -65,7 +65,7 @@ else
         try
         {
             _loading = true;
-            _tags = await TagsService.GetTagsAsync();
+            _tags = await TagsService.GetAllAsync();
         }
         finally
         {
@@ -84,7 +84,7 @@ else
         {
             _busy = true;
 
-            bool res = await TagsService.DeleteTagAsync(tagToRemove);
+            bool res = await TagsService.DeleteAsync(tagToRemove);
 
             ResetErrorMessage();
 
@@ -114,4 +114,6 @@ else
         _error = false;
         _errorMessage = string.Empty;
     }
+
+
 }

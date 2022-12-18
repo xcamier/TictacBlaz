@@ -1,10 +1,12 @@
+using tictacApp.Interfaces;
+
 namespace tictacApp.Data;
 
-public class Characteristic
+public class Characteristic: IIdLabel, IDescription, IParent
 {  
     public int Id { get; set; }
-    public string? Description1 { get; set; }
-    public string? Description2 { get; set; }
+    public string? Label { get; set; }
+    public string? Description { get; set; }
     public string? Color { get; set; }
 
     public bool IsClosed { get; set; }
@@ -15,7 +17,7 @@ public class Characteristic
     public int? CharacteristicsGroupId { get; set; }
     public CharacteristicsGroup? CharacteristicsGroup { get; set; }
 
-    public int? ParentCharacteristicId { get; set; }
+    public int? ParentId { get; set; }
     public Characteristic? ParentCharacteristic { get; set; }
 
     public ICollection<Characteristic>? SubCharacteristics { get; set; }

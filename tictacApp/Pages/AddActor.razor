@@ -4,8 +4,8 @@
 @using Helpers
 @using tictacApp.Services
 
-@inject ActorsService ActorsService
-@inject GradesService GradesService
+@inject GenericCRUDService<Actor> ActorsService
+@inject GenericCRUDService<Grade> GradesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -45,7 +45,7 @@ else if (!_areDependenciesOk)
         await CheckDependencies();
 
         _actor = new Actor();
-        Grade? firstGrade = await GradesService.GetFirstGrade();
+        Grade? firstGrade = await GradesService.GetFirstAsync();
         if (firstGrade is not null)
         {
             _actor.DefaultGradeId = firstGrade.Id;
@@ -54,7 +54,7 @@ else if (!_areDependenciesOk)
 
     private async Task CheckDependencies()
     {
-        DependenciesChecker checker = new DependenciesChecker(ActorsService);
+        DependenciesChecker<Grade> checker = new DependenciesChecker<Grade>(GradesService);
         await checker.CheckGradesDependecy();
         _areDependenciesOk = checker.AreDependenciesOk;
         _dependencies = checker.GetUnsatisfiedDependencies();
@@ -79,7 +79,7 @@ else if (!_areDependenciesOk)
         {
             _busy = true;
 
-            bool res = await ActorsService.AddActorAsync(_actor);
+            bool res = await ActorsService.AddAsync(_actor);
 
             ResetErrorMessage();
 

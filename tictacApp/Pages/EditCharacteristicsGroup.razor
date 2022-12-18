@@ -5,7 +5,7 @@
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject CharacteristicsGroupsService CharacteristicsGroupsService
+@inject GenericCRUDService<Data.CharacteristicsGroup> CharacteristicsGroupsService
 @inject ISnackbar Snackbar
 
 @if (_characteristicsGroup is null && !_busy)
@@ -49,9 +49,9 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = CharacteristicsGroupsService.GetDBContext(); 
+            _dbContext  = CharacteristicsGroupsService.GetNewDBContext(); 
 
-            Data.CharacteristicsGroup? characteristicsGroup = await CharacteristicsGroupsService.FindCharacteristicsGroupFromIdAsync(_dbContext, CharacteristicsGroupId);
+            Data.CharacteristicsGroup? characteristicsGroup = await CharacteristicsGroupsService.FindFromIdAsync(_dbContext, CharacteristicsGroupId);
             if (characteristicsGroup != null)
             {
                 _characteristicsGroup = characteristicsGroup;

@@ -1,12 +1,9 @@
 @using tictacApp.Data
-@using FluentValidation
-@using tictacApp.Services
 @using tictacApp.Helpers
-
-@inject GradesService GradesService
+@using tictacApp.Validators
 
 <MudForm Model="@Grade" 
-    @ref="@form" Validation="@(gradeValidator.ValidateValue)" ValidationDelay="0">
+    @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6" >
@@ -61,7 +58,8 @@
 
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
-    private GradeModelFluentValidator gradeValidator = new GradeModelFluentValidator();
+    private LabelFluentValidator<Grade> validator = 
+                new LabelFluentValidator<Grade>(Constants.Label1CharLength, Constants.LabelShortLength);
 
     private Task CancelAsync()
     {
@@ -77,25 +75,5 @@
         }
 
         return ValidationResult.InvokeAsync(false);
-    }
-
-    //Local class for the fluent validator
-    public class GradeModelFluentValidator : AbstractValidator<Grade>
-    {
-        public GradeModelFluentValidator()
-        {
-            RuleFor(grade => grade.Label).
-                            NotNull().
-                            MaximumLength(Constants.LabelShortLength).
-                            MinimumLength(Constants.Label1CharLength);
-		}
-
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<Grade>.CreateWithOptions((Grade)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
     }
 }

@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject ObjectivesService ObjectivesService
+@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ItemSelectionService<Objective> ItemSelectionService;
@@ -68,33 +68,20 @@ else
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private Objective[]? _objectives;
     private bool _loading = false;
-    //private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
 
 
     protected override async Task OnInitializedAsync()
     {
-        ItemSelectionService.ComesFromSelection = true;
         await BuildBreadcrumb();
         await GetObjectivesAsync();
     }
 
     private async Task BuildBreadcrumb()
     {
-        BreadcrumbItem root = new BreadcrumbItem("Objectives", href: "/objectiveSelector", icon: AppIcons.Project);
-        _path.Add(root);
-
-        if (ParentObjectiveId.HasValue)
-        {
-            KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentObjectives(ParentObjectiveId.Value);
-            foreach (KeyValuePair<int, string?> objective in parentObjectives)
-            {
-                string itemStr = FormatStringForBreadcrumb(objective.Value);
-                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/objectiveSelector/{objective.Key}");
-                _path.Add(item);
-            }
-        }
+        KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentsAsync(ParentObjectiveId);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Objectives", "objectiveSelector", parentObjectives);
     }
 
     private async Task GetObjectivesAsync()
@@ -102,7 +89,7 @@ else
         try
         {
             _loading = true;
-            _objectives = await ObjectivesService.GetObjectivesAsync(ParentObjectiveId);
+            _objectives = await ObjectivesService.GetAllAsync(ParentObjectiveId);
         }
         finally
         {
@@ -141,15 +128,5 @@ else
                         "/logs/addLogFromObjectiveSelection" : 
                         $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromObjectiveSelection";
         Navigation.NavigateTo(url);
-    }
-
-    private string FormatStringForBreadcrumb(string str)
-    {
-        if (str.Length > 15)
-        {
-            return $"{str.Substring(0, 15)}...";
-        }
-
-        return str;
     }
 }

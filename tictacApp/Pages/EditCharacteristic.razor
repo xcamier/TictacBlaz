@@ -6,7 +6,7 @@
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject CharacteristicsService CharacteristicsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 @inject ISnackbar Snackbar
 
 @if (_characteristic is null && !_busy)
@@ -50,9 +50,9 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = CharacteristicsService.GetDBContext(); 
+            _dbContext  = CharacteristicsService.GetNewDBContext(); 
 
-            Characteristic? characteristic = await CharacteristicsService.FindCharacteristicFromIdAsync(_dbContext, CharacteristicId);
+            Characteristic? characteristic = await CharacteristicsService.FindFromIdAsync(_dbContext, CharacteristicId);
             if (characteristic != null)
             {
                 _characteristic = characteristic;
@@ -158,9 +158,9 @@ else
     private void GoBackToList()
     {
         string url = string.Empty;
-        if (_characteristic.ParentCharacteristicId.HasValue)
+        if (_characteristic.ParentId.HasValue)
         {
-            url = $"/characteristics/{_characteristic.ParentCharacteristicId}";
+            url = $"/characteristics/{_characteristic.ParentId}";
         }
         else
         {

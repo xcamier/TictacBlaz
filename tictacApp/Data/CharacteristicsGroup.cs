@@ -1,6 +1,8 @@
+using tictacApp.Interfaces;
+
 namespace tictacApp.Data;
 
-public class CharacteristicsGroup
+public class CharacteristicsGroup: IIdLabel
 {
     public int Id { get; set; }
     public string? Label { get; set; }

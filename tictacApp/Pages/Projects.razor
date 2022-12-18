@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject ProjectsService ProjectsService
+@inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -83,7 +83,7 @@ else
 
         if (ParentProjectId.HasValue)
         {
-            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentProjects(ParentProjectId.Value);
+            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentsAsync(ParentProjectId.Value);
             foreach (KeyValuePair<int, string?> proj in parentProjects)
             {
                 string itemStr = FormatStringForBreadcrumb(proj.Value);
@@ -98,7 +98,7 @@ else
         try
         {
             _loading = true;
-            _projects = await ProjectsService.GetProjectsAsync(ParentProjectId);
+            _projects = await ProjectsService.GetAllAsync(ParentProjectId);
         }
         finally
         {
@@ -117,7 +117,7 @@ else
         {
             _busy = true;
 
-            bool res = await ProjectsService.DeleteProjectAsync(projectToRemove);
+            bool res = await ProjectsService.DeleteAsync(projectToRemove);
 
             ResetErrorMessage();
 

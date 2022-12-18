@@ -4,7 +4,7 @@
 @using Data
 @using tictacApp.Services
 
-@inject ObjectivesService ObjectivesService
+@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -35,7 +35,7 @@
     protected override Task OnInitializedAsync()
     {
         _objective = new Objective();
-        _objective.ParentObjectiveId = ObjectiveId;
+        _objective.ParentId = ObjectiveId;
 
         return base.OnInitializedAsync();
     }
@@ -59,7 +59,7 @@
         {
             _busy = true;
 
-            bool res = await ObjectivesService.AddObjectiveAsync(_objective);
+            bool res = await ObjectivesService.AddAsync(_objective);
 
             ResetErrorMessage();
 

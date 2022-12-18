@@ -3,7 +3,7 @@
 @using Data
 @using tictacApp.Services
 
-@inject GradesService GradesService
+@inject GenericCRUDService<Grade> GradesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -54,7 +54,7 @@
         {
             _busy = true;
 
-            bool res = await GradesService.AddGradeAsync(_grade);
+            bool res = await GradesService.AddAsync(_grade);
 
             ResetErrorMessage();
 

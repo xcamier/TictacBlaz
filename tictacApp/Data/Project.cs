@@ -1,6 +1,8 @@
+using tictacApp.Interfaces;
+
 namespace tictacApp.Data;
 
-public class Project
+public class Project: IIdLabel, IDescription, IParent
 {
     public int Id { get; set; }
     public string? Label { get; set; }
@@ -9,7 +11,7 @@ public class Project
     public bool IsFinalized { get; set; }
     public DateTime? FinalizationDate { get; set; }
 
-    public int? ParentProjectId { get; set; }
+    public int? ParentId { get; set; }
     public Project? ParentProject { get; set; }
     
     public ICollection<Project>? SubProjects { get; set; }
