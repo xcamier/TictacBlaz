@@ -52,7 +52,10 @@ else if (!_areDependenciesOk)
     {
         await CheckDependencies();
 
-        if (ComesFromSelection() == SelectionSource.Project)
+        string uri = Navigation.Uri;
+        SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
+
+        if (source == SelectionSource.Project)
         {
             _timeLog = ProjectSelectionService.EntityBackup;
 
@@ -60,18 +63,13 @@ else if (!_areDependenciesOk)
             {
                 _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
 
-                KeyValuePair<int, string?>[] parents = await ProjectsService.GetParentsAsync(_timeLog.ProjectId.Value);
-                string asText = string.Empty;
-                foreach (var pair in parents)
-                {
-                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
-                }
+                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Project>(ProjectsService, _timeLog.ProjectId.Value);
                 _timeLog.ProjectsAsText = asText;
             }
             
             ProjectSelectionService.Reset();
         }
-        else if (ComesFromSelection() == SelectionSource.Objective)
+        else if (source == SelectionSource.Objective)
         {
             _timeLog = ObjectiveSelectionService.EntityBackup;
 
@@ -79,37 +77,23 @@ else if (!_areDependenciesOk)
             {
                 _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
 
-                KeyValuePair<int, string?>[] parents = await ObjectivesService.GetParentsAsync(_timeLog.ObjectiveId.Value);
-                string asText = string.Empty;
-                foreach (var pair in parents)
-                {
-                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
-                }
+                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Objective>(ObjectivesService, _timeLog.ObjectiveId.Value);
                 _timeLog.ObjectivesAsText = asText;
             }  
 
             ObjectiveSelectionService.Reset();
         }
-        else if (ComesFromSelection() == SelectionSource.Characteristic)
+        else if (source == SelectionSource.Characteristic)
         {
             _timeLog = CharacteristicSelectionService.EntityBackup;
 
             if (CharacteristicSelectionService.HasSelected && CharacteristicSelectionService.Selection.Any())
             {
                 var selectedChar = CharacteristicSelectionService.Selection.Single();
-                if (_timeLog.Characteristics is null)
-                {
-                    _timeLog.Characteristics = new List<Characteristic>();
-                }
-
                 _timeLog.Characteristics.Add(selectedChar);
 
-                KeyValuePair<int, string?>[] parents = await CharacteristicsService.GetParentsAsync(selectedChar.Id);
-                string asText = string.Empty;
-                foreach (var pair in parents)
-                {
-                    asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
-                }
+                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Characteristic>(CharacteristicsService, selectedChar.Id);
+                _timeLog.ObjectivesAsText = asText;
 
                 _timeLog.CharacteristicsAsText.Add(new KeyValuePair<int, string>(selectedChar.Id, asText));
             }  
@@ -125,24 +109,6 @@ else if (!_areDependenciesOk)
                 TimeSpan = now.TimeOfDay
             };
         }
-    }
-
-    private SelectionSource ComesFromSelection()
-    {   
-        if (Navigation.Uri.EndsWith("addLogFromProjectSelection"))
-        {
-            return SelectionSource.Project;
-        }
-        else if (Navigation.Uri.EndsWith("addLogFromObjectiveSelection"))
-        {
-            return SelectionSource.Objective;
-        }
-        else if (Navigation.Uri.EndsWith("addLogFromCharacteristicSelection"))
-        {
-            return SelectionSource.Characteristic;
-        }
-
-        return SelectionSource.None;
     }
 
     private async Task CheckDependencies()

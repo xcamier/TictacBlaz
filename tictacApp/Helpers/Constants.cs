@@ -23,11 +23,3 @@ public static class AppIcons
     public const string Objective = @Icons.Outlined.Lightbulb;
     public const string Select = @Icons.Outlined.CheckBox;
 }
-
-enum SelectionSource
-{
-    None,
-    Project,
-    Objective,
-    Characteristic
-}
