@@ -51,6 +51,12 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 }
 
+//runs the migration if needed
+var serviceProvider = builder.Services.BuildServiceProvider();
+IServiceScopeFactory? scopeFactory = serviceProvider.GetService<IServiceScopeFactory>();
+MigrationService service = new MigrationService(scopeFactory);
+await service.MigrateAsync();
+
 
 app.UseStaticFiles();
 
