@@ -35,6 +35,7 @@ builder.Services.AddSingleton<TimeLogsService>();
 builder.Services.AddSingleton<GenericCRUDService<Tag>>();
 builder.Services.AddSingleton<GenericCRUDService<Grade>>();
 builder.Services.AddSingleton<GenericCRUDService<Actor>>();
+builder.Services.AddSingleton<GenericCRUDService<TimeLog>>();
 builder.Services.AddSingleton<GenericCRUDService<CharacteristicsGroup>>();
 builder.Services.AddSingleton<GenericCRUDServiceWithParents<Project>>();
 builder.Services.AddSingleton<GenericCRUDServiceWithParents<Objective>>();

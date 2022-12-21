@@ -13,11 +13,6 @@ public class TimeLogsService
         _dbFactory = dbFactory;
     }
 
-    public TictacDBContext? GetDBContext()
-    {
-        return _dbFactory.CreateDbContext();
-    }
-
     public async Task<TimeLog[]> GetTimeLogsAsync(DateOnly currentDate)
     {
         using var context = _dbFactory.CreateDbContext();
@@ -77,21 +72,6 @@ public class TimeLogsService
             }
 
             return await context.SaveChangesAsync() > 0;
-        }
-
-        return false;
-    }
-
-    public async Task<bool> DeleteTimeLogAsync(TimeLog timeLogToDelete)
-    {
-        if (timeLogToDelete != null)
-        {
-            using var context = _dbFactory.CreateDbContext();
-
-            context.Remove(timeLogToDelete);
-            
-            return await context.SaveChangesAsync() > 0;
-
         }
 
         return false;

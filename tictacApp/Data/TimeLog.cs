@@ -1,6 +1,8 @@
+using tictacApp.Interfaces;
+
 namespace tictacApp.Data;
 
-public class TimeLog
+public class TimeLog : IId
 {
     public int Id { get; set; }
     public DateTime? StartDate { get; set; }

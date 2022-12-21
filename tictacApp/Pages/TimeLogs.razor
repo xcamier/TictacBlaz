@@ -6,6 +6,7 @@
 
 @inject ISnackbar Snackbar
 @inject TimeLogsService TimeLogsService
+@inject GenericCRUDService<TimeLog> GenericTimelogsService
 
 
 <PageTitle>Time logs</PageTitle>
@@ -108,7 +109,7 @@ else
         {
             _busy = true;
 
-            bool res = await TimeLogsService.DeleteTimeLogAsync(timeLogToRemove);
+            bool res = await GenericTimelogsService.DeleteAsync(timeLogToRemove);
 
             ResetErrorMessage();
 

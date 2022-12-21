@@ -11,6 +11,7 @@
 
 @inject NavigationManager Navigation
 @inject TimeLogsService TimeLogsService
+@inject GenericCRUDService<TimeLog> GenericTimelogService
 @inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject GenericCRUDServiceWithParents<Characteristic> CharacteristicssService
@@ -60,7 +61,7 @@ else
             ResetErrorMessage();
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = TimeLogsService.GetDBContext(); 
+            _dbContext  = GenericTimelogService.GetNewDBContext(); 
 
             string uri = Navigation.Uri;
             SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
