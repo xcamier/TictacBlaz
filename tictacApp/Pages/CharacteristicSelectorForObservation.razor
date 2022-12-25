@@ -1,0 +1,20 @@
+@page "/characteristicSelectorForObservation"
+@page "/characteristicSelectorForObservation/{ParentCharacteristicId:int}"
+
+@using tictacApp.Services
+@using tictacApp.ViewModels
+
+@inject ItemSelectionService<CharacteristicView, ObservationView> ItemSelectionService;
+
+<CharacteristicSelectorForm 
+    TTypeOfCharacteristic=ObservationView
+    ParentCharacteristicId=@ParentCharacteristicId
+    SubItemRootUri="characteristicSelectorForObservation"
+    ReturnAddUri="/observations/addObservationFromCharacteristicSelection"
+    ReturnEditUri="@($"/observations/{ItemSelectionService.EntityBackup.Id}/editObservationFromCharacteristicSelection")" />
+
+
+@code {
+    [Parameter]
+    public int? ParentCharacteristicId { get; set; } = null;
+}

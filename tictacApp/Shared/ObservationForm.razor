@@ -1,0 +1,262 @@
+@using tictacApp.Data
+@using FluentValidation
+@using tictacApp.Services
+@using tictacApp.Helpers
+@using tictacApp.ViewModels
+@using AutoMapper
+
+@inject NavigationManager Navigation
+@inject GenericCRUDService<Actor> ActorsService
+@inject GenericCRUDService<Tag> TagsService
+@inject IMapper Mapper
+
+@inject ItemSelectionService<CharacteristicView, ObservationView> CharacteristicSelectionServiceV;
+
+<MudForm Model="@Observation"
+    @ref="@form" Validation="@(observationValidator.ValidateValue)" ValidationDelay="0">
+
+    <MudGrid Justify="Justify.Center" Class="mt-2">
+        <MudItem xs="6">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@Mode Observation</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                @if (Observation is not null && _actors is not null)
+                {
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="6">
+                                <MudDatePicker Label="Date of the observation" Placeholder="Select Date"
+                                                Editable="true" DisableToolbar="true"
+                                                @bind-Date="Observation.ObservationDate" For="@(() => Observation.ObservationDate)" />                                
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudCheckBox T=bool MudCheckBox Checked="@Observation.IsPositive" CheckedChanged="OnNatureOfFeedbackChanged" 
+                                            Label="@_isPositiveAsText"
+                                            Color="@_thumbColor" CheckedIcon=@AppIcons.Positive UncheckedIcon=@AppIcons.Negative>
+                                </MudCheckBox>                               
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudSelect Label="Select an actor" HelperText="Actor"
+                                            @bind-Value="Observation.ActorId" For="@(() => Observation.ActorId)">
+                                    @foreach (ActorView actor in _actors)
+                                    {
+                                        <MudSelectItem Value="@actor.Id">@actor.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" Label="Description" Variant="Variant.Text" Lines="3" 
+                                                @bind-Value="Observation.Description" For="@(() => Observation.Description)" 
+                                                Immediate="true"/>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" Label="Evidences" Variant="Variant.Text" Lines="3" 
+                                                @bind-Value="Observation.Evidences" For="@(() => Observation.Evidences)" 
+                                                Immediate="true"/>
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid Class="mt-4">
+                            <MudItem xs="12">
+                                <CharacteristicsSelector 
+                                    TTypeOfCharacteristic=ObservationView
+                                    Entity=@Observation
+                                    IsAdd=@IsAdd
+                                    BackFromSelection=@BackFromSelection
+                                    SelectionUri="/characteristicSelectorForObservation"
+                                    HasOpenSelector="@(async () => await HasOpenCharacteriticsSelector())"/>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudSelect Class="mt-4"  MultiSelection="true" 
+                                            @bind-SelectedValues="_selectedTags" T="TagView" Text="@_valToDisplay" OnClose="OnCloseTag"
+                                            Label="Tags" AdornmentIcon="@AppIcons.Label" AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var tag in _tags)
+                                    {
+                                        <MudSelectItem Value="@tag">@tag.Label</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions Class="d-flex justify-space-between">                                
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                                    Color="Color.Primary" 
+                                    OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+                    </MudCardActions>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public ObservationView? Observation { get; set; }
+
+    [Parameter]
+    public bool BackFromSelection { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private string Mode => IsAdd ? "Add" : "Edit";
+    private MudForm form;
+    private ObservationModelFluentValidator observationValidator = new ObservationModelFluentValidator();
+    private ActorView[]? _actors = null;
+    private TagView[]? _tags = null;
+    
+    private IEnumerable<TagView> _selectedTags { get; set; } = new HashSet<TagView>();
+    private string _valToDisplay = string.Empty;
+
+    private string _isPositiveAsText = "Negative feedback";
+    private Color _thumbColor = Color.Error;
+ 
+    protected override async Task OnInitializedAsync()
+    { 
+        await GetActorsAsync();
+        await GetTagsAsync();
+
+        if (Observation is not null)
+        {
+            AdjustNatureOfFeedbackDisplay();
+
+            HashSet<TagView> selectionHashSet = new HashSet<TagView>();
+            foreach (TagView tag in Observation.Tags)
+            {
+                var tmp = _tags.Single(t => t.Id == tag.Id);
+                selectionHashSet.Add(tmp);
+            }
+            _selectedTags = selectionHashSet;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        //Required to force the tags list to display the right string
+        if (_selectedTags.Count() > 0 && firstRender)
+        {
+            OnCloseTag();            
+            StateHasChanged();
+        }
+    }
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            AssignTags();
+            return ValidationResult.InvokeAsync(true);
+        }
+ 
+        return ValidationResult.InvokeAsync(false);
+    }
+
+    private async Task GetActorsAsync()
+    {
+        Actor[] dbActors = await ActorsService.GetAllAsync();
+        _actors = Mapper.Map<ActorView[]>(dbActors);
+    }
+
+    private async Task GetTagsAsync()
+    {
+        Tag[] dbTags = await TagsService.GetAllAsync();
+        _tags = Mapper.Map<TagView[]>(dbTags);
+    }
+
+    private async Task HasOpenCharacteriticsSelector()
+    {
+        AssignTags();
+    }
+
+    private void AssignTags()
+    {
+        if (_selectedTags.Any())
+        {
+            var tagsToRemove = Observation.Tags.Where(tl => _selectedTags.All(st => st.Id != tl.Id));
+            List<TagView> tags = new List<TagView>(tagsToRemove);   //prevents issues with the iterator
+
+            var tagsToAdd = _selectedTags.Where(st => Observation.Tags.All(tl => tl.Id != st.Id));
+
+            foreach(TagView tag in tags)
+            {
+                Observation.Tags.Remove(tag);
+            }
+
+            foreach (TagView tag in tagsToAdd)
+            {
+                Observation.Tags.Add(tag);
+            }
+        }
+    }
+
+    private void OnNatureOfFeedbackChanged(bool newCheckValue)
+    {
+        Observation.IsPositive = newCheckValue;
+        AdjustNatureOfFeedbackDisplay();
+    }
+
+    private void AdjustNatureOfFeedbackDisplay()
+    {
+        if (Observation.IsPositive)
+        {
+            _isPositiveAsText = "Positive feedback";
+            _thumbColor = Color.Success;
+        }
+        else
+        {
+            _isPositiveAsText = "Negative feedback";
+            _thumbColor = Color.Error;            
+        }        
+    }
+
+    private void OnCloseTag()
+    {
+        _valToDisplay = $"Selected tag{(_selectedTags.Count() > 1 ? "s" : "")}: {string.Join(", ", _selectedTags.Select(x => x.Label))}";
+    }
+
+    //Local class for the fluent validator
+    public class ObservationModelFluentValidator : AbstractValidator<ObservationView>
+    {
+        public ObservationModelFluentValidator()
+        {
+            RuleFor(obs => obs.ObservationDate).NotNull();
+            RuleFor(obs => obs.ActorId).NotNull();
+            RuleFor(obs => obs.Description).
+                    NotNull().
+                    MinimumLength(Constants.LabelMinLength).
+                    MaximumLength(Constants.DescriptionFullLength);
+            RuleFor(obs => obs.Evidences).MaximumLength(Constants.DescriptionFullLength);
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<ObservationView>.CreateWithOptions((ObservationView)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

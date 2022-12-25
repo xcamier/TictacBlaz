@@ -1,8 +1,8 @@
 using tictacApp.Interfaces;
 
-namespace tictacApp.Data;
+namespace tictacApp.ViewModels;
 
-public class Actor: IId
+public class ActorView: IId
 {
     public int Id { get; set; }
     public string? Name { get; set; }
@@ -10,7 +10,4 @@ public class Actor: IId
     public bool IsInactive { get; set; }
 
     public int DefaultGradeId { get; set; }
-    public Grade DefaultGrade { get; set; }
-
-    public ICollection<Observation> Observations { get; set; }
 }

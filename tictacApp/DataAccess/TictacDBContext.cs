@@ -6,20 +6,12 @@ namespace tictacApp.DataAccess;
 
 public class TictacDBContext : DbContext
 {
-    //private static bool _created = false;
-
     public TictacDBContext(DbContextOptions options) : base(options)
     {
-        /*if (!_created)
-        {
-            _created = true;
-            Database.EnsureDeleted();
-            Database.EnsureCreated();
-        }*/
     }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionbuilder)
     {
-
     }
  
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -65,10 +57,6 @@ public class TictacDBContext : DbContext
         timeLog.HasMany(t => t.Tags).WithMany(t => t.TimeLogs).UsingEntity("TimeLogsTags");
         //For display only => not in DB
         timeLog.Ignore(t => t.TimeSpentInHHMM);
-        timeLog.Ignore(t => t.TimeSpan);
-        timeLog.Ignore(t => t.ProjectsAsText);
-        timeLog.Ignore(t => t.ObjectivesAsText);
-        timeLog.Ignore(t => t.CharacteristicsAsText);
 
         var tag = modelBuilder.Entity<Tag>();
         tag.HasKey(t => t.Id);
@@ -85,6 +73,15 @@ public class TictacDBContext : DbContext
         actor.Property(a => a.Name).IsRequired();
         actor.Property(a => a.Name).HasMaxLength(Constants.LabelShortLength);
         actor.HasOne(a => a.DefaultGrade).WithMany(a => a.Actors).HasForeignKey(a => a.DefaultGradeId);
+
+        var observation = modelBuilder.Entity<Observation>();
+        observation.HasKey(o => o.Id);
+        observation.Property(o => o.Description).IsRequired();
+        observation.Property(o => o.Description).HasMaxLength(Constants.DescriptionFullLength);
+        observation.Property(o => o.Evidences).HasMaxLength(Constants.DescriptionFullLength);
+        observation.HasOne(o => o.Actor).WithMany(a => a.Observations).HasForeignKey(a => a.ActorId);
+        observation.HasMany(o => o.Characteristics).WithMany(c => c.Observations).UsingEntity("ObservationsCharacteristics");
+        observation.HasMany(t => t.Tags).WithMany(t => t.Observations).UsingEntity("ObservationsTags");
    }
 
     public DbSet<Project> Projects { get; set; }
@@ -95,4 +92,5 @@ public class TictacDBContext : DbContext
     public DbSet<Tag> Tags { get; set; }
     public DbSet<Grade> Grades { get; set; }
     public DbSet<Actor> Actors { get; set; }
+    public DbSet<Observation> Observations { get; set; }
 }

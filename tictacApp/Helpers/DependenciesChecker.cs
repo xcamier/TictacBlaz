@@ -4,7 +4,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Helpers;
 
-public class DependenciesChecker<T> where T: class, IIdLabel
+public class DependenciesChecker<T> where T: class, IId
 {
     public bool AreDependenciesOk { get; set; } = true;
 
@@ -32,7 +32,12 @@ public class DependenciesChecker<T> where T: class, IIdLabel
         await CheckDependency<CharacteristicsGroup>("Groups of Characteristics", "/characteristicsGroups");
     }
 
-    private async Task CheckDependency<T>(string element, string link) where T: class, IIdLabel
+    public async Task CheckActorDependency()
+    {
+        await CheckDependency<Actor>("Actors", "/actors");
+    }
+
+    private async Task CheckDependency<T>(string element, string link) where T: class, IId
     {
         bool isDepOk = await _service.HasAtLeastOneItem<T>();
         if (!isDepOk)

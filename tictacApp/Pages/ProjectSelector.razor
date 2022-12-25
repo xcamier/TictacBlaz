@@ -4,11 +4,15 @@
 @using tictacApp.Services
 @using tictacApp.Data
 @using tictacApp.Helpers
+@using tictacApp.ViewModels
+@using AutoMapper
 
 @inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ItemSelectionService<Project> ItemSelectionService;
+@inject IMapper Mapper
+
+@inject ItemSelectionService<ProjectView, TimeLogView> ItemSelectionService;
 
 
 <PageTitle>Project Selection</PageTitle>
@@ -108,7 +112,9 @@ else
     private void Select(Project selectedProject)
     {
         ItemSelectionService.HasSelected = true;
-        ItemSelectionService.Selection.Add(selectedProject);
+
+        ProjectView selectedProjectView = Mapper.Map<ProjectView>(selectedProject);
+        ItemSelectionService.Selection.Add(selectedProjectView);
 
         NavigateBackToCaller();
     }

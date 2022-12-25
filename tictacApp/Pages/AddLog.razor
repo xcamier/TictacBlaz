@@ -3,27 +3,33 @@
 @page "/logs/addLogFromObjectiveSelection"
 @page "/logs/addLogFromCharacteristicSelection"
 
-@using Data
-@using Helpers
+@using tictacApp.Data
+@using tictacApp.Helpers
 @using tictacApp.Services
+@using tictacApp.ViewModels
+@using AutoMapper
 
 @inject TimeLogsService TimeLogsService
 @inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
-@inject ItemSelectionService<Project> ProjectSelectionService;
-@inject ItemSelectionService<Objective> ObjectiveSelectionService;
-@inject ItemSelectionService<Data.Characteristic> CharacteristicSelectionService;
+
+@inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionService
+@inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionService
+@inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionService
+
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IMapper Mapper
 
 
 @if (_timeLog is not null && _areDependenciesOk)
 {
-    <TimeLogForm Busy="@_busy" 
-                   TimeLog="@_timeLog" 
-                   IsAdd="true"
+    <TimeLogForm Busy=@_busy 
+                   TimeLog=@_timeLog 
+                   IsAdd=true
                    CancelRequest="Cancel"
+                   BackFromSelection=@_backFromSelection
                    ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
 
     @if (_error)
@@ -34,13 +40,13 @@
 else if (!_areDependenciesOk) 
 {
     <ConfigureDependenciesForm
-        Dependencies="@_dependencies"
+        Dependencies=@_dependencies
         Target="Time logs" />
 }
 
 
 @code {
-    private TimeLog? _timeLog { get; set; }
+    private TimeLogView? _timeLog { get; set; }
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;
@@ -48,10 +54,18 @@ else if (!_areDependenciesOk)
     private bool _areDependenciesOk = false;
     Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
 
+    private bool _backFromSelection = false;
+
     protected override async Task OnInitializedAsync()
     {
         await CheckDependencies();
 
+        if (!_areDependenciesOk)
+        {
+            return;
+        }
+
+        _backFromSelection = false;
         string uri = Navigation.Uri;
         SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
 
@@ -62,11 +76,8 @@ else if (!_areDependenciesOk)
             if (ProjectSelectionService.HasSelected && ProjectSelectionService.Selection.Any())
             {
                 _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
-
-                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Project>(ProjectsService, _timeLog.ProjectId.Value);
-                _timeLog.ProjectsAsText = asText;
             }
-            
+        
             ProjectSelectionService.Reset();
         }
         else if (source == SelectionSource.Objective)
@@ -76,34 +87,20 @@ else if (!_areDependenciesOk)
             if (ObjectiveSelectionService.HasSelected && ObjectiveSelectionService.Selection.Any())
             {
                 _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
-
-                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Objective>(ObjectivesService, _timeLog.ObjectiveId.Value);
-                _timeLog.ObjectivesAsText = asText;
             }  
 
             ObjectiveSelectionService.Reset();
         }
         else if (source == SelectionSource.Characteristic)
         {
+            //Needs to be kept there to feed CharacteristicsSelector
+            _backFromSelection = true;
             _timeLog = CharacteristicSelectionService.EntityBackup;
-
-            if (CharacteristicSelectionService.HasSelected && CharacteristicSelectionService.Selection.Any())
-            {
-                var selectedChar = CharacteristicSelectionService.Selection.Single();
-                _timeLog.Characteristics.Add(selectedChar);
-
-                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Characteristic>(CharacteristicsService, selectedChar.Id);
-                _timeLog.ObjectivesAsText = asText;
-
-                _timeLog.CharacteristicsAsText.Add(new KeyValuePair<int, string>(selectedChar.Id, asText));
-            }  
-
-            CharacteristicSelectionService.Reset();
         }
         else
         {
             DateTime now = DateTime.Now;
-            _timeLog = new TimeLog
+            _timeLog = new TimeLogView(ProjectsService, ObjectivesService, CharacteristicsService)
             {
                 StartDate = now,
                 TimeSpan = now.TimeOfDay
@@ -113,13 +110,8 @@ else if (!_areDependenciesOk)
 
     private async Task CheckDependencies()
     {
-        /*DependenciesChecker checker = new DependenciesChecker(TimeLogsService);
-        await checker.CheckActorDependency();
-        _areDependenciesOk = checker.AreDependenciesOk;
-        _dependencies = checker.GetUnsatisfiedDependencies();*/
         _areDependenciesOk = true;
     }
-
 
     private async Task ValidationResultAsync(bool success)
     {
@@ -140,11 +132,15 @@ else if (!_areDependenciesOk)
         {
             _busy = true;
 
-            bool res = await TimeLogsService.AddTimeLogAsync(_timeLog);
+            IEnumerable<int> selectedChars = _timeLog.Characteristics.Select(c => c.Id);
+            IEnumerable<int> selectedTags = _timeLog.Tags.Select(t => t.Id);
+
+            TimeLog timeLogEntity = Mapper.Map<TimeLog>(_timeLog);            
+            bool res = await TimeLogsService.AddAsync<TimeLog>(timeLogEntity, selectedChars, selectedTags);
 
             ResetErrorMessage();
 
-            if (res )
+            if (res)
             {
                 Snackbar.Add("Timelog added successfully", Severity.Success);
                 GoBackToList();

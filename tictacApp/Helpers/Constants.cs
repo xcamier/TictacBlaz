@@ -10,6 +10,7 @@ public static class Constants
     public const int LabelLongLength = 50;
     public const int LabelShortLength = 15;
     public const int DescriptionStandardLength = 255;
+    public const int DescriptionFullLength = 510;
     public const int DescriptionMidLength = 140;
 }
 
@@ -22,4 +23,10 @@ public static class AppIcons
     public const string Add = @Icons.Material.Filled.PostAdd;
     public const string Objective = @Icons.Outlined.Lightbulb;
     public const string Select = @Icons.Outlined.CheckBox;
+    public const string Plus = @Icons.Material.Filled.Add;
+    public const string Positive = @Icons.Filled.ThumbUp;
+    public const string Negative =@Icons.Filled.ThumbDown;
+    public const string Label = @Icons.Outlined.Label;
+    public const string Characteristic = @Icons.Material.Filled.Anchor;
 }
+

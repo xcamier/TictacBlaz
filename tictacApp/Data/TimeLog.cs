@@ -2,7 +2,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Data;
 
-public class TimeLog : IId
+public class TimeLog : IId, IDescription, ICharacteristics, ITags
 {
     public int Id { get; set; }
     public DateTime? StartDate { get; set; }
@@ -20,9 +20,4 @@ public class TimeLog : IId
 
     //Calculated fields, for display only
     public string TimeSpentInHHMM { get; set; } = string.Empty;
-    public TimeSpan? TimeSpan { get; set; } 
-    
-    public string ProjectsAsText { get; set; } = string.Empty;
-    public string ObjectivesAsText { get; set; } = string.Empty;
-    public IList<KeyValuePair<int, string>> CharacteristicsAsText { get; set; } = new List<KeyValuePair<int, string>>();
 }

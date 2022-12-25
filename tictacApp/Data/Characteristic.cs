@@ -22,4 +22,5 @@ public class Characteristic: IIdLabel, IDescription, IParent
 
     public ICollection<Characteristic>? SubCharacteristics { get; set; }
     public ICollection<TimeLog>? TimeLogs { get; set; }
+    public ICollection<Observation>? Observations { get; set; }
 }

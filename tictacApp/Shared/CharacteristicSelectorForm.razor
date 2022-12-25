@@ -1,14 +1,19 @@
-@page "/characteristicSelector"
-@page "/characteristicSelector/{ParentCharacteristicId:int}"
+@typeparam TTypeOfCharacteristic where TTypeOfCharacteristic: class, IId
 
 @using tictacApp.Services
 @using tictacApp.Data
 @using tictacApp.Helpers
+@using tictacApp.Interfaces
+@using tictacApp.ViewModels
+@using AutoMapper
 
 @inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ItemSelectionService<Characteristic> ItemSelectionService;
+
+
+@inject ItemSelectionService<CharacteristicView, TTypeOfCharacteristic> ItemSelectionServiceV
+@inject IMapper Mapper
 
 
 <PageTitle>Characteristic Selection</PageTitle>
@@ -75,6 +80,15 @@ else
     [Parameter]
     public int? ParentCharacteristicId { get; set; } = null;
 
+    [Parameter]
+    public string SubItemRootUri { get; set; } = "/";
+
+    [Parameter]
+    public string ReturnAddUri { get; set; } = "/";
+
+    [Parameter]
+    public string ReturnEditUri { get; set; } = "/";
+
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private Characteristic[]? _characteristics;
     private bool _loading = false;
@@ -92,7 +106,7 @@ else
     private async Task BuildBreadcrumb()
     {
         KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync(ParentCharacteristicId);
-        _path = BreadcrumbHelper.BuildBreadcrumb("Characteristics", "characteristicSelector", parentCharacteristics);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Characteristics", SubItemRootUri, parentCharacteristics);
         _canGoOneLevelAbove = _path.Count < 3;
     }
 
@@ -111,7 +125,7 @@ else
 
     private void GoToSubCharacteristic(int subCharacteristicId)
     {
-        GoToSubCharacteristic($"/characteristicSelector/{subCharacteristicId}");
+        GoToSubCharacteristic($"/{SubItemRootUri}/{subCharacteristicId}");
     }
 
     private void GoToSubCharacteristic(string url)
@@ -121,24 +135,27 @@ else
 
     private void Select(Characteristic selectedCharacteristic)
     {
-        ItemSelectionService.HasSelected = true;
-        ItemSelectionService.Selection.Add(selectedCharacteristic);
+        CharacteristicView res = Mapper.Map<CharacteristicView>(selectedCharacteristic);
+
+        ItemSelectionServiceV.HasSelected = true;
+        ItemSelectionServiceV.Selection.Add(res);
 
         NavigateBackToCaller();
     }
 
     private void OnCancel()
     {
-        ItemSelectionService.HasSelected = false;
+        ItemSelectionServiceV.HasSelected = false;
 
         NavigateBackToCaller();     
     }
 
     private void NavigateBackToCaller()
     {
-        string url = ItemSelectionService.IsAdd ? 
-                        "/logs/addLogFromCharacteristicSelection" : 
-                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromCharacteristicSelection";
-        Navigation.NavigateTo(url);
+        string uri = ItemSelectionServiceV.IsAdd ? 
+                        ReturnAddUri : 
+                        ReturnEditUri;
+
+        Navigation.NavigateTo(uri);
     }
 }

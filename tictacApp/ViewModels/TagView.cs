@@ -1,21 +1,16 @@
 using  tictacApp.Interfaces;
 
-namespace tictacApp.Data;
+namespace tictacApp.ViewModels;
 
-public class Tag: IIdLabel
+public class TagView: IIdLabel
 {
     public int Id { get; set; }
     public string? Label { get; set; }
 
-    public ICollection<TimeLog>? TimeLogs { get; set; }
 
-    public ICollection<Observation>? Observations { get; set; }
-
-
-    //Usefull for the tags multiselect component
-    //TODO: to challenge as now, displayed with the view model
+    //usefull for the blazor multiselect control
     public override bool Equals(object o) {
-        var other = o as Tag;
+        var other = o as TagView;
         return other?.Label == Label;
     }
 

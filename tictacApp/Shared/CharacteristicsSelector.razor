@@ -1,0 +1,84 @@
+@typeparam TTypeOfCharacteristic where TTypeOfCharacteristic: class, ICharacteristic<CharacteristicView>
+    
+@using tictacApp.Interfaces
+@using tictacApp.Data
+@using tictacApp.Services
+@using tictacApp.Helpers
+@using tictacApp.ViewModels
+
+@inject NavigationManager Navigation
+
+@inject ItemSelectionService<CharacteristicView, TTypeOfCharacteristic> CharacteristicSelectionService
+
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+
+@if (Entity.CharacteristicsAsText.Any())
+{
+    <MudChipSet AllClosable="true" OnClose="UnselectCharacteristic">
+        @foreach (var charact in Entity.CharacteristicsAsText)
+        {
+            <MudChip Tag="@charact.Key" Text="@charact.Value"></MudChip>
+        }
+    </MudChipSet>
+    <MudIconButton Icon="@AppIcons.Plus" OnClick="SelectCharacteristic"></MudIconButton>
+}
+else
+{
+    <MudButton Variant="Variant.Text" StartIcon="@AppIcons.Characteristic"
+                OnClick="SelectCharacteristic">
+            Select Characteristic...
+    </MudButton>
+}
+
+
+@code {
+    [Parameter]
+    public EventCallback HasOpenSelector { get; set; }
+
+    [Parameter]
+    public TTypeOfCharacteristic Entity { get; set; }  
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public string SelectionUri { get; set; }
+
+    [Parameter]
+    public bool BackFromSelection { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+       if (BackFromSelection)
+       {
+            if (CharacteristicSelectionService.HasSelected && CharacteristicSelectionService.Selection.Any())
+            {
+                CharacteristicView? selectedChar = CharacteristicSelectionService.Selection.Single();
+
+                //In case of the characteristic would have already been selected
+                if (!Entity.Characteristics.Any(c => c.Id == selectedChar.Id))
+                {
+                    Entity.Characteristics.Add(selectedChar);
+                }
+            }  
+
+            CharacteristicSelectionService.Reset();
+       }
+    }
+    
+    private void SelectCharacteristic()
+    {
+        HasOpenSelector.InvokeAsync();
+        CharacteristicSelectionService.EntityBackup = Entity;
+        CharacteristicSelectionService.IsAdd = IsAdd;
+    
+        Navigation.NavigateTo(SelectionUri);
+    }
+
+    private void UnselectCharacteristic(MudChip chip)
+    {
+        var dbElement = Entity.Characteristics.Single(c => c.Id == (int)chip.Tag);
+        Entity.Characteristics.Remove(dbElement);
+    }
+
+}

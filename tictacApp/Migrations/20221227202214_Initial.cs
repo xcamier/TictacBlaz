@@ -182,6 +182,29 @@ namespace tictacApp.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Observations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ObservationDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Description = table.Column<string>(type: "TEXT", maxLength: 510, nullable: false),
+                    IsPositive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Evidences = table.Column<string>(type: "TEXT", maxLength: 510, nullable: true),
+                    ActorId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Observations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Observations_Actors_ActorId",
+                        column: x => x.ActorId,
+                        principalTable: "Actors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TimeLogsCharacteristics",
                 columns: table => new
                 {
@@ -229,6 +252,54 @@ namespace tictacApp.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ObservationsCharacteristics",
+                columns: table => new
+                {
+                    CharacteristicsId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ObservationsId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ObservationsCharacteristics", x => new { x.CharacteristicsId, x.ObservationsId });
+                    table.ForeignKey(
+                        name: "FK_ObservationsCharacteristics_Characteristics_CharacteristicsId",
+                        column: x => x.CharacteristicsId,
+                        principalTable: "Characteristics",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ObservationsCharacteristics_Observations_ObservationsId",
+                        column: x => x.ObservationsId,
+                        principalTable: "Observations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ObservationsTags",
+                columns: table => new
+                {
+                    ObservationsId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TagsId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ObservationsTags", x => new { x.ObservationsId, x.TagsId });
+                    table.ForeignKey(
+                        name: "FK_ObservationsTags_Observations_ObservationsId",
+                        column: x => x.ObservationsId,
+                        principalTable: "Observations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ObservationsTags_Tags_TagsId",
+                        column: x => x.TagsId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Actors_DefaultGradeId",
                 table: "Actors",
@@ -253,6 +324,21 @@ namespace tictacApp.Migrations
                 name: "IX_Objectives_ParentId",
                 table: "Objectives",
                 column: "ParentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Observations_ActorId",
+                table: "Observations",
+                column: "ActorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ObservationsCharacteristics_ObservationsId",
+                table: "ObservationsCharacteristics",
+                column: "ObservationsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ObservationsTags_TagsId",
+                table: "ObservationsTags",
+                column: "TagsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Projects_ParentId",
@@ -284,13 +370,19 @@ namespace tictacApp.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Actors");
+                name: "ObservationsCharacteristics");
+
+            migrationBuilder.DropTable(
+                name: "ObservationsTags");
 
             migrationBuilder.DropTable(
                 name: "TimeLogsCharacteristics");
 
             migrationBuilder.DropTable(
                 name: "TimeLogsTags");
+
+            migrationBuilder.DropTable(
+                name: "Observations");
 
             migrationBuilder.DropTable(
                 name: "Characteristics");
@@ -302,16 +394,19 @@ namespace tictacApp.Migrations
                 name: "TimeLogs");
 
             migrationBuilder.DropTable(
-                name: "CharacteristicsGroups");
+                name: "Actors");
 
             migrationBuilder.DropTable(
-                name: "Grades");
+                name: "CharacteristicsGroups");
 
             migrationBuilder.DropTable(
                 name: "Objectives");
 
             migrationBuilder.DropTable(
                 name: "Projects");
+
+            migrationBuilder.DropTable(
+                name: "Grades");
         }
     }
 }

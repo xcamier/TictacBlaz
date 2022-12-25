@@ -4,7 +4,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Services;
 
-public class GenericCRUDService<T> where T: class, IId
+public class GenericCRUDService<T>: IGenericCRUDService<T> where T: class, IId
 {
     protected IDbContextFactory<TictacDBContext> _dbFactory;
 

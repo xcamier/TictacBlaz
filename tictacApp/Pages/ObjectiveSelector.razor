@@ -4,11 +4,15 @@
 @using tictacApp.Services
 @using tictacApp.Data
 @using tictacApp.Helpers
+@using tictacApp.ViewModels
+@using AutoMapper
 
 @inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ItemSelectionService<Objective> ItemSelectionService;
+@inject IMapper Mapper
+
+@inject ItemSelectionService<ObjectiveView, TimeLogView> ItemSelectionService;
 
 
 <PageTitle>Objective Selection</PageTitle>
@@ -16,7 +20,7 @@
 <MudText Class="ml-2 mb-4" Typo="Typo.h5">Objective Selection</MudText>
 <MudBreadcrumbs Items="_path">
     <ItemTemplate Context="item">
-        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
+        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => GoToSubObjective(@item.Href))">@item.Text</MudButton>
     </ItemTemplate>
 </MudBreadcrumbs>
 
@@ -60,8 +64,6 @@ else
 }
 
 @code {
-
-
     [Parameter]
     public int? ParentObjectiveId { get; set; } = null;
 
@@ -99,10 +101,10 @@ else
 
     private void GoToSubObjective(int subObjectiveId)
     {
-        GoToSubProject($"/objectiveSelector/{subObjectiveId}");
+        GoToSubObjective($"/objectiveSelector/{subObjectiveId}");
     }
 
-    private void GoToSubProject(string url)
+    private void GoToSubObjective(string url)
     {
         Navigation.NavigateTo(url, true);
     }
@@ -110,7 +112,9 @@ else
     private void Select(Objective selectedObjective)
     {
         ItemSelectionService.HasSelected = true;
-        ItemSelectionService.Selection.Add(selectedObjective);
+
+        ObjectiveView selectedObjectiveView = Mapper.Map<ObjectiveView>(selectedObjective);
+        ItemSelectionService.Selection.Add(selectedObjectiveView);
 
         NavigateBackToCaller();
     }

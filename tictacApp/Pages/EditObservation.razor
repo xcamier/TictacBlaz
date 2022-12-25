@@ -1,0 +1,235 @@
+@page "/observations/{ObservationId:int}/editObservation"
+@page "/observations/{ObservationId:int}/editObservationFromCharacteristicSelection"
+
+@using Microsoft.EntityFrameworkCore
+@using tictacApp.Helpers
+@using tictacApp.Data
+@using tictacApp.Services
+@using tictacApp.ViewModels
+@using AutoMapper
+
+
+@inject NavigationManager Navigation
+@inject ObservationsService ObservationsService
+@inject GenericCRUDService<Observation> GenericObservationsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicssService
+
+@inject ItemSelectionService<CharacteristicView, ObservationView> CharacteristicSelectionService
+
+@inject ISnackbar Snackbar
+@inject IMapper Mapper
+
+
+@if (_observation is null && !_busy)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">Could not find the observation for id: @ObservationId</MudAlert>
+}
+else if (_observation is not null && _areDependenciesOk && !_busy)
+{
+    <ObservationForm Busy="@_busy" 
+                Observation="@_observation" 
+                IsAdd="false"
+                BackFromSelection=@_backFromSelection
+                CancelRequest="Cancel"
+                ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+else if (!_areDependenciesOk)
+{
+    <ConfigureDependenciesForm
+        Dependencies="@_dependencies"
+        Target="Observations" />
+}
+
+@if (_error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+}
+
+@code {
+    [Parameter]
+    public int ObservationId { get; set; }
+
+    private ObservationView? _observation;
+
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+    private bool _concurrencyError = false;
+
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
+    private bool _backFromSelection = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+       _observation =   new ObservationView(CharacteristicssService);
+
+        try
+        {
+            _backFromSelection = false;
+            _busy = true;
+            ResetErrorMessage();
+
+            await CheckDependencies();
+            if (!_areDependenciesOk)
+            {
+                return;
+            }
+
+            string uri = Navigation.Uri;
+            SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
+            
+            if (source == SelectionSource.Characteristic)
+            {
+                _backFromSelection = true;
+                _observation = CharacteristicSelectionService.EntityBackup;
+            }
+            else
+            {
+                Observation? dbObservation = await ObservationsService.FindFromIdAsync<Observation>(ObservationId);
+                if (dbObservation != null)
+                {
+                    Mapper.Map(dbObservation, _observation);
+                }
+                else
+                {
+                    _error = true;
+                    _errorMessage = $"Unable to find the timelog with id: {ObservationId}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+    
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to modify the observation", Severity.Warning);
+
+            _concurrencyError = false;
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true; 
+
+            ResetErrorMessage();
+
+            bool savingRes = false;
+            
+            using var dbContext = ObservationsService.GetNewDBContext();
+            if (dbContext is not null)
+            {
+                Observation? observationEntity = await ObservationsService.FindFromIdAsync<Observation>(dbContext, _observation.Id);
+                if (observationEntity is not null)
+                {
+                    IEnumerable<int> existingChars = observationEntity.Characteristics.Select(c => c.Id);
+                    IEnumerable<int> selectedChars = _observation.Characteristics.Select(c => c.Id);
+                    IEnumerable<int> charsToRemove = existingChars.Where(ec => selectedChars.All(sc => sc != ec));
+                    IEnumerable<int> charsToAdd = selectedChars.Where(sc => existingChars.All(ec => ec != sc));
+
+                    IEnumerable<int> existingTags = observationEntity.Tags.Select(t => t.Id);
+                    IEnumerable<int> selectedTags = _observation.Tags.Select(t => t.Id);
+                    IEnumerable<int> tagsToRemove = existingTags.Where(et => selectedTags.All(st => st != et)); 
+                    IEnumerable<int> tagsToAdd = selectedTags.Where(st => existingTags.All(et => et != st));                       
+
+                    Mapper.Map<ObservationView, Observation>(_observation, observationEntity);
+
+                    savingRes = await ObservationsService.UpdateAsync<Observation>(dbContext, observationEntity, 
+                                                                                    charsToAdd, charsToRemove,
+                                                                                    tagsToAdd, tagsToRemove);
+                }
+            }
+
+            ResetErrorMessage();
+
+
+            if (savingRes )
+            {
+                Snackbar.Add("Observation modified successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when modifying the observation", Severity.Warning);
+            }
+        }
+        catch (DbUpdateConcurrencyException dbex)
+        {
+            // concurrency issues!
+            _concurrencyError = true;
+
+            // get values from database
+            var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+            if (dbValues is null)
+            {
+                // deleted - show contact not found
+                Snackbar.Add("The observation could not be updated and is not found in DB. It was probably deleted before you saved.", Severity.Warning);
+                GoBackToList();
+                return;
+            }
+
+            // bind to show labels on form
+            _observation = (ObservationView)dbValues.ToObject();
+
+            // move to original so second submit works (unless there is another concurrent edit)
+            dbex.Entries[0].OriginalValues.SetValues(dbValues);
+            ResetErrorMessage();
+            _busy = false;
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CheckDependencies()
+    {
+        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(GenericObservationsService);
+        await checker.CheckActorDependency();
+        _areDependenciesOk = checker.AreDependenciesOk;
+        _dependencies = checker.GetUnsatisfiedDependencies();
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        Navigation.NavigateTo("/observations");
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

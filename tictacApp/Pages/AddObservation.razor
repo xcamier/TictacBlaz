@@ -1,0 +1,159 @@
+@page "/observations/addObservation"
+@page "/observations/addObservationFromCharacteristicSelection"
+
+@using tictacApp.Data
+@using tictacApp.Helpers
+@using tictacApp.Services
+@using tictacApp.ViewModels
+@using AutoMapper
+
+@inject ObservationsService ObservationsService
+@inject GenericCRUDService<Observation> GenericObservationsService
+@inject GenericCRUDService<Actor> GenericActorsService
+@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+
+@inject ItemSelectionService<CharacteristicView, ObservationView> CharacteristicSelectionService
+
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IMapper Mapper
+
+
+@if (_observation is not null && _areDependenciesOk)
+{
+    <ObservationForm Busy=@_busy 
+                   Observation=@_observation 
+                   IsAdd=true
+                   BackFromSelection=@_backFromSelection
+                   CancelRequest="Cancel"
+                   ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+else if (!_areDependenciesOk) 
+{
+    <ConfigureDependenciesForm
+        Dependencies=@_dependencies
+        Target="Observations" />
+}
+
+@if (_error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+}
+
+@code {
+    private ObservationView? _observation { get; set; }
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
+
+    private bool _backFromSelection = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckDependencies();
+
+        if (!_areDependenciesOk)
+        {
+            return;
+        }
+
+        _backFromSelection = false;
+        string uri = Navigation.Uri;
+        SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
+
+        if (source == SelectionSource.Characteristic)
+        {
+            _backFromSelection = true;
+            _observation = CharacteristicSelectionService.EntityBackup;
+        }
+        else
+        {
+            _observation = new ObservationView(CharacteristicsService)
+            {
+                ObservationDate = DateTime.Now
+            };
+
+            Actor? firstActor = await GenericActorsService.GetFirstAsync();
+            if (firstActor is not null)
+            {
+                _observation.ActorId = firstActor.Id;
+            };
+        }
+    }
+
+    private async Task CheckDependencies()
+    {
+        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(GenericObservationsService);
+        await checker.CheckActorDependency();
+        _areDependenciesOk = checker.AreDependenciesOk;
+        _dependencies = checker.GetUnsatisfiedDependencies();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add("Unable to add the observation", Severity.Warning);
+
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            IEnumerable<int> selectedChars = _observation.Characteristics.Select(c => c.Id);
+            IEnumerable<int> selectedTags = _observation.Tags.Select(t => t.Id);
+
+            Observation observationEntity = Mapper.Map<Observation>(_observation);
+            bool res = await ObservationsService.AddAsync<Observation>(observationEntity, selectedChars, selectedTags);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Observation added successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the observation", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        Navigation.NavigateTo($"/observations");
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

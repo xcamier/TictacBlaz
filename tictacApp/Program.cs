@@ -4,6 +4,8 @@ using tictacApp.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
 using tictacApp.Data;
+using AutoMapper;
+using tictacApp.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,17 +34,43 @@ builder.Services.AddDbContextFactory<TictacDBContext>(opt => opt.UseSqlite(@"Dat
 builder.Services.AddDbContext<TictacDBContext>(opt => opt.UseSqlite(@"Data Source=tictacDB.db"));
 
 builder.Services.AddSingleton<TimeLogsService>();
+builder.Services.AddSingleton<ObservationsService>();
 builder.Services.AddSingleton<GenericCRUDService<Tag>>();
 builder.Services.AddSingleton<GenericCRUDService<Grade>>();
 builder.Services.AddSingleton<GenericCRUDService<Actor>>();
 builder.Services.AddSingleton<GenericCRUDService<TimeLog>>();
+builder.Services.AddSingleton<GenericCRUDService<Observation>>();
 builder.Services.AddSingleton<GenericCRUDService<CharacteristicsGroup>>();
 builder.Services.AddSingleton<GenericCRUDServiceWithParents<Project>>();
 builder.Services.AddSingleton<GenericCRUDServiceWithParents<Objective>>();
 builder.Services.AddSingleton<GenericCRUDServiceWithParents<Characteristic>>();
-builder.Services.AddSingleton<ItemSelectionService<Project>>();
-builder.Services.AddSingleton<ItemSelectionService<Objective>>();
-builder.Services.AddSingleton<ItemSelectionService<Characteristic>>();
+
+builder.Services.AddSingleton<ItemSelectionService<Project, TimeLog>>();
+builder.Services.AddSingleton<ItemSelectionService<Objective, TimeLog>>();
+builder.Services.AddSingleton<ItemSelectionService<Characteristic, TimeLog>>();
+
+builder.Services.AddSingleton<ItemSelectionService<ProjectView, TimeLogView>>();
+builder.Services.AddSingleton<ItemSelectionService<ObjectiveView, TimeLogView>>();
+builder.Services.AddSingleton<ItemSelectionService<CharacteristicView, TimeLogView>>();
+builder.Services.AddSingleton<ItemSelectionService<CharacteristicView, ObservationView>>();
+
+builder.Services.AddSingleton<ItemSelectionService<Characteristic, Observation>>();
+
+//Automapper
+var mapperConfiguration = new MapperConfiguration(configuration =>
+{
+    configuration.AddProfile(new MappingTimelog());
+    configuration.AddProfile(new MappingObservation());
+    configuration.AddProfile(new MappingTag());
+    configuration.AddProfile(new MappingActor());
+    configuration.AddProfile(new MappingProject());
+    configuration.AddProfile(new MappingObjective());
+    configuration.AddProfile(new MappingChracteristic());
+});
+
+var mapper = mapperConfiguration.CreateMapper();
+builder.Services.AddSingleton(mapper);
+
 
 var app = builder.Build();
 

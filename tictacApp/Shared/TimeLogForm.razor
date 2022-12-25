@@ -2,12 +2,17 @@
 @using FluentValidation
 @using tictacApp.Services
 @using tictacApp.Helpers
+@using tictacApp.ViewModels
+@using AutoMapper
 
 @inject NavigationManager Navigation
 @inject GenericCRUDService<Tag> TagsService
-@inject ItemSelectionService<Project> ProjectSelectionService;
-@inject ItemSelectionService<Objective> ObjectiveSelectionService;
-@inject ItemSelectionService<Characteristic> CharacteristicSelectionService;
+
+@inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionServiceV;
+@inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionServiceV;
+@inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionServiceV;
+
+@inject IMapper Mapper
 
 <MudForm Model="@TimeLog"
     @ref="@form" Validation="@(timeLogValidator.ValidateValue)" ValidationDelay="0">
@@ -54,7 +59,7 @@
                                 {
                                     <MudChip Icon="@AppIcons.Project" 
                                                 OnClick="SelectProject" OnClose="UnselectProject">
-                                        @TimeLog.ProjectsAsText
+                                        @TimeLog.ProjectAsText
                                     </MudChip>
                                 }
                                 else
@@ -70,7 +75,7 @@
                                 {
                                     <MudChip Icon="@AppIcons.Objective" 
                                                 OnClick="SelectObjective" OnClose="UnselectObjective">
-                                        @TimeLog.ObjectivesAsText
+                                        @TimeLog.ObjectiveAsText
                                     </MudChip>
                                 }
                                 else
@@ -82,28 +87,18 @@
                                 }
                             </MudItem>
                             <MudItem xs="12">
-                                @if (TimeLog.CharacteristicsAsText.Any())
-                                {
-                                    <MudChipSet AllClosable="true" OnClose="UnselectCharacteristic">
-                                        @foreach (var charact in TimeLog.CharacteristicsAsText)
-                                        {
-                                            <MudChip Tag="@charact.Key" Text="@charact.Value"></MudChip>
-                                        }
-                                    </MudChipSet>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="SelectCharacteristic"></MudIconButton>
-                                }
-                                else
-                                {
-                                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Anchor"
-                                                OnClick="SelectCharacteristic">
-                                            Select Characteristic...
-                                    </MudButton>
-                                }
+                                <CharacteristicsSelector 
+                                    TTypeOfCharacteristic=TimeLogView
+                                    Entity=@TimeLog
+                                    IsAdd=@IsAdd
+                                    BackFromSelection=@BackFromSelection
+                                    SelectionUri="/characteristicSelectorForTimelog"
+                                    HasOpenSelector="@(async () => await HasOpenCharacteriticsSelector())"/>
                             </MudItem>
                             <MudItem xs="12">
                                 <MudSelect Class="mt-4"  MultiSelection="true" 
-                                            @bind-SelectedValues="_selectedTags" T="Tag" Text="@_valToDisplay" OnClose="OnCloseTag"
-                                            Label="Tags" AdornmentIcon="@Icons.Material.Filled.Search" AnchorOrigin="Origin.BottomCenter">
+                                            @bind-SelectedValues="_selectedTags" T="TagView" Text="@_valToDisplay" OnClose="OnCloseTag"
+                                            Label="Tags" AdornmentIcon="@AppIcons.Label" AnchorOrigin="Origin.BottomCenter">
                                     @foreach (var tag in _tags)
                                     {
                                         <MudSelectItem Value="@tag">@tag.Label</MudSelectItem>
@@ -138,11 +133,10 @@
     public bool IsAdd { get; set; }
 
     [Parameter]
-    public TimeLog? TimeLog { get; set; }
+    public TimeLogView? TimeLog { get; set; }
 
-    /// </summary>
     [Parameter]
-    public TimeLog? DbTimeLog { get; set; }
+    public bool BackFromSelection { get; set; }
 
     [Parameter]
     public bool Busy { get; set; }
@@ -150,10 +144,10 @@
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
     private TimeLogModelFluentValidator timeLogValidator = new TimeLogModelFluentValidator();
-    private Tag[]? _tags = null;
+    private TagView[]? _tags = null;
     //private Tag value { get; set; } //= "No tag selected";
     
-    private IEnumerable<Tag> _selectedTags { get; set; } = new HashSet<Tag>();
+    private IEnumerable<TagView> _selectedTags { get; set; } = new HashSet<TagView>();
     private string _valToDisplay = string.Empty;
 
 
@@ -165,8 +159,8 @@
         {
             TimeLog.TimeSpan = TimeLog.StartDate.Value.TimeOfDay;
 
-            HashSet<Tag> selectionHashSet = new HashSet<Tag>();
-            foreach (Tag tag in TimeLog.Tags)
+            HashSet<TagView> selectionHashSet = new HashSet<TagView>();
+            foreach (TagView tag in TimeLog.Tags)
             {
                 var tmp = _tags.Single(t => t.Id == tag.Id);
                 selectionHashSet.Add(tmp);
@@ -202,81 +196,74 @@
                 TimeLog.StartDate = TimeLog.StartDate.Value.Date + TimeLog.TimeSpan;
             }
 
-            if (_selectedTags.Any())
-            {
-                var tagsToRemove = TimeLog.Tags.Where(tl => _selectedTags.All(st => st.Id != tl.Id));
-                var tagsToAdd = _selectedTags.Where(st => TimeLog.Tags.All(tl => tl.Id != st.Id));
-
-                foreach (Tag tag in tagsToRemove)
-                {
-                    TimeLog.Tags.Remove(tag);
-                }
-
-                foreach (Tag tag in tagsToAdd)
-                {
-                    TimeLog.Tags.Add(tag);
-                }
-            }
-
+            AssignTags();
 
             return ValidationResult.InvokeAsync(true);
         }
  
-
         return ValidationResult.InvokeAsync(false);
     }
 
     private async Task GetTagsAsync()
     {
-        _tags = await TagsService.GetAllAsync();
+        Tag[] dbTags = await TagsService.GetAllAsync();
+        _tags = Mapper.Map<TagView[]>(dbTags);
     }
     
     private void SelectProject()
     {
-        ProjectSelectionService.EntityBackup = TimeLog;
-        ProjectSelectionService.IsAdd = IsAdd;
+        ProjectSelectionServiceV.EntityBackup = TimeLog;
+        ProjectSelectionServiceV.IsAdd = IsAdd;
 
         Navigation.NavigateTo("/projectSelector");
     }
 
     private void UnselectProject()
     {
-        TimeLog.Project = null;
+        //TimeLog.Project = null;
         TimeLog.ProjectId = null;
-        TimeLog.ProjectsAsText = string.Empty;
+        //TimeLog.ProjectsAsText = string.Empty;
     }
 
     private void SelectObjective()
     {
-        ObjectiveSelectionService.EntityBackup = TimeLog;
-        ObjectiveSelectionService.IsAdd = IsAdd;
+        ObjectiveSelectionServiceV.EntityBackup = TimeLog;
+        ObjectiveSelectionServiceV.IsAdd = IsAdd;
         
-
         Navigation.NavigateTo("/objectiveSelector");
     }
 
     private void UnselectObjective()
     {
-        TimeLog.Objective = null;
+        //TimeLog.Objective = null;
         TimeLog.ObjectiveId = null;
-        TimeLog.ObjectivesAsText = string.Empty;
+        //TimeLog.ObjectivesAsText = string.Empty;
     }
 
-    private void SelectCharacteristic()
+    private async Task HasOpenCharacteriticsSelector()
     {
-        CharacteristicSelectionService.EntityBackup = TimeLog;
-        CharacteristicSelectionService.IsAdd = IsAdd;
-    
-        Navigation.NavigateTo("/characteristicSelector");
+        AssignTags();
     }
 
-    private void UnselectCharacteristic(MudChip chip)
+    private void AssignTags()
     {
-        var dbElement = TimeLog.Characteristics.Single(c => c.Id == (int)chip.Tag);
-        TimeLog.Characteristics.Remove(dbElement);
+        if (_selectedTags.Any())
+        {
+            var tagsToRemove = TimeLog.Tags.Where(tl => _selectedTags.All(st => st.Id != tl.Id));
+            List<TagView> tags = new List<TagView>(tagsToRemove);   //prevents issues with the iterator
 
-        var txtElement = TimeLog.CharacteristicsAsText.Single(c => c.Key == (int)chip.Tag);
-        TimeLog.CharacteristicsAsText.Remove(txtElement);
+            var tagsToAdd = _selectedTags.Where(st => TimeLog.Tags.All(tl => tl.Id != st.Id));
+
+            foreach(TagView tag in tags)
+            {
+                TimeLog.Tags.Remove(tag);
+            }
+
+            foreach (TagView tag in tagsToAdd)
+            {
+                TimeLog.Tags.Add(tag);
+            }
+        }
     }
 
     private void OnCloseTag()
@@ -285,7 +272,7 @@
     }
 
     //Local class for the fluent validator
-    public class TimeLogModelFluentValidator : AbstractValidator<TimeLog>
+    public class TimeLogModelFluentValidator : AbstractValidator<TimeLogView>
     {
         public TimeLogModelFluentValidator()
         {
@@ -299,7 +286,7 @@
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<TimeLog>.CreateWithOptions((TimeLog)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<TimeLogView>.CreateWithOptions((TimeLogView)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);

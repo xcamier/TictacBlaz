@@ -1,0 +1,229 @@
+@page "/observations"
+
+@using tictacApp.Helpers
+@using tictacApp.Data
+@using tictacApp.Services
+
+@inject ISnackbar Snackbar
+@inject ObservationsService ObservationsService
+@inject GenericCRUDService<Observation> GenericObservationsService
+@inject GenericCRUDService<Actor> ActorsService
+
+
+<PageTitle>Observations</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">Observations</MudText>
+
+@if (_observations is not null && _areDependenciesOk)
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+                    <MudButton StartIcon="@AppIcons.Add" Href="observations/addObservation">Add Observation</MudButton>
+                </MudButtonGroup>
+            </MudItem>
+            <MudItem xs="3">
+                <MudSelect T=int Label="Select an actor"
+                                    Value="_selectedActorId" ValueChanged="OnActorChange">
+                        @foreach (Actor actor in _actors)
+                        {
+                            <MudSelectItem Value="@actor.Id">@actor.Name</MudSelectItem>
+                        }
+                </MudSelect>             
+            </MudItem>
+            <MudItem xs="3">
+                <MudDatePicker Label="Between" Placeholder="Select Date"
+                        Editable="true" DisableToolbar="true" 
+                        Date="_startDate" DateChanged="OnStartDateChange"/>  
+            </MudItem>
+            <MudItem xs="3">
+                <MudDatePicker Label="and" Placeholder="Select Date"
+                        Editable="true" DisableToolbar="true"
+                        Date="_endDate" DateChanged="OnEndDateChange" />  
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudTable Items="@_observations" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                Class="ml-2 mr-2 mt-4">
+        <ColGroup>
+            <col style="width: 5%;"/>
+            <col />
+            <col style="width: 5%;"/>
+            <col style="width: 20%;"/>
+            <col style="width: 120px;"/>
+        </ColGroup>
+        <HeaderContent>
+            <MudTh>Date</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Actor</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Start Date">@context.ObservationDate.Value.ToString("d")</MudTd>
+            <MudTd DataLabel="Time Spent">@context.Description</MudTd>
+            <MudTd DataLabel="Time Spent"> 
+                <MudIcon Icon="@(@context.IsPositive ? @AppIcons.Positive : @AppIcons.Negative)"    
+                        Color="@(@context.IsPositive ? @Color.Success : @Color.Error)">
+                </MudIcon> 
+            </MudTd>
+            <MudTd DataLabel="Time Spent">@context.Actor.Name</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/observations/{context.Id}/editObservation")" />
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObservationAsync(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+
+    @if (_error)
+    {
+        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
+    }
+}
+else if (!_areDependenciesOk) 
+{
+    <ConfigureDependenciesForm
+        Dependencies="@_dependencies"
+        Target="Observations" />
+}
+else if (_observations == null)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+
+@code {
+    private Observation[]? _observations;
+    private Actor[]? _actors;
+    private int _selectedActorId;
+    private DateTime? _endDate = DateTime.Now;
+    private DateTime? _startDate = DateTime.Now;
+
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _loading = true;
+
+            await CheckDependencies();
+
+            if (_areDependenciesOk)
+            {
+                DateTime now = DateTime.Now;
+                SetEndDate(now);
+                SetStartDate(DateTime.Today.AddMonths(-1));
+
+                await GetActorsAsync();
+                _selectedActorId = _actors.First().Id;
+
+                await GetObservationAsync();
+            }
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+    }
+
+    private async Task DeleteObservationAsync(Observation observationToRemove)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            bool res = await GenericObservationsService.DeleteAsync(observationToRemove);
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Observation deleted successfully", Severity.Success);
+                await GetObservationAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when deleting the observation", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnStartDateChange(DateTime? newDate)
+    {
+        SetStartDate(newDate);
+        await GetObservationAsync();
+    }
+
+    private async Task OnEndDateChange(DateTime? newDate)
+    {
+        SetEndDate(newDate);
+        await GetObservationAsync();
+    }
+
+    private async Task OnActorChange(int newValue)
+    {
+        _selectedActorId = newValue;
+        await GetObservationAsync();
+    }
+
+    private async Task GetObservationAsync()
+    {
+        if (_startDate.HasValue && _endDate.HasValue)
+        {
+            _observations = await ObservationsService.GetObservationsAsync(_startDate.Value, _endDate.Value, _selectedActorId); 
+        }
+    }
+
+    private async Task GetActorsAsync()
+    {
+        _actors = await ActorsService.GetAllAsync(); 
+    }
+
+    private async Task CheckDependencies()
+    {
+        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(GenericObservationsService);
+        await checker.CheckActorDependency();
+        _areDependenciesOk = checker.AreDependenciesOk;
+        _dependencies = checker.GetUnsatisfiedDependencies();
+    }
+
+    private void SetStartDate(DateTime? startDate)
+    {
+        _startDate = startDate.Value.Date;
+    }
+
+    private void SetEndDate(DateTime? endDate)
+    {
+        _endDate = new DateTime(endDate.Value.Year, endDate.Value.Month, endDate.Value.Day, 23, 59, 59);
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

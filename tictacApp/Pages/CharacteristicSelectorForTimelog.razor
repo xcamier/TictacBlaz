@@ -1,0 +1,20 @@
+@page "/characteristicSelectorForTimelog"
+@page "/characteristicSelectorForTimelog/{ParentCharacteristicId:int}"
+
+@using tictacApp.Services
+@using tictacApp.ViewModels
+
+@inject ItemSelectionService<CharacteristicView, TimeLogView> ItemSelectionService;
+
+<CharacteristicSelectorForm 
+    TTypeOfCharacteristic=TimeLogView
+    ParentCharacteristicId=@ParentCharacteristicId
+    SubItemRootUri="characteristicSelectorForTimelog"
+    ReturnAddUri="/logs/addLogFromCharacteristicSelection"
+    ReturnEditUri="@($"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromCharacteristicSelection")" />
+
+
+@code {
+    [Parameter]
+    public int? ParentCharacteristicId { get; set; } = null;
+}

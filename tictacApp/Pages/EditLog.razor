@@ -7,30 +7,41 @@
 @using Microsoft.EntityFrameworkCore
 @using tictacApp.Data
 @using tictacApp.Services
-@using tictacApp.DataAccess
+@using tictacApp.ViewModels
+@using AutoMapper
 
 @inject NavigationManager Navigation
 @inject TimeLogsService TimeLogsService
-@inject GenericCRUDService<TimeLog> GenericTimelogService
 @inject GenericCRUDServiceWithParents<Project> ProjectsService
 @inject GenericCRUDServiceWithParents<Objective> ObjectivesService
 @inject GenericCRUDServiceWithParents<Characteristic> CharacteristicssService
-@inject ItemSelectionService<Project> ProjectSelectionService;
-@inject ItemSelectionService<Objective> ObjectiveSelectionService;
-@inject ItemSelectionService<Data.Characteristic> CharacteristicSelectionService;
+
+@inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionService
+@inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionService
+@inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionService
+
+@inject IMapper Mapper;
+
 @inject ISnackbar Snackbar
 
 @if (_timeLog is null && !_busy)
 {
     <MudAlert Severity="Severity.Error" Variant="Variant.Filled">Could not find the timelog for id: @TimeLogId</MudAlert>
 }
-else
+else if (_timeLog is not null && _areDependenciesOk && !_busy)
 {
-    <TimeLogForm Busy="@_busy" 
-                 TimeLog="@_timeLog"
-                 IsAdd="false"
+    <TimeLogForm Busy=@_busy 
+                 TimeLog=@_timeLog
+                 IsAdd=false
                  CancelRequest="Cancel"
+                 BackFromSelection=@_backFromSelection
                  ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+else if (!_areDependenciesOk)
+{
+    <ConfigureDependenciesForm
+        Dependencies="@_dependencies"
+        Target="TimeLogs" />
 }
 
 @if (_error)
@@ -42,26 +53,33 @@ else
     [Parameter]
     public int TimeLogId { get; set; }
 
-    private TimeLog? _timeLog { get; set; } = new TimeLog();
+    private TimeLogView? _timeLog;
 
-    private TimeLog _dbTimeLog { get; set; } = new TimeLog();
-
-    private TictacDBContext? _dbContext;
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;
     private bool _concurrencyError = false;
 
+    private bool _areDependenciesOk = false;
+    Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
+    private bool _backFromSelection = false;
+
 
     protected override async Task OnInitializedAsync()
     {
+       _timeLog =   new TimeLogView(ProjectsService, ObjectivesService, CharacteristicssService);
+
         try
         {
+            _backFromSelection = false;
             _busy = true;
             ResetErrorMessage();
 
-            //persists until the component is destroyed as we have to keep the connection until we save or dismiss
-            _dbContext  = GenericTimelogService.GetNewDBContext(); 
+            await CheckDependencies();
+            if (!_areDependenciesOk)
+            {
+                return;
+            }
 
             string uri = Navigation.Uri;
             SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
@@ -69,8 +87,6 @@ else
             if (source == SelectionSource.Project)
             {
                 _timeLog = ProjectSelectionService.EntityBackup;
-
-                _dbContext.Attach(_timeLog);
 
                 if (ProjectSelectionService.HasSelected && ProjectSelectionService.Selection.Any())
                 {
@@ -83,8 +99,6 @@ else
             {
                 _timeLog = ObjectiveSelectionService.EntityBackup;
 
-                _dbContext.Attach(_timeLog);
-
                 if (ObjectiveSelectionService.HasSelected && ObjectiveSelectionService.Selection.Any())
                 {
                     _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
@@ -94,26 +108,15 @@ else
             }
             else if (source == SelectionSource.Characteristic)
             {
+                _backFromSelection = true;
                 _timeLog = CharacteristicSelectionService.EntityBackup;
-
-                _dbContext.Attach(_timeLog);
-
-                if (CharacteristicSelectionService.HasSelected && CharacteristicSelectionService.Selection.Any())
-                {
-                    foreach (Characteristic charact in CharacteristicSelectionService.Selection)
-                    {
-                        _timeLog.Characteristics.Add(charact);
-                    }
-                }
-
-                CharacteristicSelectionService.Reset();
             }
             else
             {
-                TimeLog? timeLog = await TimeLogsService.FindTimeLogFromIdAsync(_dbContext, TimeLogId);
-                if (timeLog != null)
+                TimeLog? dbTimelog = await TimeLogsService.FindFromIdAsync<TimeLog>(TimeLogId);
+                if (dbTimelog != null)
                 {
-                    _timeLog = timeLog;
+                    Mapper.Map(dbTimelog, _timeLog);
                 }
                 else
                 {
@@ -121,31 +124,6 @@ else
                     _errorMessage = $"Unable to find the timelog with id: {TimeLogId}";
                 }
             }
-
-            if (_timeLog.ProjectId.HasValue)
-            {
-                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Project>(ProjectsService, _timeLog.ProjectId.Value);
-                _timeLog.ProjectsAsText = asText;
-            }
-
-            if (_timeLog.ObjectiveId.HasValue)
-            {
-                string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Objective>(ObjectivesService, _timeLog.ObjectiveId.Value);
-                _timeLog.ObjectivesAsText = asText;
-            }
-            
-            if (_timeLog.Characteristics.Any())
-            {
-                _timeLog.CharacteristicsAsText.Clear();
-                foreach (var characteristic in _timeLog.Characteristics)
-                {
-                    string asText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Characteristic>(CharacteristicssService, characteristic.Id);
-                    _timeLog.ObjectivesAsText = asText;
-
-                    _timeLog.CharacteristicsAsText.Add(new KeyValuePair<int, string>(characteristic.Id, asText));
-                }
-            }
-
         }
         catch (Exception ex)
         {
@@ -183,21 +161,33 @@ else
             ResetErrorMessage();
 
             bool savingRes = false;
-            if (_dbContext is not null)
+            
+            using var dbContext = TimeLogsService.GetNewDBContext();
+            if (dbContext is not null)
             {
-                //Management of the many to many relationships, to prevent modification of the entities themselves
-                //while we want to update only the many to many intermediate db table
-                foreach (Data.Characteristic charToAttach in _timeLog.Characteristics)
+                TimeLog? timeLogEntity = await TimeLogsService.FindFromIdAsync<TimeLog>(dbContext, _timeLog.Id);
+                if (timeLogEntity is not null)
                 {
-                    _dbContext.Entry(charToAttach).State = EntityState.Unchanged;
-                }
-                foreach (Tag tagToAttach in _timeLog.Tags)
-                {
-                    _dbContext.Entry(tagToAttach).State = EntityState.Unchanged;
-                }
+                    IEnumerable<int> existingChars = timeLogEntity.Characteristics.Select(c => c.Id);
+                    IEnumerable<int> selectedChars = _timeLog.Characteristics.Select(c => c.Id);
+                    IEnumerable<int> charsToRemove = existingChars.Where(ec => selectedChars.All(sc => sc != ec));
+                    IEnumerable<int> charsToAdd = selectedChars.Where(sc => existingChars.All(ec => ec != sc));
 
-                savingRes = await _dbContext.SaveChangesAsync() > 0;
+                    IEnumerable<int> existingTags = timeLogEntity.Tags.Select(t => t.Id);
+                    IEnumerable<int> selectedTags = _timeLog.Tags.Select(t => t.Id);
+                    IEnumerable<int> tagsToRemove = existingTags.Where(et => selectedTags.All(st => st != et)); 
+                    IEnumerable<int> tagsToAdd = selectedTags.Where(st => existingTags.All(et => et != st));                       
+
+                    Mapper.Map<TimeLogView, TimeLog>(_timeLog, timeLogEntity);
+
+                    savingRes = await TimeLogsService.UpdateAsync<TimeLog>(dbContext, timeLogEntity, 
+                                                                            charsToAdd, charsToRemove,
+                                                                            tagsToAdd, tagsToRemove);
+                }
             }
+
+            ResetErrorMessage();
+
 
             if (savingRes )
             {
@@ -226,7 +216,7 @@ else
             }
 
             // bind to show labels on form
-            _timeLog = (TimeLog)dbValues.ToObject();
+            _timeLog = (TimeLogView)dbValues.ToObject();
 
             // move to original so second submit works (unless there is another concurrent edit)
             dbex.Entries[0].OriginalValues.SetValues(dbValues);
@@ -244,6 +234,11 @@ else
         }
     }
 
+    private async Task CheckDependencies()
+    {
+        _areDependenciesOk = true;
+    }
+
     // Back to list.
     private void Cancel()
     {
@@ -252,17 +247,12 @@ else
 
     private void GoBackToList()
     {
-        Navigation.NavigateTo($"/");
+        Navigation.NavigateTo("/");
     }
 
     private void ResetErrorMessage()
     {
         _error = false;
         _errorMessage = string.Empty;
-    }
-
-    public void Dispose()
-    {
-        _dbContext?.Dispose();
     }
 }
