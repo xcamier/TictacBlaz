@@ -81,19 +81,10 @@ else
 
     private async Task BuildBreadcrumb()
     {
-        BreadcrumbItem root = new BreadcrumbItem("Objectives", href: "/objectives", icon: AppIcons.Objective);
-        _path.Add(root);
+        KeyValuePair<int, string?>[] parentProjects = 
+                            await ObjectivesService.GetParentsAsync<Objective>(ParentObjectiveId);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Objectives", "objectives", parentProjects);
 
-        if (ParentObjectiveId.HasValue)
-        {
-            KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentsAsync<Objective>(ParentObjectiveId.Value);
-            foreach (KeyValuePair<int, string?> obj in parentObjectives)
-            {
-                string itemStr = FormatStringForBreadcrumb(obj.Value);
-                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/objectives/{obj.Key}");
-                _path.Add(item);
-            }
-        }
     }
 
     private async Task GetObjectivesAsync()

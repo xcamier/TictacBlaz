@@ -5,16 +5,16 @@ namespace tictacApp.Helpers;
 
 public class BreadcrumbHelper
 {
-    public static List<BreadcrumbItem> BuildBreadcrumb(string rootName, string selectorUri, KeyValuePair<int, string?>[] items)
+    public static List<BreadcrumbItem> BuildBreadcrumb(string rootName, string rootUri, KeyValuePair<int, string?>[] items)
     {
         List<BreadcrumbItem> path = new List<BreadcrumbItem>();        
 
-        BreadcrumbItem root = new BreadcrumbItem(rootName, href: $"/{selectorUri}", icon: AppIcons.Project);
+        BreadcrumbItem root = new BreadcrumbItem(rootName, href: $"/{rootUri}", icon: AppIcons.Project);
         path.Add(root);
 
         foreach (KeyValuePair<int, string?> item in items)
         {
-            BreadcrumbItem bcItem = new BreadcrumbItem(item.Value, href: $"/{selectorUri}/{item.Key}");
+            BreadcrumbItem bcItem = new BreadcrumbItem(item.Value, href: $"/{rootUri}/{item.Key}");
             path.Add(bcItem);
         }
 

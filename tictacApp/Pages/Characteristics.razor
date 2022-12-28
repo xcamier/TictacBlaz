@@ -92,21 +92,9 @@ else
 
     private async Task BuildBreadcrumb()
     {
-        BreadcrumbItem root = new BreadcrumbItem("Characteristics", href: "/characteristics", icon: AppIcons.Objective);
-        _path.Add(root);
-
-        if (ParentCharacteristicId.HasValue)
-        {
-            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync<Characteristic>(ParentCharacteristicId.Value);
-            foreach (KeyValuePair<int, string?> obj in parentCharacteristics)
-            {
-                string itemStr = FormatStringForBreadcrumb(obj.Value);
-                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/characteristics/{obj.Key}");
-                _path.Add(item);
-            }
-
-            _canGoOneLevelAbove = _path.Count < 3;
-        }
+        KeyValuePair<int, string?>[] parentProjects = 
+                    await CharacteristicsService.GetParentsAsync<Characteristic>(ParentCharacteristicId);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Characteristics", "characteristics", parentProjects);
     }
 
     private async Task GetCharacteristicsAsync()

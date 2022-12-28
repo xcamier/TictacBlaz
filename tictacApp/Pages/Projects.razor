@@ -78,20 +78,9 @@ else
 
     private async Task BuildBreadcrumb()
     {
-        //TODO: look the same in projectSelector
-        BreadcrumbItem root = new BreadcrumbItem("Projects", href: "/projects", icon: AppIcons.Project);
-        _path.Add(root);
-
-        if (ParentProjectId.HasValue)
-        {
-            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentsAsync<Project>(ParentProjectId.Value);
-            foreach (KeyValuePair<int, string?> proj in parentProjects)
-            {
-                string itemStr = FormatStringForBreadcrumb(proj.Value);
-                BreadcrumbItem item = new BreadcrumbItem(itemStr, href: $"/projects/{proj.Key}");
-                _path.Add(item);
-            }
-        }
+        KeyValuePair<int, string?>[] parentProjects = 
+                            await ProjectsService.GetParentsAsync<Project>(ParentProjectId);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Projects", "projects", parentProjects);
     }
 
     private async Task GetProjectsAsync()
