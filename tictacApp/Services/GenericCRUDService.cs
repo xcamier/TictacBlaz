@@ -4,7 +4,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Services;
 
-public class GenericCRUDService<T>: IGenericCRUDService<T> where T: class, IId
+public class GenericCRUDService: IGenericCRUDService
 {
     protected IDbContextFactory<TictacDBContext> _dbFactory;
 
@@ -24,14 +24,14 @@ public class GenericCRUDService<T>: IGenericCRUDService<T> where T: class, IId
         return await context.Set<T>().AnyAsync();
     }
 
-    public async Task<T[]> GetAllAsync()
+    public async Task<T[]> GetAllAsync<T>() where T : class
     {
         using var context = _dbFactory.CreateDbContext();
         
         return await context.Set<T>().ToArrayAsync();
     }
 
-    public async Task<T?> FindFromIdAsync(TictacDBContext? dbContext, int id)
+    public async Task<T?> FindFromIdAsync<T>(TictacDBContext? dbContext, int id) where T : class, IId
     {    
         if (dbContext is not null && dbContext.Set<T>() is not null)
         {
@@ -41,7 +41,7 @@ public class GenericCRUDService<T>: IGenericCRUDService<T> where T: class, IId
         return null;
     }
 
-    public async Task<bool> AddAsync(T? itemToAdd)
+    public async Task<bool> AddAsync<T>(T? itemToAdd) where T : class
     {
         if (itemToAdd != null)
         {
@@ -55,7 +55,7 @@ public class GenericCRUDService<T>: IGenericCRUDService<T> where T: class, IId
         return false;
     }
 
-    public async Task<bool> DeleteAsync(T itemToDelete)
+    public async Task<bool> DeleteAsync<T>(T itemToDelete) where T : class
     {
         if (itemToDelete != null)
         {
@@ -69,7 +69,7 @@ public class GenericCRUDService<T>: IGenericCRUDService<T> where T: class, IId
         return false;
     }
 
-    public async Task<T?> GetFirstAsync()
+    public async Task<T?> GetFirstAsync<T>() where T : class
     {
         using var context = _dbFactory.CreateDbContext();
 

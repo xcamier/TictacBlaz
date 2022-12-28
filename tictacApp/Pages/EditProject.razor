@@ -1,12 +1,13 @@
 @page "/projects/{ProjectId:int}/editProject"
 
 @using Microsoft.EntityFrameworkCore
+
 @using tictacApp.Data
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GenericCRUDServiceWithParents<Project> ProjectsService
+@inject IGenericCRUDServiceWithParents ProjectsService
 @inject ISnackbar Snackbar
 
 @if (_project is null && !_busy)
@@ -52,7 +53,7 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = ProjectsService.GetNewDBContext(); 
 
-            Project? project = await ProjectsService.FindFromIdAsync(_dbContext, ProjectId);
+            Project? project = await ProjectsService.FindFromIdAsync<Project>(_dbContext, ProjectId);
             if (project != null)
             {
                 _project = project;

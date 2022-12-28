@@ -3,18 +3,19 @@
 @page "/logs/{TimeLogId:int}/editLogFromObjectiveSelection"
 @page "/logs/{TimeLogId:int}/editLogFromCharacteristicSelection"
 
-@using Helpers
 @using Microsoft.EntityFrameworkCore
+
+@using tictacApp.Helpers
 @using tictacApp.Data
 @using tictacApp.Services
 @using tictacApp.ViewModels
+@using tictacApp.Interfaces
+
 @using AutoMapper
 
 @inject NavigationManager Navigation
 @inject TimeLogsService TimeLogsService
-@inject GenericCRUDServiceWithParents<Project> ProjectsService
-@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicssService
+@inject IGenericCRUDServiceWithParents CRUDService
 
 @inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionService
 @inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionService
@@ -67,7 +68,7 @@ else if (!_areDependenciesOk)
 
     protected override async Task OnInitializedAsync()
     {
-       _timeLog =   new TimeLogView(ProjectsService, ObjectivesService, CharacteristicssService);
+       _timeLog =   new TimeLogView(CRUDService);
 
         try
         {

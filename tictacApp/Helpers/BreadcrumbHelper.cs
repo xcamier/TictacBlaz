@@ -1,6 +1,5 @@
 using MudBlazor;
 using tictacApp.Interfaces;
-using tictacApp.Services;
 
 namespace tictacApp.Helpers;
 
@@ -22,9 +21,9 @@ public class BreadcrumbHelper
         return path;
     }
 
-    public static async Task<string> BuildSimpifiedBreadcrumb<T>(GenericCRUDServiceWithParents<T> crud, int id) where T: class, IIdLabel, IParent
+    public static async Task<string> BuildSimpifiedBreadcrumb<T>(IGenericCRUDServiceWithParents crud, int id) where T: class, IIdLabel, IParent
     {
-        KeyValuePair<int, string?>[] parents = await crud.GetParentsAsync(id);
+        KeyValuePair<int, string?>[] parents = await crud.GetParentsAsync<T>(id);
         string asText = string.Empty;
         foreach (var pair in parents)
         {

@@ -5,14 +5,15 @@
 @using tictacApp.Helpers
 @using tictacApp.Interfaces
 @using tictacApp.ViewModels
+
 @using AutoMapper
 
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
 
-@inject ItemSelectionService<CharacteristicView, TTypeOfCharacteristic> ItemSelectionServiceV
+@inject ItemSelectionService<CharacteristicView, TTypeOfCharacteristic> ItemSelectionService
 @inject IMapper Mapper
 
 
@@ -105,7 +106,7 @@ else
 
     private async Task BuildBreadcrumb()
     {
-        KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync(ParentCharacteristicId);
+        KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync<Characteristic>(ParentCharacteristicId);
         _path = BreadcrumbHelper.BuildBreadcrumb("Characteristics", SubItemRootUri, parentCharacteristics);
         _canGoOneLevelAbove = _path.Count < 3;
     }
@@ -115,7 +116,7 @@ else
         try
         {
             _loading = true;
-            _characteristics = await CharacteristicsService.GetAllAsync(ParentCharacteristicId);
+            _characteristics = await CharacteristicsService.GetAllAsync<Characteristic>(ParentCharacteristicId);
         }
         finally
         {
@@ -137,22 +138,22 @@ else
     {
         CharacteristicView res = Mapper.Map<CharacteristicView>(selectedCharacteristic);
 
-        ItemSelectionServiceV.HasSelected = true;
-        ItemSelectionServiceV.Selection.Add(res);
+        ItemSelectionService.HasSelected = true;
+        ItemSelectionService.Selection.Add(res);
 
         NavigateBackToCaller();
     }
 
     private void OnCancel()
     {
-        ItemSelectionServiceV.HasSelected = false;
+        ItemSelectionService.HasSelected = false;
 
         NavigateBackToCaller();     
     }
 
     private void NavigateBackToCaller()
     {
-        string uri = ItemSelectionServiceV.IsAdd ? 
+        string uri = ItemSelectionService.IsAdd ? 
                         ReturnAddUri : 
                         ReturnEditUri;
 

@@ -1,11 +1,11 @@
 @page "/characteristics"
 @page "/characteristics/{ParentCharacteristicId:int}"
 
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -97,7 +97,7 @@ else
 
         if (ParentCharacteristicId.HasValue)
         {
-            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync(ParentCharacteristicId.Value);
+            KeyValuePair<int, string?>[] parentCharacteristics = await CharacteristicsService.GetParentsAsync<Characteristic>(ParentCharacteristicId.Value);
             foreach (KeyValuePair<int, string?> obj in parentCharacteristics)
             {
                 string itemStr = FormatStringForBreadcrumb(obj.Value);
@@ -114,7 +114,7 @@ else
         try
         {
             _loading = true;
-            _characteristics = await CharacteristicsService.GetAllAsync(ParentCharacteristicId);
+            _characteristics = await CharacteristicsService.GetAllAsync<Characteristic>(ParentCharacteristicId);
         }
         finally
         {
@@ -133,7 +133,7 @@ else
         {
             _busy = true;
 
-            bool res = await CharacteristicsService.DeleteAsync(CharacteristicToRemove);
+            bool res = await CharacteristicsService.DeleteAsync<Characteristic>(CharacteristicToRemove);
 
             ResetErrorMessage();
 

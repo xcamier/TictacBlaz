@@ -2,11 +2,11 @@
 
 @using Microsoft.EntityFrameworkCore
 @using tictacApp.Data
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GenericCRUDService<Grade> GradesService
+@inject IGenericCRUDService GradesService
 @inject ISnackbar Snackbar
 
 @if (_grade is null && !_busy)
@@ -52,7 +52,7 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = GradesService.GetNewDBContext(); 
 
-            Grade? grade = await GradesService.FindFromIdAsync(_dbContext, GradeId);
+            Grade? grade = await GradesService.FindFromIdAsync<Grade>(_dbContext, GradeId);
             if (grade != null)
             {
                 _grade = grade;

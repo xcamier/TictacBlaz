@@ -4,13 +4,13 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Services;
 
-public class GenericCRUDServiceWithParents<T>: GenericCRUDService<T> where T: class, IIdLabel, IParent
+public class GenericCRUDServiceWithParents: GenericCRUDService, IGenericCRUDServiceWithParents
 {
     public GenericCRUDServiceWithParents(IDbContextFactory<TictacDBContext> dbFactory): base(dbFactory)
     {
     }
 
-    public async Task<T[]> GetAllAsync(int? parentId)
+    public async Task<T[]> GetAllAsync<T>(int? parentId) where T: class, IParent
     {
         using var context = _dbFactory.CreateDbContext();
         
@@ -28,7 +28,7 @@ public class GenericCRUDServiceWithParents<T>: GenericCRUDService<T> where T: cl
         }
     }
 
-    public async Task<KeyValuePair<int, string?>[]> GetParentsAsync(int? id)
+    public async Task<KeyValuePair<int, string?>[]> GetParentsAsync<T>(int? id) where T: class, IIdLabel, IParent
     {
         List<KeyValuePair<int, string?>> parents = new List<KeyValuePair<int, string?>>();
 

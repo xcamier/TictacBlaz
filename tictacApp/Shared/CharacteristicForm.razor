@@ -1,11 +1,9 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
-@using tictacApp.Services
 @using tictacApp.Validators
+@using tictacApp.Interfaces
 
-@inject GenericCRUDService<Grade> GradesService
-@inject GenericCRUDService<Data.CharacteristicsGroup> CharacteristicsGroupsService
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CRUDService
 
 <MudForm Model="@Characteristic"
     @ref="@form" Validation="@(characteristicValidator.ValidateValue)" ValidationDelay="0">
@@ -127,10 +125,10 @@
     protected override async Task OnInitializedAsync()
     {
         _hasTwoLevelsOfParents = await CharacteristicsServiceHelper.
-                                            HasTwoLevelsOfParentsAsync(CharacteristicsService, Characteristic.ParentId);
+                                            HasTwoLevelsOfParentsAsync(CRUDService, Characteristic.ParentId);
         //Characteristic.GradeId = 0;
-        _grades = await GradesService.GetAllAsync();
-        _groups = await CharacteristicsGroupsService.GetAllAsync();
+        _grades = await CRUDService.GetAllAsync<Grade>();
+        _groups = await CRUDService.GetAllAsync<Data.CharacteristicsGroup>();
     }
 
     private Task CancelAsync()

@@ -1,11 +1,11 @@
 @page "/projects"
 @page "/projects/{ParentProjectId:int}"
 
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject GenericCRUDServiceWithParents<Project> ProjectsService
+@inject IGenericCRUDServiceWithParents ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -84,7 +84,7 @@ else
 
         if (ParentProjectId.HasValue)
         {
-            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentsAsync(ParentProjectId.Value);
+            KeyValuePair<int, string?>[] parentProjects = await ProjectsService.GetParentsAsync<Project>(ParentProjectId.Value);
             foreach (KeyValuePair<int, string?> proj in parentProjects)
             {
                 string itemStr = FormatStringForBreadcrumb(proj.Value);
@@ -99,7 +99,7 @@ else
         try
         {
             _loading = true;
-            _projects = await ProjectsService.GetAllAsync(ParentProjectId);
+            _projects = await ProjectsService.GetAllAsync<Project>(ParentProjectId);
         }
         finally
         {
@@ -118,7 +118,7 @@ else
         {
             _busy = true;
 
-            bool res = await ProjectsService.DeleteAsync(projectToRemove);
+            bool res = await ProjectsService.DeleteAsync<Project>(projectToRemove);
 
             ResetErrorMessage();
 

@@ -17,9 +17,9 @@ public class TimelogObservation: IId, IDescription, ICharacteristic<Characterist
     //Calculated field
     public IList<KeyValuePair<int, string>> CharacteristicsAsText { get; set; } = new List<KeyValuePair<int, string>>();
 
-    private GenericCRUDServiceWithParents<Characteristic> _characteristicsService;
+    private IGenericCRUDServiceWithParents _characteristicsService;
 
-    public TimelogObservation(GenericCRUDServiceWithParents<Characteristic> characteristicsService)
+    public TimelogObservation(IGenericCRUDServiceWithParents characteristicsService)
     {
         _characteristicsService = characteristicsService;
 

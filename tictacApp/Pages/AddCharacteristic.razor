@@ -1,11 +1,11 @@
 @page "/characteristics/addCharacteristic"
 @page "/characteristics/{CharacteristicId:int}/addCharacteristic"
 
-@using Data
-@using Helpers
-@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Helpers
+@using tictacApp.Interfaces
 
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -79,7 +79,7 @@ else if (!_areDependenciesOk)
         {
             _busy = true;
 
-            bool res = await CharacteristicsService.AddAsync(_characteristic);
+            bool res = await CharacteristicsService.AddAsync<Characteristic>(_characteristic);
 
             ResetErrorMessage();
 

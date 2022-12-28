@@ -1,15 +1,14 @@
-using tictacApp.Data;
 using tictacApp.DataAccess;
 
 namespace tictacApp.Interfaces;
 
-public interface IGenericCRUDService<T>
+public interface IGenericCRUDService
 {
     TictacDBContext? GetNewDBContext();
     Task<bool> HasAtLeastOneItem<U>() where U : class;
-    Task<T[]> GetAllAsync();
-    Task<T?> FindFromIdAsync(TictacDBContext? dbContext, int id);
-    Task<bool> AddAsync(T? itemToAdd);
-    Task<bool> DeleteAsync(T itemToDelete);
-    Task<T?> GetFirstAsync();
+    Task<T[]> GetAllAsync<T>() where T : class;
+    Task<T?> FindFromIdAsync<T>(TictacDBContext? dbContext, int id) where T : class, IId;
+    Task<bool> AddAsync<T>(T? itemToAdd) where T : class;
+    Task<bool> DeleteAsync<T>(T itemToDelete) where T : class;
+    Task<T?> GetFirstAsync<T>() where T : class;
 }

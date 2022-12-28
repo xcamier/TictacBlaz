@@ -10,9 +10,9 @@ public class DependenciesChecker<T> where T: class, IId
 
     private List<Tuple<string, string>> deps = new List<Tuple<string, string>>();
     
-    private GenericCRUDService<T> _service;
+    private IGenericCRUDService _service;
 
-    public DependenciesChecker(GenericCRUDService<T> service)
+    public DependenciesChecker(IGenericCRUDService service)
     {
         _service = service;
     }

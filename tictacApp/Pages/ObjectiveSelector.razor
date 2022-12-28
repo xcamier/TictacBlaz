@@ -5,9 +5,11 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 @using tictacApp.ViewModels
+@using tictacApp.Interfaces
+
 @using AutoMapper
 
-@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
+@inject IGenericCRUDServiceWithParents ObjectivesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IMapper Mapper
@@ -82,7 +84,7 @@ else
 
     private async Task BuildBreadcrumb()
     {
-        KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentsAsync(ParentObjectiveId);
+        KeyValuePair<int, string?>[] parentObjectives = await ObjectivesService.GetParentsAsync<Objective>(ParentObjectiveId);
         _path = BreadcrumbHelper.BuildBreadcrumb("Objectives", "objectiveSelector", parentObjectives);
     }
 
@@ -91,7 +93,7 @@ else
         try
         {
             _loading = true;
-            _objectives = await ObjectivesService.GetAllAsync(ParentObjectiveId);
+            _objectives = await ObjectivesService.GetAllAsync<Objective>(ParentObjectiveId);
         }
         finally
         {

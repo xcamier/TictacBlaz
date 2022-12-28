@@ -7,12 +7,11 @@
 @using tictacApp.Helpers
 @using tictacApp.Services
 @using tictacApp.ViewModels
+@using tictacApp.Interfaces
 @using AutoMapper
 
 @inject TimeLogsService TimeLogsService
-@inject GenericCRUDServiceWithParents<Project> ProjectsService
-@inject GenericCRUDServiceWithParents<Objective> ObjectivesService
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CRUDService
 
 @inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionService
 @inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionService
@@ -100,7 +99,7 @@ else if (!_areDependenciesOk)
         else
         {
             DateTime now = DateTime.Now;
-            _timeLog = new TimeLogView(ProjectsService, ObjectivesService, CharacteristicsService)
+            _timeLog = new TimeLogView(CRUDService)
             {
                 StartDate = now,
                 TimeSpan = now.TimeOfDay

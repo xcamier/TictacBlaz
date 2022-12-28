@@ -1,9 +1,9 @@
 @page "/grades/addGrade"
 
-@using Data
-@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Interfaces
 
-@inject GenericCRUDService<Grade> GradesService
+@inject IGenericCRUDService GradesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -54,7 +54,7 @@
         {
             _busy = true;
 
-            bool res = await GradesService.AddAsync(_grade);
+            bool res = await GradesService.AddAsync<Grade>(_grade);
 
             ResetErrorMessage();
 

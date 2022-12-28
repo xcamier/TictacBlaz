@@ -1,7 +1,7 @@
 using tictacApp.Data;
 using tictacApp.Interfaces;
-using tictacApp.Services;
 using tictacApp.Helpers;
+
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -46,16 +46,12 @@ public class TimeLogView : TimelogObservation, IId, IDescription, ICharacteristi
 
     public event PropertyChangedEventHandler PropertyChanged;
 
-    private GenericCRUDServiceWithParents<Project> _projectsService;
-    private GenericCRUDServiceWithParents<Objective> _objectivesService;
+    private IGenericCRUDServiceWithParents _crudService;
 
 
-    public TimeLogView(GenericCRUDServiceWithParents<Project> projectsService,
-                        GenericCRUDServiceWithParents<Objective> objectivesService,
-                        GenericCRUDServiceWithParents<Characteristic> characteristicsService): base(characteristicsService)
+    public TimeLogView(IGenericCRUDServiceWithParents crudService): base(crudService)
     {
-        _projectsService = projectsService;
-        _objectivesService = objectivesService;
+         _crudService = crudService;
 
         this.PropertyChanged += DependencyIdPropertyChanged;
     }
@@ -84,7 +80,7 @@ public class TimeLogView : TimelogObservation, IId, IDescription, ICharacteristi
     {
         if (ProjectId.HasValue)
         {
-            this.ProjectAsText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Project>(_projectsService, ProjectId.Value);
+            this.ProjectAsText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Project>(_crudService, ProjectId.Value);
         }
         else
         {
@@ -96,7 +92,7 @@ public class TimeLogView : TimelogObservation, IId, IDescription, ICharacteristi
     {
         if (ObjectiveId.HasValue)
         {
-            this.ObjectiveAsText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Objective>(_objectivesService, ObjectiveId.Value);
+            this.ObjectiveAsText = await BreadcrumbHelper.BuildSimpifiedBreadcrumb<Objective>(_crudService, ObjectiveId.Value);
         }
         else
         {

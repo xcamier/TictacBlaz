@@ -1,8 +1,8 @@
 @page "/characteristicsGroups/addCharacteristicsGroup"
 
-@using tictacApp.Services
+@using tictacApp.Interfaces
 
-@inject GenericCRUDService<Data.CharacteristicsGroup> CharacteristicsGroupsService
+@inject IGenericCRUDService CharacteristicsGroupsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -53,7 +53,7 @@
         {
             _busy = true;
 
-            bool res = await CharacteristicsGroupsService.AddAsync(_characteristicsGroup);
+            bool res = await CharacteristicsGroupsService.AddAsync<Data.CharacteristicsGroup>(_characteristicsGroup);
 
             ResetErrorMessage();
 

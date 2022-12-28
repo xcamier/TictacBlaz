@@ -2,11 +2,11 @@
 
 @using Microsoft.EntityFrameworkCore
 @using tictacApp.Data
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GenericCRUDService<Actor> ActorsService
+@inject IGenericCRUDService ActorsService
 @inject ISnackbar Snackbar
 
 @if (_actor is null && !_busy)
@@ -52,7 +52,7 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = ActorsService.GetNewDBContext(); 
 
-            Actor? actor = await ActorsService.FindFromIdAsync(_dbContext, ActorId);
+            Actor? actor = await ActorsService.FindFromIdAsync<Actor>(_dbContext, ActorId);
             if (actor != null)
             {
                 _actor = actor;

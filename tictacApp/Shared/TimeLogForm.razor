@@ -3,10 +3,11 @@
 @using tictacApp.Services
 @using tictacApp.Helpers
 @using tictacApp.ViewModels
+@using tictacApp.Interfaces
 @using AutoMapper
 
 @inject NavigationManager Navigation
-@inject GenericCRUDService<Tag> TagsService
+@inject IGenericCRUDService TagsService
 
 @inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionServiceV;
 @inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionServiceV;
@@ -206,7 +207,7 @@
 
     private async Task GetTagsAsync()
     {
-        Tag[] dbTags = await TagsService.GetAllAsync();
+        Tag[] dbTags = await TagsService.GetAllAsync<Tag>();
         _tags = Mapper.Map<TagView[]>(dbTags);
     }
     

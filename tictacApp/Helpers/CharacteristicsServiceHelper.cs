@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using tictacApp.Data;
-using tictacApp.Services;
+using tictacApp.Interfaces;
 
 namespace tictacApp.Helpers;
 
 public class CharacteristicsServiceHelper
 {
-    public static async Task<bool> HasTwoLevelsOfParentsAsync(GenericCRUDService<Characteristic> crud, int? characteristicIdToCheck)
+    public static async Task<bool> HasTwoLevelsOfParentsAsync(IGenericCRUDService crud, int? characteristicIdToCheck)
     {
         if (characteristicIdToCheck.HasValue)
         {

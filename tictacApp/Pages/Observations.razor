@@ -3,11 +3,11 @@
 @using tictacApp.Helpers
 @using tictacApp.Data
 @using tictacApp.Services
+@using tictacApp.Interfaces
 
 @inject ISnackbar Snackbar
 @inject ObservationsService ObservationsService
-@inject GenericCRUDService<Observation> GenericObservationsService
-@inject GenericCRUDService<Actor> ActorsService
+@inject IGenericCRUDService CRUDService
 
 
 <PageTitle>Observations</PageTitle>
@@ -147,7 +147,7 @@ else if (_observations == null)
         {
             _busy = true;
 
-            bool res = await GenericObservationsService.DeleteAsync(observationToRemove);
+            bool res = await CRUDService.DeleteAsync<Observation>(observationToRemove);
 
             ResetErrorMessage();
 
@@ -200,12 +200,12 @@ else if (_observations == null)
 
     private async Task GetActorsAsync()
     {
-        _actors = await ActorsService.GetAllAsync(); 
+        _actors = await CRUDService.GetAllAsync<Actor>(); 
     }
 
     private async Task CheckDependencies()
     {
-        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(GenericObservationsService);
+        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(CRUDService);
         await checker.CheckActorDependency();
         _areDependenciesOk = checker.AreDependenciesOk;
         _dependencies = checker.GetUnsatisfiedDependencies();

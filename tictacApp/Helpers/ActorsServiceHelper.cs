@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using tictacApp.Data;
-using tictacApp.Services;
+using tictacApp.Interfaces;
 
 namespace tictacApp.Helpers;
 
 public class ActorsServiceHelper
 {
-    public static async Task<Actor?> GetActorByDefaultForTimelogs(GenericCRUDService<Actor> crud)
+    public static async Task<Actor?> GetActorByDefaultForTimelogs(IGenericCRUDService crud)
     {
         using var context = crud.GetNewDBContext();
 

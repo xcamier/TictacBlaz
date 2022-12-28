@@ -5,12 +5,11 @@
 @using tictacApp.Helpers
 @using tictacApp.Services
 @using tictacApp.ViewModels
+@using tictacApp.Interfaces
 @using AutoMapper
 
 @inject ObservationsService ObservationsService
-@inject GenericCRUDService<Observation> GenericObservationsService
-@inject GenericCRUDService<Actor> GenericActorsService
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CRUDService
 
 @inject ItemSelectionService<CharacteristicView, ObservationView> CharacteristicSelectionService
 
@@ -71,12 +70,12 @@ else if (!_areDependenciesOk)
         }
         else
         {
-            _observation = new ObservationView(CharacteristicsService)
+            _observation = new ObservationView(CRUDService)
             {
                 ObservationDate = DateTime.Now
             };
 
-            Actor? firstActor = await GenericActorsService.GetFirstAsync();
+            Actor? firstActor = await CRUDService.GetFirstAsync<Actor>();
             if (firstActor is not null)
             {
                 _observation.ActorId = firstActor.Id;
@@ -86,7 +85,7 @@ else if (!_areDependenciesOk)
 
     private async Task CheckDependencies()
     {
-        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(GenericObservationsService);
+        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(CRUDService);
         await checker.CheckActorDependency();
         _areDependenciesOk = checker.AreDependenciesOk;
         _dependencies = checker.GetUnsatisfiedDependencies();

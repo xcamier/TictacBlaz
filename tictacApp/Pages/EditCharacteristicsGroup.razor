@@ -1,11 +1,11 @@
 @page "/characteristicsGroups/{CharacteristicsGroupId:int}/editCharacteristicsGroup"
 
 @using Microsoft.EntityFrameworkCore
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GenericCRUDService<Data.CharacteristicsGroup> CharacteristicsGroupsService
+@inject IGenericCRUDService CharacteristicsGroupsService
 @inject ISnackbar Snackbar
 
 @if (_characteristicsGroup is null && !_busy)
@@ -51,7 +51,7 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = CharacteristicsGroupsService.GetNewDBContext(); 
 
-            Data.CharacteristicsGroup? characteristicsGroup = await CharacteristicsGroupsService.FindFromIdAsync(_dbContext, CharacteristicsGroupId);
+            Data.CharacteristicsGroup? characteristicsGroup = await CharacteristicsGroupsService.FindFromIdAsync<Data.CharacteristicsGroup>(_dbContext, CharacteristicsGroupId);
             if (characteristicsGroup != null)
             {
                 _characteristicsGroup = characteristicsGroup;

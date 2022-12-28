@@ -1,10 +1,10 @@
 @page "/actors"
 
-@using tictacApp.Services
 @using tictacApp.Data
 @using tictacApp.Helpers
+@using tictacApp.Interfaces
 
-@inject GenericCRUDService<Actor> ActorsService
+@inject IGenericCRUDService CRUDService
 @inject ISnackbar Snackbar
 
 
@@ -65,7 +65,7 @@ else
         try
         {
             _loading = true;
-            _actors = await ActorsService.GetAllAsync();
+            _actors = await CRUDService.GetAllAsync<Actor>();
         }
         finally
         {
@@ -84,7 +84,7 @@ else
         {
             _busy = true;
 
-            bool res = await ActorsService.DeleteAsync(actorToRemove);
+            bool res = await CRUDService.DeleteAsync<Actor>(actorToRemove);
 
             ResetErrorMessage();
 

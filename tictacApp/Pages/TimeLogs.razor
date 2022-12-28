@@ -3,10 +3,11 @@
 @using tictacApp.Helpers
 @using tictacApp.Data
 @using tictacApp.Services
+@using tictacApp.Interfaces
 
 @inject ISnackbar Snackbar
 @inject TimeLogsService TimeLogsService
-@inject GenericCRUDService<TimeLog> GenericTimelogsService
+@inject IGenericCRUDService GenericTimelogsService
 
 
 <PageTitle>Time logs</PageTitle>
@@ -109,7 +110,7 @@ else
         {
             _busy = true;
 
-            bool res = await GenericTimelogsService.DeleteAsync(timeLogToRemove);
+            bool res = await GenericTimelogsService.DeleteAsync<TimeLog>(timeLogToRemove);
 
             ResetErrorMessage();
 

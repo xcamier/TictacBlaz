@@ -1,10 +1,9 @@
 @using tictacApp.Data
 @using FluentValidation
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.Helpers
 
-@inject GenericCRUDService<Actor> ActorsService
-@inject GenericCRUDService<Grade> GradesService
+@inject IGenericCRUDService CRUDService
 
 <MudForm Model="@Actor" 
     @ref="@form" Validation="@(actorValidator.ValidateValue)" ValidationDelay="0">
@@ -91,9 +90,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _grades = await GradesService.GetAllAsync();
+        _grades = await CRUDService.GetAllAsync<Grade>();
 
-        Actor? defaultActor = await ActorsServiceHelper.GetActorByDefaultForTimelogs(ActorsService);
+        Actor? defaultActor = await ActorsServiceHelper.GetActorByDefaultForTimelogs(CRUDService);
         _hasAlreadyADefaultWhichIsNotThisUser = (defaultActor is not null) && defaultActor.Id != Actor.Id;
         _nameOfActorWhoIsDefault = defaultActor?.Name;
     }

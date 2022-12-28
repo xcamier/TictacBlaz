@@ -1,10 +1,10 @@
 @page "/projects/addProject"
 @page "/projects/{ProjectId:int}/addProject"
 
-@using Data
-@using tictacApp.Services
+@using tictacApp.Data
+@using tictacApp.Interfaces
 
-@inject GenericCRUDServiceWithParents<Project> ProjectsService
+@inject IGenericCRUDServiceWithParents ProjectsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -59,7 +59,7 @@
         {
             _busy = true;
 
-            bool res = await ProjectsService.AddAsync(_project);
+            bool res = await ProjectsService.AddAsync<Project>(_project);
 
             ResetErrorMessage();
 

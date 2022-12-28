@@ -12,7 +12,7 @@ public class ObservationView : TimelogObservation, IId, IDescription, ICharacter
 
     public int ActorId { get; set; }
 
-    public ObservationView(GenericCRUDServiceWithParents<Characteristic> characteristicsService): base(characteristicsService)
+    public ObservationView(IGenericCRUDServiceWithParents characteristicsService): base(characteristicsService)
     {
     }
 }

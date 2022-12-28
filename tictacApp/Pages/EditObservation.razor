@@ -2,17 +2,18 @@
 @page "/observations/{ObservationId:int}/editObservationFromCharacteristicSelection"
 
 @using Microsoft.EntityFrameworkCore
+
 @using tictacApp.Helpers
 @using tictacApp.Data
 @using tictacApp.Services
 @using tictacApp.ViewModels
-@using AutoMapper
+@using tictacApp.Interfaces
 
+@using AutoMapper
 
 @inject NavigationManager Navigation
 @inject ObservationsService ObservationsService
-@inject GenericCRUDService<Observation> GenericObservationsService
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicssService
+@inject IGenericCRUDServiceWithParents CRUDService
 
 @inject ItemSelectionService<CharacteristicView, ObservationView> CharacteristicSelectionService
 
@@ -63,7 +64,7 @@ else if (!_areDependenciesOk)
 
     protected override async Task OnInitializedAsync()
     {
-       _observation =   new ObservationView(CharacteristicssService);
+       _observation =   new ObservationView(CRUDService);
 
         try
         {
@@ -210,7 +211,7 @@ else if (!_areDependenciesOk)
 
     private async Task CheckDependencies()
     {
-        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(GenericObservationsService);
+        DependenciesChecker<Observation> checker = new DependenciesChecker<Observation>(CRUDService);
         await checker.CheckActorDependency();
         _areDependenciesOk = checker.AreDependenciesOk;
         _dependencies = checker.GetUnsatisfiedDependencies();

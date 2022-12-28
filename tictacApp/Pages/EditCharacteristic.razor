@@ -1,12 +1,13 @@
 @page "/characteristics/{CharacteristicId:int}/editCharacteristic"
 
-@using Data
 @using Microsoft.EntityFrameworkCore
-@using tictacApp.Services
+
+@using tictacApp.Data
+@using tictacApp.Interfaces
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GenericCRUDServiceWithParents<Characteristic> CharacteristicsService
+@inject IGenericCRUDServiceWithParents CharacteristicsService
 @inject ISnackbar Snackbar
 
 @if (_characteristic is null && !_busy)
@@ -52,7 +53,7 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = CharacteristicsService.GetNewDBContext(); 
 
-            Characteristic? characteristic = await CharacteristicsService.FindFromIdAsync(_dbContext, CharacteristicId);
+            Characteristic? characteristic = await CharacteristicsService.FindFromIdAsync<Characteristic>(_dbContext, CharacteristicId);
             if (characteristic != null)
             {
                 _characteristic = characteristic;

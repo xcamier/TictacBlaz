@@ -1,10 +1,9 @@
-@using tictacApp.Services
 @using tictacApp.Helpers
 @using tictacApp.Interfaces
 
 @typeparam TItem where TItem: class, IIdLabel
 
-@inject GenericCRUDService<TItem> DataService
+@inject IGenericCRUDService CRUDService
 @inject ISnackbar Snackbar
 
 
@@ -81,7 +80,7 @@ else
         try
         {
             _loading = true;
-            _listOfItems = await DataService.GetAllAsync();
+            _listOfItems = await CRUDService.GetAllAsync<TItem>();
         }
         finally
         {
@@ -100,7 +99,7 @@ else
         {
             _busy = true;
 
-            bool res = await DataService.DeleteAsync(itemToRemove);
+            bool res = await CRUDService.DeleteAsync<TItem>(itemToRemove);
 
             ResetErrorMessage();
 

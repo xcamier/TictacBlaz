@@ -6,6 +6,7 @@ using MudBlazor;
 using tictacApp.Data;
 using AutoMapper;
 using tictacApp.ViewModels;
+using tictacApp.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,15 +36,8 @@ builder.Services.AddDbContext<TictacDBContext>(opt => opt.UseSqlite(@"Data Sourc
 
 builder.Services.AddSingleton<TimeLogsService>();
 builder.Services.AddSingleton<ObservationsService>();
-builder.Services.AddSingleton<GenericCRUDService<Tag>>();
-builder.Services.AddSingleton<GenericCRUDService<Grade>>();
-builder.Services.AddSingleton<GenericCRUDService<Actor>>();
-builder.Services.AddSingleton<GenericCRUDService<TimeLog>>();
-builder.Services.AddSingleton<GenericCRUDService<Observation>>();
-builder.Services.AddSingleton<GenericCRUDService<CharacteristicsGroup>>();
-builder.Services.AddSingleton<GenericCRUDServiceWithParents<Project>>();
-builder.Services.AddSingleton<GenericCRUDServiceWithParents<Objective>>();
-builder.Services.AddSingleton<GenericCRUDServiceWithParents<Characteristic>>();
+builder.Services.AddSingleton<IGenericCRUDService, GenericCRUDService>();
+builder.Services.AddSingleton<IGenericCRUDServiceWithParents, GenericCRUDServiceWithParents>();
 
 builder.Services.AddSingleton<ItemSelectionService<Project, TimeLog>>();
 builder.Services.AddSingleton<ItemSelectionService<Objective, TimeLog>>();

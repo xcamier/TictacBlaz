@@ -2,11 +2,11 @@
 
 @using Microsoft.EntityFrameworkCore
 @using tictacApp.Data
-@using tictacApp.Services
+@using tictacApp.Interfaces
 @using tictacApp.DataAccess
 
 @inject NavigationManager Navigation
-@inject GenericCRUDService<Tag> TagsService
+@inject IGenericCRUDService TagsService
 @inject ISnackbar Snackbar
 
 @if (_tag is null && !_busy)
@@ -52,7 +52,7 @@ else
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = TagsService.GetNewDBContext(); 
 
-            Tag? tag = await TagsService.FindFromIdAsync(_dbContext, TagId);
+            Tag? tag = await TagsService.FindFromIdAsync<Tag>(_dbContext, TagId);
             if (tag != null)
             {
                 _tag = tag;
