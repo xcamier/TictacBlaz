@@ -1,16 +1,25 @@
 @page "/objectives"
 @page "/objectives/{ParentObjectiveId:int}"
+@page "/objectiveSelector"
+@page "/objectiveSelector/{ParentObjectiveId:int}"
 
+@using tictacApp.Services
 @using tictacApp.Interfaces
 @using tictacApp.Data
 @using tictacApp.Helpers
+@using tictacApp.ViewModels
+
+@using AutoMapper
 
 @inject IGenericCRUDServiceWithParents ObjectivesService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
+@inject IMapper Mapper
 
-<ListTemplate PageTitle="Objectives" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
+@inject ItemSelectionService<ObjectiveView, TimeLogView> ItemSelectionService
+
+<ListTemplate PageTitle=@_pageTitle Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
     <BreadcrumbContent>
         <MudBreadcrumbs Items="_path">
@@ -21,8 +30,16 @@
     </BreadcrumbContent>
 
     <ButtonsAreaContent>
-        <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                   OnClick="@(() => AddObjective(ParentObjectiveId))" Class="d-inline-flex">Add Objective</MudButton>
+        @if (_isInSelection)
+        {
+            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                        OnClick="OnCancel">Cancel</MudButton>
+        }
+        else
+        {
+            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                    OnClick="@(() => AddObjective(ParentObjectiveId))" Class="d-inline-flex">Add Objective</MudButton>
+        }
     </ButtonsAreaContent>
 
     <ListAreaContent>
@@ -46,8 +63,15 @@
                 <MudTd DataLabel="Label">@context.TargetDate?.ToString("d")</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubObjective(context.Id))" />
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/objectives/{context.Id}/editObjective")" />
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObjectiveAsync(context))" />
+                    @if (_isInSelection)
+                    {
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
+                    }
+                    else
+                    {
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/objectives/{context.Id}/editObjective")" />
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObjectiveAsync(context))" />
+                    }
                 </MudTd>
             </RowTemplate>
         </MudTable>
@@ -66,9 +90,19 @@
     private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
+    private bool _isInSelection = false;
+    private string _pageTitle = "Objectives";
+    private string _rootUri = "objectives";
 
     protected override async Task OnInitializedAsync()
     {
+        if (Navigation.Uri.Contains("Selector"))
+        {
+            _isInSelection = true;
+            _pageTitle = "Objective Selection";
+            _rootUri = "objectiveSelector";
+        }
+
         await BuildBreadcrumb();
         await GetObjectivesAsync();
     }
@@ -77,7 +111,7 @@
     {
         KeyValuePair<int, string?>[] parentProjects = 
                             await ObjectivesService.GetParentsAsync<Objective>(ParentObjectiveId);
-        _path = BreadcrumbHelper.BuildBreadcrumb("Objectives", "objectives", parentProjects);
+        _path = BreadcrumbHelper.BuildBreadcrumb("Objectives", _rootUri, parentProjects);
 
     }
 
@@ -136,9 +170,9 @@
         _errorMessage = string.Empty;
     }
 
-    private void GoToSubObjective(int subProjectId)
+    private void GoToSubObjective(int subObjectiveId)
     {
-        GoToSubObjective($"/objectives/{subProjectId}");
+        GoToSubObjective($"/{_rootUri}/{subObjectiveId}");
     }
 
     private void GoToSubObjective(string url)
@@ -160,13 +194,28 @@
         Navigation.NavigateTo(url);
     }
 
-    private string FormatStringForBreadcrumb(string str)
+    private void Select(Objective selectedObjective)
     {
-        if (str.Length > 15)
-        {
-            return $"{str.Substring(0, 15)}...";
-        }
+        ItemSelectionService.HasSelected = true;
 
-        return str;
+        ObjectiveView selectedObjectiveView = Mapper.Map<ObjectiveView>(selectedObjective);
+        ItemSelectionService.Selection.Add(selectedObjectiveView);
+
+        NavigateBackToCaller();
+    }
+
+    private void OnCancel()
+    {
+        ItemSelectionService.HasSelected = false;
+
+        NavigateBackToCaller();     
+    }
+
+    private void NavigateBackToCaller()
+    {
+        string url = ItemSelectionService.IsAdd ? 
+                        "/logs/addLogFromObjectiveSelection" : 
+                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromObjectiveSelection";
+        Navigation.NavigateTo(url);
     }
 }
