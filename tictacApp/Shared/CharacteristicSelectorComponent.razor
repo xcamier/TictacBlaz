@@ -12,70 +12,64 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-
-@inject ItemSelectionService<CharacteristicView, TTypeOfCharacteristic> ItemSelectionService
 @inject IMapper Mapper
 
+@inject ItemSelectionService<CharacteristicView, TTypeOfCharacteristic> ItemSelectionService
 
-<PageTitle>Characteristic Selection</PageTitle>
 
-<MudText Class="ml-2 mb-4" Typo="Typo.h5">Characteristic Selection</MudText>
-<MudBreadcrumbs Items="_path">
-    <ItemTemplate Context="item">
-        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => GoToSubCharacteristic(@item.Href))">@item.Text</MudButton>
-    </ItemTemplate>
-</MudBreadcrumbs>
+<ListTemplate PageTitle="Characteristic Selection" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
-@if (_characteristics == null)
-{
-    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
-}
-else
-{
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">        
+    <BreadcrumbContent>
+        <MudBreadcrumbs Items="_path">
+            <ItemTemplate Context="item">
+                <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => GoToSubCharacteristic(@item.Href))">@item.Text</MudButton>
+            </ItemTemplate>
+        </MudBreadcrumbs>
+    </BreadcrumbContent>
+
+    <ButtonsAreaContent>
         <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
                     OnClick="OnCancel">Cancel</MudButton>
-    </MudPaper>
+    </ButtonsAreaContent>
 
-    <MudTable Items="@_characteristics" Loading="@_loading" LoadingProgressColor="Color.Info"
-                Class="ml-2 mr-2 mt-4" Hover="true" Breakpoint="Breakpoint.Sm" >
-        <ColGroup>
-            <col />
-            @if (_canGoOneLevelAbove)
-            {
+    <ListAreaContent>
+        <MudTable Items="@_characteristics" Loading="@_loading" LoadingProgressColor="Color.Info"
+                    Class="ml-2 mr-2 mt-4" Hover="true" Breakpoint="Breakpoint.Sm" >
+            <ColGroup>
                 <col />
-            }
-            <col style="width: 120px;"/>
-        </ColGroup>
-        <HeaderContent>
-            <MudTh>Primary Description</MudTh>
-            @if (_canGoOneLevelAbove)
-            {
-                <MudTh>Secondary Description</MudTh>
-            }
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Label">@context.Label</MudTd>
-            @if (_canGoOneLevelAbove)
-            {
-                <MudTd DataLabel="Label">@context.Description</MudTd>
-            }
-            <MudTd DataLabel="Actions">
                 @if (_canGoOneLevelAbove)
                 {
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubCharacteristic(context.Id))" />
+                    <col />
                 }
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+                <col style="width: 120px;"/>
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Primary Description</MudTh>
+                @if (_canGoOneLevelAbove)
+                {
+                    <MudTh>Secondary Description</MudTh>
+                }
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Label">@context.Label</MudTd>
+                @if (_canGoOneLevelAbove)
+                {
+                    <MudTd DataLabel="Label">@context.Description</MudTd>
+                }
+                <MudTd DataLabel="Actions">
+                    @if (_canGoOneLevelAbove)
+                    {
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubCharacteristic(context.Id))" />
+                    }
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </ListAreaContent>
 
-    @if (_error)
-    {
-        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
-    }
-}
+</ListTemplate>
+
 
 @code {
     [Parameter]

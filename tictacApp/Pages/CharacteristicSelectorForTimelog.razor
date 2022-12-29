@@ -3,10 +3,11 @@
 
 @using tictacApp.Services
 @using tictacApp.ViewModels
+@using tictacApp.Shared
 
-@inject ItemSelectionService<CharacteristicView, TimeLogView> ItemSelectionService;
+@inject ItemSelectionService<CharacteristicView, TimeLogView> ItemSelectionService
 
-<CharacteristicSelectorForm 
+<CharacteristicSelectorComponent 
     TTypeOfCharacteristic=TimeLogView
     ParentCharacteristicId=@ParentCharacteristicId
     SubItemRootUri="characteristicSelectorForTimelog"
