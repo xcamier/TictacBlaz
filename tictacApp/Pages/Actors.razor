@@ -8,45 +8,36 @@
 @inject ISnackbar Snackbar
 
 
-<PageTitle>Actors</PageTitle>
+<ListTemplate PageTitle="Actors" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
-<MudText Class="ml-2 mb-4" Typo="Typo.h5">Actors</MudText>
-
-@if (_actors == null)
-{
-    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
-}
-else
-{
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+    <ButtonsAreaContent>
         <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
                     Href="/actors/addActor" Class="d-inline-flex">Add Actor</MudButton>
-    </MudPaper>
+    </ButtonsAreaContent>
 
-    <MudTable Items="@_actors" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                Class="ml-2 mr-2 mt-4">
-        <ColGroup>
-            <col />
-            <col style="width: 120px;"/>
-        </ColGroup>
-        <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Name">@context.Name</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/actors/{context.Id}/editActor")" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteActorAsync(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+    <ListAreaContent>
+        <MudTable Items="@_actors" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                    Class="ml-2 mr-2 mt-4">
+            <ColGroup>
+                <col />
+                <col style="width: 120px;"/>
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/actors/{context.Id}/editActor")" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteActorAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </ListAreaContent>
 
-    @if (_error)
-    {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
-    }
-}
+</ListTemplate>
+
 
 @code {
     private Actor[]? _actors;

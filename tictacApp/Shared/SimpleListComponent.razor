@@ -6,46 +6,36 @@
 @inject IGenericCRUDService CRUDService
 @inject ISnackbar Snackbar
 
+<ListTemplate PageTitle=@PageTitle Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
-<PageTitle>@PageTitle</PageTitle>
-
-<MudText Class="ml-2 mb-4" Typo="Typo.h5">@PageTitle</MudText>
-
-@if (_listOfItems == null)
-{
-    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
-}
-else
-{
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+    <ButtonsAreaContent>
         <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                    Href="@($"/{RootUri}/{AddUri}")" Class="d-inline-flex">Add @SingularContext</MudButton>
-    </MudPaper>
+            Href="@($"/{RootUri}/{AddUri}")" Class="d-inline-flex">Add @SingularContext</MudButton>
+    </ButtonsAreaContent>
 
-    <MudTable Items="@_listOfItems" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                Class="ml-2 mr-2 mt-4">
-        <ColGroup>
-            <col />
-            <col style="width: 120px;"/>
-        </ColGroup>
-        <HeaderContent>
-            <MudTh>Label</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Label">@context.Label</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/{RootUri}/{context.Id}/{EditUri}")" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteItemAsync(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+    <ListAreaContent>
+        <MudTable Items="@_listOfItems" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                    Class="ml-2 mr-2 mt-4">
+            <ColGroup>
+                <col />
+                <col style="width: 120px;"/>
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Label</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Label">@context.Label</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/{RootUri}/{context.Id}/{EditUri}")" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteItemAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </ListAreaContent>
 
-    @if (_error)
-    {
-        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
-    }
-}
+</ListTemplate>
+
 
 @code {
     [Parameter]
@@ -81,6 +71,11 @@ else
         {
             _loading = true;
             _listOfItems = await CRUDService.GetAllAsync<TItem>();
+            if (_listOfItems is null)
+            {
+                _error = true;
+                _errorMessage = "Retrieval of the data failed";
+            }
         }
         finally
         {

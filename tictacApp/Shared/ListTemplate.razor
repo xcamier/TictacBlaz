@@ -1,0 +1,51 @@
+<PageTitle>@PageTitle</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">@PageTitle</MudText>
+
+@if (@BreadcrumbContent is not null)
+{
+    @BreadcrumbContent
+}
+
+@if (Loading)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+        @ButtonsAreaContent
+    </MudPaper>
+
+    @ListAreaContent
+}
+
+@if (Error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+}
+
+@code {
+    [Parameter]
+    public string PageTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public bool Error { get; set; }
+
+    [Parameter]
+    public string ErrorMessage  { get; set; }
+
+    [Parameter]
+    public RenderFragment? BreadcrumbContent { get; set; } = null;
+    
+    [Parameter]
+    public RenderFragment? ButtonsAreaContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? ListAreaContent { get; set; }
+
+ 
+}

@@ -10,54 +10,48 @@
 @inject ISnackbar Snackbar
 
 
-<PageTitle>Projects</PageTitle>
+<ListTemplate PageTitle="Objectives" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
-<MudText Class="ml-2 mb-4" Typo="Typo.h5">Projects</MudText>
-<MudBreadcrumbs Items="_path">
-    <ItemTemplate Context="item">
-        <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
-    </ItemTemplate>
-</MudBreadcrumbs>
+    <BreadcrumbContent>
+        <MudBreadcrumbs Items="_path">
+            <ItemTemplate Context="item">
+                <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
+            </ItemTemplate>
+        </MudBreadcrumbs>
+    </BreadcrumbContent>
 
-@if (_projects == null)
-{
-    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
-}
-else
-{
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+    <ButtonsAreaContent>
         <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
                    OnClick="@(() => @AddProject(@ParentProjectId))" Class="d-inline-flex">Add Project</MudButton>
-    </MudPaper>
+    </ButtonsAreaContent>
 
-    <MudTable Items="@_projects" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                Class="ml-2 mr-2 mt-4">
-        <ColGroup>
-            <col />
-            <col />
-            <col style="width: 120px;"/>
-        </ColGroup>
-        <HeaderContent>
-            <MudTh>Label</MudTh>
-            <MudTh>Description</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Label">@context.Label</MudTd>
-            <MudTd DataLabel="Label">@context.Description</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => @GoToSubProject(context.Id))" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/projects/{context.Id}/editProject")" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteProjectAsync(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+    <ListAreaContent>
+        <MudTable Items="@_projects" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                    Class="ml-2 mr-2 mt-4">
+            <ColGroup>
+                <col />
+                <col />
+                <col style="width: 120px;"/>
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Label</MudTh>
+                <MudTh>Description</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Label">@context.Label</MudTd>
+                <MudTd DataLabel="Label">@context.Description</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => @GoToSubProject(context.Id))" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/projects/{context.Id}/editProject")" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteProjectAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </ListAreaContent>
 
-    @if (_error)
-    {
-        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
-    }
-}
+</ListTemplate>
+
 
 @code {
     [Parameter]
