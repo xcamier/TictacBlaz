@@ -242,12 +242,11 @@
     {
         public ObservationModelFluentValidator()
         {
-            RuleFor(obs => obs.ObservationDate).NotNull();
-            RuleFor(obs => obs.ActorId).NotNull();
+            RuleFor(obs => obs.ObservationDate).NotNull().WithMessage("Please specify an observation date");
+            RuleFor(obs => obs.ActorId).NotNull().WithMessage("Please select an actor");
             RuleFor(obs => obs.Description).
-                    NotNull().
-                    MinimumLength(Constants.LabelMinLength).
-                    MaximumLength(Constants.DescriptionFullLength);
+                    NotEmpty().WithMessage("Please specify a description").
+                    Length(Constants.LabelMinLength, Constants.DescriptionFullLength);
             RuleFor(obs => obs.Evidences).MaximumLength(Constants.DescriptionFullLength);
 		}
 

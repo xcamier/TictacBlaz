@@ -279,7 +279,7 @@
         {
             DateTime now = DateTime.Now;
             RuleFor(timeLog => timeLog.StartDate).
-                            NotNull().
+                            NotNull().WithMessage("Please specify a date for the timelog").
                             GreaterThan(new DateTime(now.Year - 1, now.Month, now.Day, 0, 0, 0));
 
             RuleFor(timeLog =>timeLog.TimeSpentInMin).GreaterThan(0);

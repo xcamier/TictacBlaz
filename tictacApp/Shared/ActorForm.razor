@@ -82,7 +82,6 @@
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
     private ActorModelFluentValidator actorValidator = new ActorModelFluentValidator();
-
     private Grade[]? _grades;
     private bool _hasAlreadyADefaultWhichIsNotThisUser;
     private string _nameOfActorWhoIsDefault = string.Empty;
@@ -119,9 +118,8 @@
         public ActorModelFluentValidator()
         {
             RuleFor(actor => actor.Name).
-                            NotNull().
-                            MaximumLength(Constants.LabelShortLength).
-                            MinimumLength(Constants.Label1CharLength);
+                            NotEmpty().WithMessage("Please sepcify the name of the actor").
+                            Length(Constants.Label1CharLength, Constants.LabelShortLength);
 		}
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>

@@ -1,5 +1,5 @@
+@using tictacApp.Validators
 @using tictacApp.Data
-@using FluentValidation
 @using tictacApp.Helpers
 
 <MudForm Model="@CharacteristicsGroup" 
@@ -62,7 +62,9 @@
 
     private string Mode => IsAdd ? "Add" : "Edit";
     private MudForm form;
-    private CharacteristicsGroupModelFluentValidator characteristicsGroupValidator = new CharacteristicsGroupModelFluentValidator();
+    private LabelFluentValidator<CharacteristicsGroup> characteristicsGroupValidator = 
+                                new LabelFluentValidator<CharacteristicsGroup>(Constants.Label1CharLength, 
+                                                                                Constants.LabelStandardLength);
 
     private Task CancelAsync()
     {
@@ -78,26 +80,5 @@
         }
 
         return ValidationResult.InvokeAsync(false);
-    }
-
-    //Local class for the fluent validator
-    public class CharacteristicsGroupModelFluentValidator : AbstractValidator<CharacteristicsGroup>
-    {
-        public CharacteristicsGroupModelFluentValidator()
-        {
-            RuleFor(CharacteristicsGroup => CharacteristicsGroup.Label).
-                            NotNull().
-                            MaximumLength(Constants.LabelStandardLength).
-                            MinimumLength(Constants.Label1CharLength);
-		}
-
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<CharacteristicsGroup>.
-                            CreateWithOptions((CharacteristicsGroup)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
     }
 }
