@@ -3,14 +3,14 @@
 @using tictacApp.Validators
 
 <MudForm Model="@Objective"
-    @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
+    @ref="@_form" Validation="@(_validator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6">
             <MudCard>
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">@Mode Objective</MudText>
+                        <MudText Typo="Typo.h6">@_mode Objective</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
 
@@ -48,7 +48,7 @@
                     <MudCardActions Class="d-flex justify-space-between">                                
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
                                     Color="Color.Primary" 
-                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@_mode</MudButton>
                         
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
                                     Color="Color.Primary" 
@@ -74,16 +74,15 @@
     public Objective? Objective { get; set; }
 
     [Parameter]
-    public Objective? DbObjective { get; set; }
-
-    [Parameter]
     public bool Busy { get; set; }
 
-    private string Mode => IsAdd ? "Add" : "Edit";
-    private MudForm form;
+    private string _mode => IsAdd ? "Add" : "Edit";
+    private MudForm _form;
 
-    private LabelAndDescriptionFluentValidator<Objective> validator = 
-                new LabelAndDescriptionFluentValidator<Objective>(Constants.LabelMinLength, Constants.LabelLongLength, Constants.DescriptionStandardLength);
+    private LabelAndDescriptionFluentValidator<Objective> _validator = 
+                new LabelAndDescriptionFluentValidator<Objective>(Constants.LabelMinLength, 
+                                                                    Constants.LabelLongLength, 
+                                                                    Constants.DescriptionStandardLength);
 
     private Task CancelAsync()
     {
@@ -92,8 +91,8 @@
 
     private async Task<Task> HandleSubmitAsync(bool isValid)
     {
-        await form.Validate();
-        if (form.IsValid)
+        await _form.Validate();
+        if (_form.IsValid)
         {
             return ValidationResult.InvokeAsync(true);
         }

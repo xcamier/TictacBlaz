@@ -32,9 +32,7 @@ else
     [Parameter]
     public int ObjectiveId { get; set; }
 
-    private Objective? _objective { get; set; } = new Objective();
-
-    private Objective _dbObjective { get; set; } = new Objective();
+    private Objective? _objective = new Objective();
 
     private TictacDBContext? _dbContext;
     private bool _busy;

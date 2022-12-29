@@ -31,9 +31,7 @@ else
     [Parameter]
     public int ActorId { get; set; }
 
-    private Actor? _actor { get; set; } = new Actor();
-
-    private Actor _dbActor { get; set; } = new Actor();
+    private Actor? _actor = new Actor();
 
     private TictacDBContext? _dbContext;
     private bool _busy;

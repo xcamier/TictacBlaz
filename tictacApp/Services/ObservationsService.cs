@@ -20,19 +20,4 @@ public class ObservationsService: TimelogObservation<Observation>
                         Where(o => o.ObservationDate >= startDate && o.ObservationDate <= endDate &&
                                 o.ActorId == actorId).ToArrayAsync();         
     }
-
-    /*public async Task<Observation?> FindObservationFromIdAsync(TictacDBContext? dbContext, int observationId)
-    {    
-        if (dbContext is not null && dbContext.Observations is not null)
-        {
-            return await dbContext.Observations.
-                                Include(t => t.Characteristics).
-                                Include(t => t.Tags).
-                                SingleOrDefaultAsync(c => c.Id == observationId); 
-        }
-
-        return null;
-    }*/
-
-
 }

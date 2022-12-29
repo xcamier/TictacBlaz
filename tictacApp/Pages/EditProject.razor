@@ -32,9 +32,7 @@ else
     [Parameter]
     public int ProjectId { get; set; }
 
-    private Project? _project { get; set; } = new Project();
-
-    private Project _dbProject { get; set; } = new Project();
+    private Project? _project = new Project();
 
     private TictacDBContext? _dbContext;
     private bool _busy;

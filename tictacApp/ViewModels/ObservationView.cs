@@ -1,10 +1,8 @@
 using tictacApp.Interfaces;
-using tictacApp.Services;
-using tictacApp.Data;
 
 namespace tictacApp.ViewModels;
 
-public class ObservationView : TimelogObservation, IId, IDescription, ICharacteristic<CharacteristicView>
+public class ObservationView : TimelogObservation
 {
     public DateTime? ObservationDate { get; set; }
     public bool IsPositive { get; set; }

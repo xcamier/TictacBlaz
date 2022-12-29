@@ -27,7 +27,7 @@
     [Parameter]
     public int? ObjectiveId { get; set; } = null;
     
-    private Objective? _objective { get; set; }
+    private Objective? _objective;
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;

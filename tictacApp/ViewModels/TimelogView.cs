@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace tictacApp.ViewModels;
 
-public class TimeLogView : TimelogObservation, IId, IDescription, ICharacteristic<CharacteristicView>, INotifyPropertyChanged
+public class TimeLogView : TimelogObservation, INotifyPropertyChanged
 {
     private int? _projectId;
     private int? _objectiveId;

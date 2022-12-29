@@ -27,7 +27,7 @@
     [Parameter]
     public int? ProjectId { get; set; } = null;
     
-    private Project? _project { get; set; }
+    private Project? _project;
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;

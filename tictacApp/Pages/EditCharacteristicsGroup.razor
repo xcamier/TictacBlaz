@@ -30,9 +30,7 @@ else
     [Parameter]
     public int CharacteristicsGroupId { get; set; }
 
-    private Data.CharacteristicsGroup? _characteristicsGroup { get; set; } = new Data.CharacteristicsGroup();
-
-    private Data.CharacteristicsGroup _dbCharacteristicsGroup { get; set; } = new Data.CharacteristicsGroup();
+    private Data.CharacteristicsGroup? _characteristicsGroup = new Data.CharacteristicsGroup();
 
     private TictacDBContext? _dbContext;
     private bool _busy;

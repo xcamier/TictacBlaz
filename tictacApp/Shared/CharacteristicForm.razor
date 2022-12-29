@@ -6,14 +6,14 @@
 @inject IGenericCRUDServiceWithParents CRUDService
 
 <MudForm Model="@Characteristic"
-    @ref="@form" Validation="@(characteristicValidator.ValidateValue)" ValidationDelay="0">
+    @ref="@_form" Validation="@(_characteristicValidator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6">
             <MudCard>
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">@Mode Characteristic</MudText>
+                        <MudText Typo="Typo.h6">@_mode Characteristic</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
 
@@ -80,7 +80,7 @@
                     <MudCardActions Class="d-flex justify-space-between">                                
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
                                     Color="Color.Primary" 
-                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@_mode</MudButton>
                         
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
                                     Color="Color.Primary" 
@@ -106,15 +106,14 @@
     public Characteristic? Characteristic { get; set; }
 
     [Parameter]
-    public Characteristic? DbCharacteristic { get; set; }
-
-    [Parameter]
     public bool Busy { get; set; }
 
-    private string Mode => IsAdd ? "Add" : "Edit";
-    private MudForm form;
-    private LabelAndDescriptionFluentValidator<Characteristic> characteristicValidator = 
-                    new LabelAndDescriptionFluentValidator<Characteristic>(Constants.LabelMinLength, Constants.DescriptionStandardLength, Constants.DescriptionStandardLength);
+    private string _mode => IsAdd ? "Add" : "Edit";
+    private MudForm _form;
+    private LabelAndDescriptionFluentValidator<Characteristic> _characteristicValidator = 
+                    new LabelAndDescriptionFluentValidator<Characteristic>(Constants.LabelMinLength, 
+                                                                            Constants.DescriptionStandardLength, 
+                                                                            Constants.DescriptionStandardLength);
 
     private bool _hasTwoLevelsOfParents = false;
 
@@ -138,8 +137,8 @@
 
     private async Task<Task> HandleSubmitAsync(bool isValid)
     {
-        await form.Validate();
-        if (form.IsValid)
+        await _form.Validate();
+        if (_form.IsValid)
         {
             return ValidationResult.InvokeAsync(true);
         }

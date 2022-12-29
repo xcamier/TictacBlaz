@@ -31,9 +31,7 @@ else
     [Parameter]
     public int TagId { get; set; }
 
-    private Tag? _tag { get; set; } = new Tag();
-
-    private Tag _dbTag { get; set; } = new Tag();
+    private Tag? _tag = new Tag();
 
     private TictacDBContext? _dbContext;
     private bool _busy;

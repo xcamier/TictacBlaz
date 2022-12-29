@@ -16,14 +16,14 @@
 @inject IMapper Mapper
 
 <MudForm Model="@TimeLog"
-    @ref="@form" Validation="@(timeLogValidator.ValidateValue)" ValidationDelay="0">
+    @ref="@_form" Validation="@(_timeLogValidator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
         <MudItem xs="6">
             <MudCard>
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">@Mode Time Log</MudText>
+                        <MudText Typo="Typo.h6">@_mode Time Log</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
 
@@ -111,7 +111,7 @@
                     <MudCardActions Class="d-flex justify-space-between">                                
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
                                     Color="Color.Primary" 
-                                    OnClick="@(async () => await HandleSubmitAsync(true))">@Mode</MudButton>
+                                    OnClick="@(async () => await HandleSubmitAsync(true))">@_mode</MudButton>
                         
                         <MudButton Variant="Variant.Filled" Disabled="@Busy" 
                                     Color="Color.Primary" 
@@ -142,9 +142,9 @@
     [Parameter]
     public bool Busy { get; set; }
 
-    private string Mode => IsAdd ? "Add" : "Edit";
-    private MudForm form;
-    private TimeLogModelFluentValidator timeLogValidator = new TimeLogModelFluentValidator();
+    private string _mode => IsAdd ? "Add" : "Edit";
+    private MudForm _form;
+    private TimeLogModelFluentValidator _timeLogValidator = new TimeLogModelFluentValidator();
     private TagView[]? _tags = null;
     //private Tag value { get; set; } //= "No tag selected";
     
@@ -187,8 +187,8 @@
 
     private async Task<Task> HandleSubmitAsync(bool isValid)
     {
-        await form.Validate();
-        if (form.IsValid)
+        await _form.Validate();
+        if (_form.IsValid)
         {
             int value = _selectedTags.Count();
 

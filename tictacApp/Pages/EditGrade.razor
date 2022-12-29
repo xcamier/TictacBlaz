@@ -31,9 +31,7 @@ else
     [Parameter]
     public int GradeId { get; set; }
 
-    private Grade? _grade { get; set; } = new Grade();
-
-    private Grade _dbGrade { get; set; } = new Grade();
+    private Grade? _grade = new Grade();
 
     private TictacDBContext? _dbContext;
     private bool _busy;

@@ -32,9 +32,7 @@ else
     [Parameter]
     public int CharacteristicId { get; set; }
 
-    private Characteristic? _characteristic { get; set; } = new Characteristic();
-
-    private Characteristic _dbCharacteristic { get; set; } = new Characteristic();
+    private Characteristic? _characteristic = new Characteristic();
 
     private TictacDBContext? _dbContext;
     private bool _busy;
