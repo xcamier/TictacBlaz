@@ -29,7 +29,7 @@
 }
 else if (!_areDependenciesOk) 
 {
-    <ConfigureDependenciesForm
+    <ConfigureDependenciesComponent
         Dependencies=@_dependencies
         Target="Observations" />
 }
@@ -40,7 +40,7 @@ else if (!_areDependenciesOk)
 }
 
 @code {
-    private ObservationView? _observation { get; set; }
+    private ObservationView? _observation;
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;

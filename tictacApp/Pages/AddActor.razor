@@ -24,14 +24,14 @@
 } 
 else if (!_areDependenciesOk) 
 {
-    <ConfigureDependenciesForm
+    <ConfigureDependenciesComponent
         Dependencies="@_dependencies"
         Target="Actors" />
 }
 
 
 @code {
-    private Actor? _actor { get; set; }
+    private Actor? _actor;
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;

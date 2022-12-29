@@ -38,14 +38,14 @@
 }
 else if (!_areDependenciesOk) 
 {
-    <ConfigureDependenciesForm
+    <ConfigureDependenciesComponent
         Dependencies=@_dependencies
         Target="Time logs" />
 }
 
 
 @code {
-    private TimeLogView? _timeLog { get; set; }
+    private TimeLogView? _timeLog;
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;
