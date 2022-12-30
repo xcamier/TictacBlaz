@@ -39,14 +39,19 @@ builder.Services.AddSingleton<ObservationsService>();
 builder.Services.AddSingleton<IGenericCRUDService, GenericCRUDService>();
 builder.Services.AddSingleton<IGenericCRUDServiceWithParents, GenericCRUDServiceWithParents>();
 
-builder.Services.AddSingleton<ItemSelectionService<Project, TimeLog>>();
-builder.Services.AddSingleton<ItemSelectionService<Objective, TimeLog>>();
-builder.Services.AddSingleton<ItemSelectionService<Characteristic, TimeLog>>();
+//TODO: to remove when stabilized
+//builder.Services.AddSingleton<ItemSelectionService<Project, TimeLog>>();
+//builder.Services.AddSingleton<ItemSelectionService<Objective, TimeLog>>();
+//builder.Services.AddSingleton<ItemSelectionService<Characteristic, TimeLog>>();
 
-builder.Services.AddSingleton<ItemSelectionService<ProjectView, TimeLogView>>();
-builder.Services.AddSingleton<ItemSelectionService<ObjectiveView, TimeLogView>>();
 builder.Services.AddSingleton<ItemSelectionService<CharacteristicView, TimeLogView>>();
 builder.Services.AddSingleton<ItemSelectionService<CharacteristicView, ObservationView>>();
+
+//check if those two are still usefull after replacement by...
+builder.Services.AddSingleton<ItemSelectionService<ProjectView, TimeLogView>>();
+builder.Services.AddSingleton<ItemSelectionService<ObjectiveView, TimeLogView>>();
+//... this one
+builder.Services.AddSingleton<ItemSelectionService<PlannedActivityView, TimeLogView>>();
 
 builder.Services.AddSingleton<ItemSelectionService<Characteristic, Observation>>();
 

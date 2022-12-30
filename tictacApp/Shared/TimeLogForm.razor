@@ -9,9 +9,8 @@
 @inject NavigationManager Navigation
 @inject IGenericCRUDService TagsService
 
-@inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionServiceV;
-@inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionServiceV;
-@inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionServiceV;
+@inject ItemSelectionService<PlannedActivityView, TimeLogView> ActivitySelectionService
+@inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionService
 
 @inject IMapper Mapper
 
@@ -213,32 +212,28 @@
     
     private void SelectProject()
     {
-        ProjectSelectionServiceV.EntityBackup = TimeLog;
-        ProjectSelectionServiceV.IsAdd = IsAdd;
+        ActivitySelectionService.EntityBackup = TimeLog;
+        ActivitySelectionService.IsAdd = IsAdd;
 
         Navigation.NavigateTo("/projectSelector");
     }
 
     private void UnselectProject()
     {
-        //TimeLog.Project = null;
         TimeLog.ProjectId = null;
-        //TimeLog.ProjectsAsText = string.Empty;
     }
 
     private void SelectObjective()
     {
-        ObjectiveSelectionServiceV.EntityBackup = TimeLog;
-        ObjectiveSelectionServiceV.IsAdd = IsAdd;
+        ActivitySelectionService.EntityBackup = TimeLog;
+        ActivitySelectionService.IsAdd = IsAdd;
         
         Navigation.NavigateTo("/objectiveSelector");
     }
 
     private void UnselectObjective()
     {
-        //TimeLog.Objective = null;
         TimeLog.ObjectiveId = null;
-        //TimeLog.ObjectivesAsText = string.Empty;
     }
 
     private async Task HasOpenCharacteriticsSelector()

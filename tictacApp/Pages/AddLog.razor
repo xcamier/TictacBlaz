@@ -13,8 +13,7 @@
 @inject TimeLogsService TimeLogsService
 @inject IGenericCRUDServiceWithParents CRUDService
 
-@inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionService
-@inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionService
+@inject ItemSelectionService<PlannedActivityView, TimeLogView> SelectionService
 @inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionService
 
 @inject NavigationManager Navigation
@@ -57,54 +56,66 @@ else if (!_areDependenciesOk)
 
     protected override async Task OnInitializedAsync()
     {
-        await CheckDependencies();
-
-        if (!_areDependenciesOk)
+        try
         {
-            return;
-        }
+            _backFromSelection = false;
+            _busy = true;
+            ResetErrorMessage();
 
-        _backFromSelection = false;
-        string uri = Navigation.Uri;
-        SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
-
-        if (source == SelectionSource.Project)
-        {
-            _timeLog = ProjectSelectionService.EntityBackup;
-
-            if (ProjectSelectionService.HasSelected && ProjectSelectionService.Selection.Any())
+            await CheckDependencies();
+            if (!_areDependenciesOk)
             {
-                _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
+                return;
             }
-        
-            ProjectSelectionService.Reset();
-        }
-        else if (source == SelectionSource.Objective)
-        {
-            _timeLog = ObjectiveSelectionService.EntityBackup;
+      
+            string uri = Navigation.Uri;
+            SelectionSource selectionSource = LogDependenciesSelectionHelper.ComesFromSelection(uri);
 
-            if (ObjectiveSelectionService.HasSelected && ObjectiveSelectionService.Selection.Any())
+            if (selectionSource == SelectionSource.Project || selectionSource == SelectionSource.Objective) 
             {
-                _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
-            }  
+                _timeLog = SelectionService.EntityBackup;
 
-            ObjectiveSelectionService.Reset();
-        }
-        else if (source == SelectionSource.Characteristic)
-        {
-            //Needs to be kept there to feed CharacteristicsSelector
-            _backFromSelection = true;
-            _timeLog = CharacteristicSelectionService.EntityBackup;
-        }
-        else
-        {
-            DateTime now = DateTime.Now;
-            _timeLog = new TimeLogView(CRUDService)
+                if (_timeLog is not null && SelectionService.HasSelected && SelectionService.Selection.Any())
+                {
+                    if (selectionSource == SelectionSource.Project)
+                    {
+                        _timeLog.ProjectId = SelectionService.Selection.Single().Id;
+                    }
+                    else
+                    {
+                        _timeLog.ObjectiveId = SelectionService.Selection.Single().Id;
+                    }
+                }
+
+                SelectionService.Reset();
+            }
+            else if (selectionSource == SelectionSource.Characteristic)
             {
-                StartDate = now,
-                TimeSpan = now.TimeOfDay
-            };
+                //Needs to be kept there to feed CharacteristicsSelector
+                _backFromSelection = true;
+                _timeLog = CharacteristicSelectionService.EntityBackup;
+            }
+            else
+            {
+                DateTime now = DateTime.Now;
+                _timeLog = new TimeLogView(CRUDService)
+                {
+                    StartDate = now,
+                    TimeSpan = now.TimeOfDay
+                };
+            }
         }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
     }
 
     private async Task CheckDependencies()

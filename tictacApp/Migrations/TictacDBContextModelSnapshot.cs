@@ -180,43 +180,6 @@ namespace tictacApp.Migrations
                     b.ToTable("Grades");
                 });
 
-            modelBuilder.Entity("tictacApp.Data.Objective", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("FinalizationDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsClosed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsFinalized")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("ParentId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("TargetDate")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("Objectives");
-                });
-
             modelBuilder.Entity("tictacApp.Data.Observation", b =>
                 {
                     b.Property<int>("Id")
@@ -248,7 +211,7 @@ namespace tictacApp.Migrations
                     b.ToTable("Observations");
                 });
 
-            modelBuilder.Entity("tictacApp.Data.Project", b =>
+            modelBuilder.Entity("tictacApp.Data.PlannedActivity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -256,6 +219,10 @@ namespace tictacApp.Migrations
 
                     b.Property<string>("Description")
                         .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("FinalizationDate")
@@ -269,17 +236,22 @@ namespace tictacApp.Migrations
 
                     b.Property<string>("Label")
                         .IsRequired()
-                        .HasMaxLength(15)
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentId");
+                    b.ToTable("PlannedActivity");
 
-                    b.ToTable("Projects");
+                    b.HasDiscriminator<string>("Discriminator").HasValue("PlannedActivity");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("tictacApp.Data.Tag", b =>
@@ -328,6 +300,24 @@ namespace tictacApp.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("TimeLogs");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.Objective", b =>
+                {
+                    b.HasBaseType("tictacApp.Data.PlannedActivity");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasDiscriminator().HasValue("Objective");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.Project", b =>
+                {
+                    b.HasBaseType("tictacApp.Data.PlannedActivity");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasDiscriminator().HasValue("Project");
                 });
 
             modelBuilder.Entity("ObservationsCharacteristics", b =>
@@ -422,15 +412,6 @@ namespace tictacApp.Migrations
                     b.Navigation("ParentCharacteristic");
                 });
 
-            modelBuilder.Entity("tictacApp.Data.Objective", b =>
-                {
-                    b.HasOne("tictacApp.Data.Objective", "ParentObjective")
-                        .WithMany("SubObjectives")
-                        .HasForeignKey("ParentId");
-
-                    b.Navigation("ParentObjective");
-                });
-
             modelBuilder.Entity("tictacApp.Data.Observation", b =>
                 {
                     b.HasOne("tictacApp.Data.Actor", "Actor")
@@ -440,15 +421,6 @@ namespace tictacApp.Migrations
                         .IsRequired();
 
                     b.Navigation("Actor");
-                });
-
-            modelBuilder.Entity("tictacApp.Data.Project", b =>
-                {
-                    b.HasOne("tictacApp.Data.Project", "ParentProject")
-                        .WithMany("SubProjects")
-                        .HasForeignKey("ParentId");
-
-                    b.Navigation("ParentProject");
                 });
 
             modelBuilder.Entity("tictacApp.Data.TimeLog", b =>
@@ -464,6 +436,24 @@ namespace tictacApp.Migrations
                     b.Navigation("Objective");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.Objective", b =>
+                {
+                    b.HasOne("tictacApp.Data.Objective", "ParentObjective")
+                        .WithMany("SubObjectives")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("ParentObjective");
+                });
+
+            modelBuilder.Entity("tictacApp.Data.Project", b =>
+                {
+                    b.HasOne("tictacApp.Data.Project", "ParentProject")
+                        .WithMany("SubProjects")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("ParentProject");
                 });
 
             modelBuilder.Entity("tictacApp.Data.Actor", b =>
