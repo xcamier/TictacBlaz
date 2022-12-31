@@ -36,7 +36,7 @@
                                 </MudItem>
                             }
 
-                            @if (Characteristic.ParentId is null)
+                            @if (_hasTwoLevelsOfParents)
                             {
                                 <MudItem xs="12">
                                     <MudSelect Label="Select a grade"
@@ -47,10 +47,7 @@
                                         }
                                     </MudSelect>
                                 </MudItem>
-                            }
 
-                            @if (_hasTwoLevelsOfParents)
-                            {
                                 <MudItem xs="12">
                                     <MudSelect Label="Select group"
                                                     @bind-Value="Characteristic.CharacteristicsGroupId" For="@(() => Characteristic.CharacteristicsGroupId)">
