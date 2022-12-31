@@ -2,6 +2,11 @@
 
 <MudText Class="ml-2 mb-4" Typo="Typo.h5">@PageTitle</MudText>
 
+@if (Error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+}
+
 @if (@BreadcrumbContent is not null)
 {
     @BreadcrumbContent

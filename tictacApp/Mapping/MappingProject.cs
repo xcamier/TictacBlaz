@@ -7,5 +7,6 @@ public class MappingProject : Profile
     public MappingProject()
     {
         CreateMap<Project, ProjectView>(); 
+        CreateMap<Project, PlannedActivityView>();
     }
 }

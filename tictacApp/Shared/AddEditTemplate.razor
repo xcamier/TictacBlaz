@@ -1,0 +1,71 @@
+<PageTitle>@PageTitle</PageTitle>
+
+@if (Error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+}
+
+<MudGrid Justify="Justify.Center" Class="mt-2">
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@PageTitle</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+
+            @AddEditContent
+
+            <MudCardActions Class="d-flex justify-space-between">                                
+                <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                            Color="Color.Primary" 
+                            OnClick="@(async () => await ValidationRequestAsync())">@Mode</MudButton>
+                
+                <MudButton Variant="Variant.Filled" Disabled="@Busy" 
+                            Color="Color.Primary" 
+                            OnClick="@(async () => await CancelAsync())">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@if (Error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+}
+
+@code {
+    [Parameter]
+    public EventCallback ValidationRequest { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public string PageTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Error { get; set; }
+
+    [Parameter]
+    public string ErrorMessage  { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment? AddEditContent { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public string Mode { get; set; }
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private Task ValidationRequestAsync()
+    {
+        return ValidationRequest.InvokeAsync(null);
+    }
+}

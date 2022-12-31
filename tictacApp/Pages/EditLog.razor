@@ -17,8 +17,7 @@
 @inject TimeLogsService TimeLogsService
 @inject IGenericCRUDServiceWithParents CRUDService
 
-@inject ItemSelectionService<ProjectView, TimeLogView> ProjectSelectionService
-@inject ItemSelectionService<ObjectiveView, TimeLogView> ObjectiveSelectionService
+@inject ItemSelectionService<PlannedActivityView, TimeLogView> SelectionService
 @inject ItemSelectionService<CharacteristicView, TimeLogView> CharacteristicSelectionService
 
 @inject IMapper Mapper;
@@ -68,7 +67,7 @@ else if (!_areDependenciesOk)
 
     protected override async Task OnInitializedAsync()
     {
-       _timeLog =   new TimeLogView(CRUDService);
+       _timeLog = new TimeLogView(CRUDService);
 
         try
         {
@@ -83,31 +82,27 @@ else if (!_areDependenciesOk)
             }
 
             string uri = Navigation.Uri;
-            SelectionSource source = LogDependenciesSelectionHelper.ComesFromSelection(uri);
+            SelectionSource selectionSource = LogDependenciesSelectionHelper.ComesFromSelection(uri);
 
-            if (source == SelectionSource.Project)
+            if (selectionSource == SelectionSource.Project || selectionSource == SelectionSource.Objective) 
             {
-                _timeLog = ProjectSelectionService.EntityBackup;
+                _timeLog = SelectionService.EntityBackup;
 
-                if (ProjectSelectionService.HasSelected && ProjectSelectionService.Selection.Any())
+                if (_timeLog is not null && SelectionService.HasSelected && SelectionService.Selection.Any())
                 {
-                    _timeLog.ProjectId = ProjectSelectionService.Selection.Single().Id;
+                    if (selectionSource == SelectionSource.Project)
+                    {
+                        _timeLog.ProjectId = SelectionService.Selection.Single().Id;
+                    }
+                    else
+                    {
+                        _timeLog.ObjectiveId = SelectionService.Selection.Single().Id;
+                    }
                 }
 
-                ProjectSelectionService.Reset();
+                SelectionService.Reset();
             }
-            else if (source == SelectionSource.Objective)
-            {
-                _timeLog = ObjectiveSelectionService.EntityBackup;
-
-                if (ObjectiveSelectionService.HasSelected && ObjectiveSelectionService.Selection.Any())
-                {
-                    _timeLog.ObjectiveId = ObjectiveSelectionService.Selection.Single().Id;
-                }
-
-                ObjectiveSelectionService.Reset();
-            }
-            else if (source == SelectionSource.Characteristic)
+            else if (selectionSource == SelectionSource.Characteristic)
             {
                 _backFromSelection = true;
                 _timeLog = CharacteristicSelectionService.EntityBackup;
@@ -139,6 +134,11 @@ else if (!_areDependenciesOk)
         await base.OnInitializedAsync();
     }
     
+    private async Task CheckDependencies()
+    {
+        _areDependenciesOk = true;
+    }
+
     private async Task ValidationResultAsync(bool success)
     {
         if (_busy)
@@ -233,11 +233,6 @@ else if (!_areDependenciesOk)
         {
             _busy = false;
         }
-    }
-
-    private async Task CheckDependencies()
-    {
-        _areDependenciesOk = true;
     }
 
     // Back to list.

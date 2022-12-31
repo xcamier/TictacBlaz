@@ -17,11 +17,12 @@ public class TictacDBContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var project = modelBuilder.Entity<Project>();
-        project.HasKey(p => p.Id);
+        project.HasBaseType<PlannedActivity>();
         project.Property(p => p.Label).IsRequired();
         project.Property(p => p.Label).HasMaxLength(Constants.LabelShortLength);
         project.Property(p => p.Description).HasMaxLength(Constants.DescriptionStandardLength);
-        project.HasOne(p => p.ParentProject).WithMany(p => p.SubProjects).HasForeignKey(p => p.ParentId);
+        project.HasOne(p => p.ParentProject).
+                    WithMany(p => p.SubProjects).HasForeignKey(p => p.ParentId);
 
         var characterstic = modelBuilder.Entity<Characteristic>();
         characterstic.HasKey(c => c.Id);
@@ -38,11 +39,12 @@ public class TictacDBContext : DbContext
         characteristicsGroup.Property(g => g.Label).HasMaxLength(Constants.LabelStandardLength);
 
         var objective = modelBuilder.Entity<Objective>();
-        objective.HasKey(o => o.Id);
+        objective.HasBaseType<PlannedActivity>();
         objective.Property(o => o.Label).IsRequired();
         objective.Property(o => o.Label).HasMaxLength(Constants.LabelLongLength);
         objective.Property(o => o.Description).HasMaxLength(Constants.DescriptionStandardLength);
-        objective.HasOne(o => o.ParentObjective).WithMany(o => o.SubObjectives).HasForeignKey(o => o.ParentId);
+        objective.HasOne(o => o.ParentObjective).
+                                WithMany(o => o.SubObjectives).HasForeignKey(o => o.ParentId);
 
         var timeLog = modelBuilder.Entity<TimeLog>();
         timeLog.HasKey(t => t.Id);

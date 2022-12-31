@@ -1,0 +1,114 @@
+@typeparam TPlannedActivity where TPlannedActivity: PlannedActivity, new()
+
+@using tictacApp.Data
+@using tictacApp.Interfaces
+
+@inject IGenericCRUDServiceWithParents CRUDService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+
+@if (_plannedActivity is not null)
+{
+    <PlannedActivityForm 
+                Busy=@_busy 
+                TPlannedActivity=TPlannedActivity
+                PlannedActivity=@_plannedActivity 
+                IsAdd=true
+                Context=@Context
+                Error=@_error
+                ErrorMessage=@_errorMessage
+                CancelRequest="Cancel"
+                ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+}
+
+@code {
+    [Parameter]
+    public int? PlannedActivityId { get; set; } = null;
+
+    [Parameter]
+    public string Context { get; set; } = string.Empty;
+
+    [Parameter]
+    public string RootUri { get; set; }
+    
+    private TPlannedActivity? _plannedActivity = new TPlannedActivity();
+    private bool _busy;
+    private bool _error;
+    private string _errorMessage = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _plannedActivity.ParentId = PlannedActivityId;
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task ValidationResultAsync(bool success)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        if (!success)
+        {
+            Snackbar.Add($"Unable to add the {Context}", Severity.Warning);
+
+            ResetErrorMessage();
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+            ResetErrorMessage();
+
+            bool res = await CRUDService.AddAsync<TPlannedActivity>(_plannedActivity);
+            if (res )
+            {
+                Snackbar.Add($"{Context} added successfully", Severity.Success);
+                GoBackToList();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the {Context}", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Back to list.
+    private void Cancel()
+    {
+        GoBackToList();
+    }
+
+    private void GoBackToList()
+    {
+        string url = string.Empty;
+        if (PlannedActivityId.HasValue)
+        {
+            url = $"/{RootUri}/{PlannedActivityId}";
+        }
+        else
+        {
+            url = $"/{RootUri}";
+        }
+        Navigation.NavigateTo(url);
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}

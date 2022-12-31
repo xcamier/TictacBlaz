@@ -1,0 +1,117 @@
+@typeparam TPlannedActivity where TPlannedActivity: PlannedActivity
+
+@using tictacApp.Data
+@using tictacApp.Helpers
+@using tictacApp.Validators
+
+<AddEditTemplate 
+    PageTitle=@_pageTitle
+    Error=@Error
+    ErrorMessage=@ErrorMessage
+    Busy=@Busy 
+    Mode=@_mode
+    CancelRequest="CancelAsync"
+    ValidationRequest="ValidationRequestAsync" >
+
+    <AddEditContent>
+
+        @if (PlannedActivity is not null)
+        {
+            <MudCardContent>  
+                <MudForm Model="@PlannedActivity"
+                    @ref="@_form" Validation="@(_validator.ValidateValue)" ValidationDelay="0">
+
+                    <MudTextField T="string" Label="Label" Variant="Variant.Text" 
+                                    @bind-Value="PlannedActivity.Label" For="@(() => PlannedActivity.Label)" 
+                                    Immediate="true"/>
+
+                    <MudTextField T="string" Label="Description" Variant="Variant.Text" Lines="3" 
+                                    @bind-Value="PlannedActivity.Description" For="@(() => PlannedActivity.Description)" 
+                                    Immediate="true"/>
+
+                    <MudDatePicker Label="Target date" Placeholder="Select Date"
+                                Editable="true" DisableToolbar="true"
+                                @bind-Date="PlannedActivity.TargetDate" For="@(() => PlannedActivity.TargetDate)" />
+
+                    <MudGrid Class="mt-4">
+                        <MudItem xs="6">
+                            <MudSwitch  Label="Finalized" Color="Color.Info" 
+                                        @bind-Checked="@PlannedActivity.IsFinalized" For="@(() => PlannedActivity.IsFinalized)"/>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker Label="Finalization date" Placeholder="Select Date"
+                                        Editable="true" DisableToolbar="true"
+                                        @bind-Date="PlannedActivity.FinalizationDate" For="@(() => PlannedActivity.FinalizationDate)" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSwitch  Label="Closed" Color="Color.Info" 
+                                        @bind-Checked="@PlannedActivity.IsClosed" For="@(() => PlannedActivity.IsClosed)"/>
+                        </MudItem>
+                    </MudGrid>
+                </MudForm>
+            </MudCardContent>
+        }
+
+    </AddEditContent>
+ 
+</AddEditTemplate>
+
+
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback CancelRequest { get; set; }
+
+    [Parameter]
+    public bool IsAdd { get; set; }
+
+    [Parameter]
+    public TPlannedActivity? PlannedActivity { get; set; }
+
+    [Parameter]
+    public string Context { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public bool Error { get; set; }
+
+    [Parameter]
+    public string ErrorMessage { get; set; }
+
+    private string _mode => IsAdd ? "Add" : "Edit";
+    private MudForm _form;
+    private string _pageTitle = string.Empty;
+
+    private LabelAndDescriptionFluentValidator<TPlannedActivity> _validator = 
+                new LabelAndDescriptionFluentValidator<TPlannedActivity>(Constants.LabelMinLength, 
+                                                                    Constants.LabelLongLength, 
+                                                                    Constants.DescriptionStandardLength);
+
+    protected override void OnInitialized()
+    {
+        _pageTitle = $"{_mode} {Context}";
+
+        base.OnInitialized();
+    }
+
+    private Task CancelAsync()
+    {
+        return CancelRequest.InvokeAsync(null);
+    }
+
+    private Task ValidationRequestAsync()
+    {
+         _form.Validate();
+        if (_form.IsValid)
+        {
+            return ValidationResult.InvokeAsync(true);
+        }
+
+        return ValidationResult.InvokeAsync(false);
+    }
+}

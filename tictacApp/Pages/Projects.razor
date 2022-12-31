@@ -3,217 +3,35 @@
 @page "/projectSelector"
 @page "/projectSelector/{ParentProjectId:int}"
 
-@using tictacApp.Services
-@using tictacApp.Interfaces
 @using tictacApp.Data
-@using tictacApp.Helpers
-@using tictacApp.ViewModels
+@using tictacApp.Shared
 
-@using AutoMapper
-
-@inject IGenericCRUDServiceWithParents ProjectsService
 @inject NavigationManager Navigation
-@inject ISnackbar Snackbar
 
-@inject IMapper Mapper
-
-@inject ItemSelectionService<ProjectView, TimeLogView> ItemSelectionService
-
-
-<ListTemplate PageTitle=@_pageTitle Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
-
-    <BreadcrumbContent>
-        <MudBreadcrumbs Items="_path">
-            <ItemTemplate Context="item">
-                <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => @GoToSubProject(@item.Href))">@item.Text</MudButton>
-            </ItemTemplate>
-        </MudBreadcrumbs>
-    </BreadcrumbContent>
-
-    <ButtonsAreaContent>
-        @if (_isInSelection)
-        {
-            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                        OnClick="OnCancel">Cancel</MudButton>
-        }
-        else
-        {
-            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                    OnClick="@(() => @AddProject(@ParentProjectId))" Class="d-inline-flex">Add Project</MudButton>
-        }
-
-    </ButtonsAreaContent>
-
-    <ListAreaContent>
-        <MudTable Items="@_projects" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                    Class="ml-2 mr-2 mt-4">
-            <ColGroup>
-                <col />
-                <col />
-                <col style="width: 120px;"/>
-            </ColGroup>
-            <HeaderContent>
-                <MudTh>Label</MudTh>
-                <MudTh>Description</MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Label">@context.Label</MudTd>
-                <MudTd DataLabel="Label">@context.Description</MudTd>
-                <MudTd DataLabel="Actions">
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => @GoToSubProject(context.Id))" />
-                    @if (_isInSelection)
-                    {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
-                    }
-                    else
-                    {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/projects/{context.Id}/editProject")" />
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteProjectAsync(context))" />   
-                    }
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-    </ListAreaContent>
-
-</ListTemplate>
+<PlannedActivityListComponent
+    TPlannedActivity=Project
+    ParentActivityId=@ParentProjectId
+    IsInSelection=@_isInSelection
+    Context="Projects"
+    RootUri=@_rootUri 
+    AddUri = "addProject"
+    EditUri = "editProject"
+    BackToLogWhenAdding="addLogFromProjectSelection"
+    BackToLogWhenEditing="editLogFromProjectSelection" />
 
 
 @code {
     [Parameter]
     public int? ParentProjectId { get; set; } = null;
 
-    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
-    private Project[]? _projects;
-    private bool _loading = false;
-    private bool _busy = false;
-    private bool _error = false;
-    private string _errorMessage = string.Empty;
     private bool _isInSelection = false;
-    private string _pageTitle = "Projects";
-    private string _rootUri = "projects";
+    private string _rootUri = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        if (Navigation.Uri.Contains("Selector"))
-        {
-            _isInSelection = true;
-            _pageTitle = "Project Selection";
-            _rootUri = "projectSelector";
-        }
+        _isInSelection = Navigation.Uri.Contains("Selector");
+        _rootUri = _isInSelection ? "projectSelector" : "projects";
 
-        await BuildBreadcrumb();
-        await GetProjectsAsync();
-    }
-
-    private async Task BuildBreadcrumb()
-    {
-        KeyValuePair<int, string?>[] parentProjects = 
-                            await ProjectsService.GetParentsAsync<Project>(ParentProjectId);
-        _path = BreadcrumbHelper.BuildBreadcrumb("Projects", _rootUri, parentProjects);
-    }
-
-    private async Task GetProjectsAsync()
-    {
-        try
-        {
-            _loading = true;
-            _projects = await ProjectsService.GetAllAsync<Project>(ParentProjectId);
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private async Task DeleteProjectAsync(Project projectToRemove)
-    {
-        if (_busy)
-        {
-            return;
-        }
-
-        try
-        {
-            _busy = true;
-
-            bool res = await ProjectsService.DeleteAsync<Project>(projectToRemove);
-
-            ResetErrorMessage();
-
-            if (res )
-            {
-                Snackbar.Add("Project deleted successfully", Severity.Success);
-                await GetProjectsAsync();
-            }
-            else
-            {
-                Snackbar.Add("Error when deleting the project", Severity.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            _error = true;
-            _errorMessage = ex.Message;
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
-
-    private void ResetErrorMessage()
-    {
-        _error = false;
-        _errorMessage = string.Empty;
-    }
-
-    private void GoToSubProject(int subProjectId)
-    {
-        GoToSubProject($"/{_rootUri}/{subProjectId}");
-    }
-
-    private void GoToSubProject(string url)
-    {
-        Navigation.NavigateTo(url, true);
-    }
-
-    private void AddProject(int? parentProjectId)
-    {
-        string url = string.Empty;
-        if (parentProjectId.HasValue)
-        {
-            url = $"/projects/{parentProjectId}/addProject";
-        }
-        else
-        {
-            url = "/projects/addProject";
-        }
-        Navigation.NavigateTo(url);
-    }
-
-    private void Select(Project selectedProject)
-    {
-        ItemSelectionService.HasSelected = true;
-
-        ProjectView selectedProjectView = Mapper.Map<ProjectView>(selectedProject);
-        ItemSelectionService.Selection.Add(selectedProjectView);
-
-        NavigateBackToCaller();
-    }
-
-    private void OnCancel()
-    {
-        ItemSelectionService.HasSelected = false;
-
-        NavigateBackToCaller();     
-    }
-
-    private void NavigateBackToCaller()
-    {
-        string url = ItemSelectionService.IsAdd ? 
-                        "/logs/addLogFromProjectSelection" : 
-                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromProjectSelection";
-        Navigation.NavigateTo(url);
+        base.OnInitialized();
     }
 }

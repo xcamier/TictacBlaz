@@ -3,219 +3,35 @@
 @page "/objectiveSelector"
 @page "/objectiveSelector/{ParentObjectiveId:int}"
 
-@using tictacApp.Services
-@using tictacApp.Interfaces
 @using tictacApp.Data
-@using tictacApp.Helpers
-@using tictacApp.ViewModels
+@using tictacApp.Shared
 
-@using AutoMapper
-
-@inject IGenericCRUDServiceWithParents ObjectivesService
 @inject NavigationManager Navigation
-@inject ISnackbar Snackbar
 
-@inject IMapper Mapper
-
-@inject ItemSelectionService<ObjectiveView, TimeLogView> ItemSelectionService
-
-<ListTemplate PageTitle=@_pageTitle Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
-
-    <BreadcrumbContent>
-        <MudBreadcrumbs Items="_path">
-            <ItemTemplate Context="item">
-                <MudButton Variant="Variant.Text" StartIcon="@item.Icon" Size="Size.Small" OnClick="@(() => GoToSubObjective(@item.Href))">@item.Text</MudButton>
-            </ItemTemplate>
-        </MudBreadcrumbs>
-    </BreadcrumbContent>
-
-    <ButtonsAreaContent>
-        @if (_isInSelection)
-        {
-            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                        OnClick="OnCancel">Cancel</MudButton>
-        }
-        else
-        {
-            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                    OnClick="@(() => AddObjective(ParentObjectiveId))" Class="d-inline-flex">Add Objective</MudButton>
-        }
-    </ButtonsAreaContent>
-
-    <ListAreaContent>
-        <MudTable Items="@_objectives" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                    Class="ml-2 mr-2 mt-4">
-            <ColGroup>
-                <col />
-                <col />
-                <col />
-                <col style="width: 120px;"/>
-            </ColGroup>
-            <HeaderContent>
-                <MudTh>Label</MudTh>
-                <MudTh>Description</MudTh>
-                <MudTh>Target</MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Label">@context.Label</MudTd>
-                <MudTd DataLabel="Label">@context.Description</MudTd>
-                <MudTd DataLabel="Label">@context.TargetDate?.ToString("d")</MudTd>
-                <MudTd DataLabel="Actions">
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubObjective(context.Id))" />
-                    @if (_isInSelection)
-                    {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
-                    }
-                    else
-                    {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/objectives/{context.Id}/editObjective")" />
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObjectiveAsync(context))" />
-                    }
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-    </ListAreaContent>
-
-</ListTemplate>
+<PlannedActivityListComponent
+    TPlannedActivity=Objective
+    ParentActivityId=@ParentObjectiveId
+    IsInSelection=@_isInSelection
+    Context="Objectives"
+    RootUri=@_rootUri 
+    AddUri = "addObjective"
+    EditUri = "editObjective"
+    BackToLogWhenAdding="addLogFromObjectiveSelection"
+    BackToLogWhenEditing="editLogFromObjectiveSelection" />
 
 
 @code {
     [Parameter]
     public int? ParentObjectiveId { get; set; } = null;
 
-    private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
-    private Objective[]? _objectives;
-    private bool _loading = false;
-    private bool _busy = false;
-    private bool _error = false;
-    private string _errorMessage = string.Empty;
     private bool _isInSelection = false;
-    private string _pageTitle = "Objectives";
-    private string _rootUri = "objectives";
+    private string _rootUri = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        if (Navigation.Uri.Contains("Selector"))
-        {
-            _isInSelection = true;
-            _pageTitle = "Objective Selection";
-            _rootUri = "objectiveSelector";
-        }
+        _isInSelection = Navigation.Uri.Contains("Selector");
+        _rootUri = _isInSelection ? "objectiveSelector" : "objectives";
 
-        await BuildBreadcrumb();
-        await GetObjectivesAsync();
-    }
-
-    private async Task BuildBreadcrumb()
-    {
-        KeyValuePair<int, string?>[] parentProjects = 
-                            await ObjectivesService.GetParentsAsync<Objective>(ParentObjectiveId);
-        _path = BreadcrumbHelper.BuildBreadcrumb("Objectives", _rootUri, parentProjects);
-
-    }
-
-    private async Task GetObjectivesAsync()
-    {
-        try
-        {
-            _loading = true;
-            _objectives = await ObjectivesService.GetAllAsync<Objective>(ParentObjectiveId);
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private async Task DeleteObjectiveAsync(Objective objectiveToRemove)
-    {
-        if (_busy)
-        {
-            return;
-        }
-
-        try
-        {
-            _busy = true;
-
-            bool res = await ObjectivesService.DeleteAsync<Objective>(objectiveToRemove);
-
-            ResetErrorMessage();
-
-            if (res )
-            {
-                Snackbar.Add("Objective deleted successfully", Severity.Success);
-                await GetObjectivesAsync();
-            }
-            else
-            {
-                Snackbar.Add("Error when deleting the objective", Severity.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            _error = true;
-            _errorMessage = ex.Message;
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
-
-    private void ResetErrorMessage()
-    {
-        _error = false;
-        _errorMessage = string.Empty;
-    }
-
-    private void GoToSubObjective(int subObjectiveId)
-    {
-        GoToSubObjective($"/{_rootUri}/{subObjectiveId}");
-    }
-
-    private void GoToSubObjective(string url)
-    {
-        Navigation.NavigateTo(url, true);
-    }
-
-    private void AddObjective(int? parentObjectiveId)
-    {
-        string url = string.Empty;
-        if (parentObjectiveId.HasValue)
-        {
-            url = $"/objectives/{parentObjectiveId}/addObjective";
-        }
-        else
-        {
-            url = "/objectives/addObjective";
-        }
-        Navigation.NavigateTo(url);
-    }
-
-    private void Select(Objective selectedObjective)
-    {
-        ItemSelectionService.HasSelected = true;
-
-        ObjectiveView selectedObjectiveView = Mapper.Map<ObjectiveView>(selectedObjective);
-        ItemSelectionService.Selection.Add(selectedObjectiveView);
-
-        NavigateBackToCaller();
-    }
-
-    private void OnCancel()
-    {
-        ItemSelectionService.HasSelected = false;
-
-        NavigateBackToCaller();     
-    }
-
-    private void NavigateBackToCaller()
-    {
-        string url = ItemSelectionService.IsAdd ? 
-                        "/logs/addLogFromObjectiveSelection" : 
-                        $"/logs/{ItemSelectionService.EntityBackup.Id}/editLogFromObjectiveSelection";
-        Navigation.NavigateTo(url);
+        base.OnInitialized();
     }
 }
