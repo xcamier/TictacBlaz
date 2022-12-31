@@ -80,7 +80,7 @@
     private ActorModelFluentValidator _actorValidator = new ActorModelFluentValidator();
     private Grade[]? _grades;
     private bool _hasAlreadyADefaultWhichIsNotThisUser;
-    private string _nameOfActorWhoIsDefault = string.Empty;
+    private string? _nameOfActorWhoIsDefault = string.Empty;
 
 
     protected override async Task OnInitializedAsync()
@@ -89,7 +89,7 @@
 
         Actor? defaultActor = await ActorsServiceHelper.GetActorByDefaultForTimelogs(CRUDService);
         _hasAlreadyADefaultWhichIsNotThisUser = (defaultActor is not null) && defaultActor.Id != Actor.Id;
-        _nameOfActorWhoIsDefault = defaultActor.Name;
+        _nameOfActorWhoIsDefault = defaultActor?.Name;
     }
 
     private Task CancelAsync()
