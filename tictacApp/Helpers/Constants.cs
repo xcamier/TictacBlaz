@@ -12,6 +12,7 @@ public static class Constants
     public const int DescriptionStandardLength = 255;
     public const int DescriptionFullLength = 510;
     public const int DescriptionMidLength = 140;
+    public const int MaxBreadcrumReadeableItemTextLength = 20;
 }
 
 public static class AppIcons

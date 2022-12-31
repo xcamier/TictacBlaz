@@ -14,7 +14,8 @@ public class BreadcrumbHelper
 
         foreach (KeyValuePair<int, string?> item in items)
         {
-            BreadcrumbItem bcItem = new BreadcrumbItem(item.Value, href: $"/{rootUri}/{item.Key}");
+            string asText = FormatStringForBreadcrumb(item.Value);
+            BreadcrumbItem bcItem = new BreadcrumbItem(asText, href: $"/{rootUri}/{item.Key}");
             path.Add(bcItem);
         }
 
@@ -27,19 +28,19 @@ public class BreadcrumbHelper
         string asText = string.Empty;
         foreach (var pair in parents)
         {
-            asText += (asText.Length == 0 ? "" : " / ") + pair.Value;
+            asText += (asText.Length == 0 ? "" : " / ") + FormatStringForBreadcrumb(pair.Value);
         }
 
         return asText;
     }
 
-    public static string FormatStringForBreadcrumb(string str)
+    public static string FormatStringForBreadcrumb(string? str)
     {
-        if (str.Length > 15)
+        if (str != null && str.Length > Constants.MaxBreadcrumReadeableItemTextLength)
         {
-            return $"{str.Substring(0, 15)}...";
+            return $"{str.Substring(0, Constants.MaxBreadcrumReadeableItemTextLength)}...";
         }
 
-        return str;
+        return str ?? string.Empty;
     }
 }
