@@ -82,6 +82,10 @@
     {
         await BuildBreadcrumb();
         await GetCharacteristicsAsync();
+
+        bool _hasTwoLevelsOfParents = await CharacteristicsServiceHelper.
+                                        HasTwoLevelsOfParentsAsync(CharacteristicsService, ParentCharacteristicId);
+        _canGoOneLevelAbove = !_hasTwoLevelsOfParents;
     }
 
     private async Task BuildBreadcrumb()
