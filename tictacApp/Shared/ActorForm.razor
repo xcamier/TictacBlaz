@@ -23,7 +23,7 @@
                         <MudTextField T="string" Label="Label" Variant="Variant.Text" 
                                         @bind-Value="Actor.Name" For="@(() => Actor.Name)" 
                                         Immediate="true"/>
-                        <MudSelect Label="Select a grade" HelperText="Grade"
+                        <MudSelect Label="Select a grade"
                                             @bind-Value="Actor.DefaultGradeId" For="@(() => Actor.DefaultGradeId)">
                                 @foreach (Grade grade in _grades)
                                 {

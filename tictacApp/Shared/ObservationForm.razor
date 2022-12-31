@@ -40,7 +40,7 @@
                                 </MudCheckBox>                               
                             </MudItem>
                             <MudItem xs="12">
-                                <MudSelect Label="Select an actor" HelperText="Actor"
+                                <MudSelect Label="Select an actor"
                                             @bind-Value="Observation.ActorId" For="@(() => Observation.ActorId)">
                                     @foreach (ActorView actor in _actors)
                                     {

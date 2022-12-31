@@ -39,7 +39,7 @@
                             @if (Characteristic.ParentId is null)
                             {
                                 <MudItem xs="12">
-                                    <MudSelect Label="Select a grade" HelperText="Grade"
+                                    <MudSelect Label="Select a grade"
                                                     @bind-Value="Characteristic.GradeId" For="@(() => Characteristic.GradeId)">
                                         @foreach (Grade grade in _grades)
                                         {
@@ -52,7 +52,7 @@
                             @if (_hasTwoLevelsOfParents)
                             {
                                 <MudItem xs="12">
-                                    <MudSelect Label="Select group" HelperText="Group"
+                                    <MudSelect Label="Select group"
                                                     @bind-Value="Characteristic.CharacteristicsGroupId" For="@(() => Characteristic.CharacteristicsGroupId)">
                                         @foreach (CharacteristicsGroup group in _groups)
                                         {
