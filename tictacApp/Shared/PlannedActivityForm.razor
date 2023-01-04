@@ -58,7 +58,7 @@
                         </MudItem>
                         <MudItem xs="6">
                             <MudDatePicker Label="Finalization date" Placeholder="Select Date"
-                                        Editable="true" DisableToolbar="true"
+                                        Editable="true" DisableToolbar="true" Disabled="@(!PlannedActivity.IsFinalized)"
                                         @bind-Date="PlannedActivity.FinalizationDate" For="@(() => PlannedActivity.FinalizationDate)" />
                         </MudItem>
                         <MudItem xs="12">
