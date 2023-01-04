@@ -217,6 +217,9 @@ namespace tictacApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("CompletionPercent")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Description")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
@@ -227,6 +230,9 @@ namespace tictacApp.Migrations
 
                     b.Property<DateTime?>("FinalizationDate")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBehind")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsClosed")
                         .HasColumnType("INTEGER");

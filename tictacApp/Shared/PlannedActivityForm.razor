@@ -3,6 +3,9 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 @using tictacApp.Validators
+@using tictacApp.Interfaces
+
+@inject IPlannedActivityCRUDService CRUDService
 
 <AddEditTemplate 
     PageTitle=@_pageTitle
@@ -34,6 +37,21 @@
                                 @bind-Date="PlannedActivity.TargetDate" For="@(() => PlannedActivity.TargetDate)" />
 
                     <MudGrid Class="mt-4">
+                        <MudItem xs="6">
+                            <MudSwitch  Label=@GetStatusLabel() 
+                                        Color="Color.Error" UnCheckedColor="Color.Success"
+                                        @bind-Checked="@PlannedActivity.IsBehind" For="@(() => PlannedActivity.IsBehind)"/>
+                        </MudItem>
+                        <MudItem xs="2">
+                            <MudTextField Label="Completion" 
+                                            Adornment="Adornment.End" AdornmentText="%"
+                                            @bind-Value="PlannedActivity.CompletionPercent"  For="@(() => PlannedActivity.CompletionPercent)"
+                                            Immediate="true"/>
+                        </MudItem>
+                        <MudItem xs="4" Class="d-flex align-center">
+                            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Calculate" Size="Size.Small"
+                                    OnClick="@(() => AutoCalcChange(PlannedActivity.Id))" />
+                        </MudItem>
                         <MudItem xs="6">
                             <MudSwitch  Label="Finalized" Color="Color.Info" 
                                         @bind-Checked="@PlannedActivity.IsFinalized" For="@(() => PlannedActivity.IsFinalized)"/>
@@ -86,6 +104,7 @@
     private string _mode => IsAdd ? "Add" : "Edit";
     private MudForm _form;
     private string _pageTitle = string.Empty;
+    private string _statusLabel = ProgressStatus.OnTrack;
 
     private LabelAndDescriptionFluentValidator<TPlannedActivity> _validator = 
                 new LabelAndDescriptionFluentValidator<TPlannedActivity>(Constants.LabelMinLength, 
@@ -113,5 +132,25 @@
         }
 
         return ValidationResult.InvokeAsync(false);
+    }
+
+    private string GetStatusLabel() 
+            => (PlannedActivity is null || PlannedActivity.IsBehind) ? 
+                                                ProgressStatus.Behind : 
+                                                ProgressStatus.OnTrack;
+
+    private void AutoCalcChange(int Id)
+    {
+        if (PlannedActivity is not null)
+        {
+            Tuple<int, int> values = new Tuple<int, int>(0,0);
+            CRUDService.GetSumOfCompletionOfChildren<TPlannedActivity>(Id, ref values);
+            double total = 0d;
+            if (values.Item1 != 0)
+            {
+                total = Math.Round((double)values.Item2 / (double)values.Item1, MidpointRounding.AwayFromZero);
+            }
+            PlannedActivity.CompletionPercent = (int)total;
+        }
     }
 }

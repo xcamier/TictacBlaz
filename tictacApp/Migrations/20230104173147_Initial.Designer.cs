@@ -11,7 +11,7 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20221230113547_Initial")]
+    [Migration("20230104173147_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -220,6 +220,9 @@ namespace tictacApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("CompletionPercent")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Description")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
@@ -230,6 +233,9 @@ namespace tictacApp.Migrations
 
                     b.Property<DateTime?>("FinalizationDate")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBehind")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsClosed")
                         .HasColumnType("INTEGER");

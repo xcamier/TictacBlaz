@@ -43,21 +43,32 @@
         <MudTable Items="@_plannedActivities" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
                     Class="ml-2 mr-2 mt-4">
             <ColGroup>
+                <col style="width: 20%;" />
                 <col />
-                <col />
-                <col />
+                <col style="width: 8%;" />
+                <col style="width: 5%;" />
                 <col style="width: 120px;"/>
             </ColGroup>
             <HeaderContent>
                 <MudTh>Label</MudTh>
                 <MudTh>Description</MudTh>
                 <MudTh>Target</MudTh>
+                <MudTh>Completion</MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Label">@context.Label</MudTd>
-                <MudTd DataLabel="Label">@context.Description</MudTd>
-                <MudTd DataLabel="Label">@context.TargetDate?.ToString("d")</MudTd>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                <MudTd DataLabel="Target">@context.TargetDate?.ToString("d")</MudTd>
+
+                <MudTd DataLabel="Completion">
+                    <MudProgressLinear Color=@GetStatusColor(context.IsBehind) Size="Size.Large" Value=@context.CompletionPercent>
+                         <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                            <b>@context.CompletionPercent</b>
+                        </MudText>
+                    </MudProgressLinear>
+                </MudTd>
+
                 <MudTd DataLabel="Actions">
                     <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubActivity(context.Id))" />
                     @if (IsInSelection)
@@ -229,4 +240,7 @@
                         $"/logs/{ItemSelectionService.EntityBackup.Id}/{BackToLogWhenEditing}";
         Navigation.NavigateTo(url);
     }
+
+    private Color GetStatusColor(bool isBehind) 
+        => isBehind ? Color.Error : Color.Success;
 }

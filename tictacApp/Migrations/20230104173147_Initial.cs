@@ -47,6 +47,8 @@ namespace tictacApp.Migrations
                     Label = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
                     TargetDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    IsBehind = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CompletionPercent = table.Column<int>(type: "INTEGER", nullable: false),
                     IsClosed = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsFinalized = table.Column<bool>(type: "INTEGER", nullable: false),
                     FinalizationDate = table.Column<DateTime>(type: "TEXT", nullable: true),

@@ -29,5 +29,11 @@ public static class AppIcons
     public const string Negative =@Icons.Filled.ThumbDown;
     public const string Label = @Icons.Outlined.Label;
     public const string Characteristic = @Icons.Material.Filled.Anchor;
+    public const string Calculate = @Icons.Material.Outlined.Calculate;
 }
 
+public static class ProgressStatus
+{
+    public const string OnTrack = "On Track";
+    public const string Behind = "Behind";
+}
