@@ -5,7 +5,7 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 
-@inject IGenericCRUDServiceWithParents CharacteristicsService
+@inject ICharacteristicCRUDService CharacteristicsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -34,6 +34,11 @@
                 {
                     <col />
                 }
+                @if (!_canGoOneLevelAbove)
+                {
+                    <col />
+                    <col />
+                }
                 <col style="width: 120px;"/>
             </ColGroup>
             <HeaderContent>
@@ -42,13 +47,27 @@
                 {
                     <MudTh>Secondary Description</MudTh>
                 }
+                @if (!_canGoOneLevelAbove)
+                {
+                    <MudTh>Group</MudTh>
+                    <MudTh>Grade</MudTh>
+                }
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Label">@context.Label</MudTd>
+                <MudTd DataLabel="Primary Description">@context.Label</MudTd>
                 @if (_canGoOneLevelAbove)
                 {
-                    <MudTd DataLabel="Label">@context.Description</MudTd>
+                    <MudTd DataLabel="Secondary Description">@context.Description</MudTd>
+                }
+                @if (!_canGoOneLevelAbove)
+                {
+                    <MudTd DataLabel="Group">
+                        @(context.CharacteristicsGroup is not null ? context.CharacteristicsGroup.Label : string.Empty)
+                    </MudTd>
+                    <MudTd DataLabel="Grade">
+                        @(context.Grade is not null ? context.Grade.Label : string.Empty)
+                    </MudTd>   
                 }
                 <MudTd DataLabel="Actions">
                     @if (_canGoOneLevelAbove)
@@ -81,11 +100,12 @@
     protected override async Task OnInitializedAsync()
     {
         await BuildBreadcrumb();
-        await GetCharacteristicsAsync();
 
         bool _hasTwoLevelsOfParents = await CharacteristicsServiceHelper.
                                         HasTwoLevelsOfParentsAsync(CharacteristicsService, ParentCharacteristicId);
         _canGoOneLevelAbove = !_hasTwoLevelsOfParents;
+
+        await GetCharacteristicsAsync();
     }
 
     private async Task BuildBreadcrumb()
@@ -100,7 +120,8 @@
         try
         {
             _loading = true;
-            _characteristics = await CharacteristicsService.GetAllAsync<Characteristic>(ParentCharacteristicId);
+            _characteristics = await CharacteristicsService.GetAllAsync(ParentCharacteristicId, 
+                                                                        !_canGoOneLevelAbove);
         }
         finally
         {
