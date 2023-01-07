@@ -41,6 +41,8 @@ builder.Services.AddSingleton<IGenericCRUDServiceWithParents, GenericCRUDService
 builder.Services.AddSingleton<IPlannedActivityCRUDService, PlannedActivityCRUDService>();
 builder.Services.AddSingleton<ICharacteristicCRUDService, CharacteristicCRUDService>();
 
+builder.Services.AddSingleton<ISettingsCRUDService, SettingsCRUDService>();
+
 //TODO: to remove when stabilized
 //builder.Services.AddSingleton<ItemSelectionService<Project, TimeLog>>();
 //builder.Services.AddSingleton<ItemSelectionService<Objective, TimeLog>>();

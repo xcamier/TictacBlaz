@@ -37,3 +37,11 @@ public static class ProgressStatus
     public const string OnTrack = "On Track";
     public const string Behind = "Behind";
 }
+
+public static class SettingsKeys
+{
+    public const string OrangeLow = "orange_low";
+    public const string OrangeHigh = "orange_high";
+    public const string GreenLow = "green_low";
+    public const string GreenHigh = "green_high";
+}

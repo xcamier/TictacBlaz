@@ -84,6 +84,11 @@ public class TictacDBContext : DbContext
         observation.HasOne(o => o.Actor).WithMany(a => a.Observations).HasForeignKey(a => a.ActorId);
         observation.HasMany(o => o.Characteristics).WithMany(c => c.Observations).UsingEntity("ObservationsCharacteristics");
         observation.HasMany(t => t.Tags).WithMany(t => t.Observations).UsingEntity("ObservationsTags");
+        
+        var setting = modelBuilder.Entity<Setting>();
+        setting.HasKey(s => s.Key);
+        setting.Property(s => s.Key).HasMaxLength(Constants.LabelShortLength);
+        setting.Property(s => s.Value).HasMaxLength(Constants.LabelShortLength);
    }
 
     public DbSet<Project> Projects { get; set; }
@@ -95,4 +100,5 @@ public class TictacDBContext : DbContext
     public DbSet<Grade> Grades { get; set; }
     public DbSet<Actor> Actors { get; set; }
     public DbSet<Observation> Observations { get; set; }
+    public DbSet<Setting> Settings { get; set; }
 }
