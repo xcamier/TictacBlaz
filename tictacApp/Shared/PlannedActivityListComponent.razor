@@ -9,6 +9,7 @@
 @using AutoMapper
 
 @inject IGenericCRUDServiceWithParents PlannedActivitiesService
+@inject ISettingsService SettingsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
@@ -59,8 +60,7 @@
             <RowTemplate>
                 <MudTd DataLabel="Label">@context.Label</MudTd>
                 <MudTd DataLabel="Description">@context.Description</MudTd>
-                <MudTd DataLabel="Target">@context.TargetDate?.ToString("d")</MudTd>
-
+                <MudTd DataLabel="Target" Style="@GetTargetDateColor(context.TargetDate)">@context.TargetDate?.ToString("d")</MudTd>
                 <MudTd DataLabel="Completion">
                     <MudProgressLinear Color=@GetStatusColor(context.IsBehind) Size="Size.Large" Value=@context.CompletionPercent>
                          <MudText Typo="Typo.subtitle1" Color="Color.Dark">
@@ -121,11 +121,15 @@
     private string _errorMessage = string.Empty;
     private string _pageTitle = string.Empty;
 
+    private PlannedActivitySettingsView _activitiesSettings;
+
+
     protected override async Task OnInitializedAsync()
     {
         _pageTitle = IsInSelection ? $"{Context} Selection" : Context;
 
         await BuildBreadcrumb();
+        await GetSettings();
         await GetObjectivesAsync();
     }
 
@@ -135,6 +139,12 @@
                             await PlannedActivitiesService.GetParentsAsync<TPlannedActivity>(ParentActivityId);
         _path = BreadcrumbHelper.BuildBreadcrumb(Context, RootUri, parentActivities);
 
+    }
+
+    private async Task GetSettings()
+    {
+        Setting[] settings = await SettingsService.GetAllAsync();
+        _activitiesSettings = SettingsService.MapPlannedActivitySettingsToView(settings);
     }
 
     private async Task GetObjectivesAsync()
@@ -243,4 +253,69 @@
 
     private Color GetStatusColor(bool isBehind) 
         => isBehind ? Color.Error : Color.Success;
+
+    private bool IsTooLate(DateTime? targetDate)
+    {
+        if (!targetDate.HasValue)
+            return false;
+
+        DateTime now = DateTime.Now.Date; 
+        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
+
+        if (_activitiesSettings.OrangeLow.HasValue)
+        {
+            return remainingDays < _activitiesSettings.OrangeLow;
+        }
+
+        return targetDate.Value <= now;
+    }
+
+    private bool IsInDangerZone(DateTime? targetDate)
+    {
+        return IsInZone(targetDate, _activitiesSettings.OrangeLow, _activitiesSettings.OrangeHigh);
+    }
+
+    private bool IsInGreenZone(DateTime? targetDate)
+    {
+        return IsInZone(targetDate, _activitiesSettings.GreenLow, _activitiesSettings.GreenHigh);
+    }
+
+    private bool IsInZone(DateTime? targetDate, int? low, int? high)
+    {
+        if (!targetDate.HasValue || !low.HasValue || !high.HasValue) 
+            return false;
+
+        DateTime now = DateTime.Now.Date; 
+        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
+
+        return (remainingDays >= low && remainingDays <= high);
+    }
+
+    private static double CalculateRemainingDays(DateTime now, DateTime targetDate)
+    {
+        DateTime end = targetDate.Date.AddDays(1).AddSeconds(-1);
+        TimeSpan remaining = end - now;
+
+        return Math.Round(remaining.TotalDays);
+    }
+
+    private string GetTargetDateColor(DateTime? targetDate)
+    {
+        if (IsTooLate(targetDate))
+        {
+            return "Color: red;";
+        }
+        else if (IsInDangerZone(targetDate))
+        {
+            return "Color: orange;";
+        }
+        else if (IsInGreenZone(targetDate))
+        {
+            return "Color: green;";
+        }
+        else
+        {
+            return "";
+        }   
+    }
 }

@@ -8,7 +8,7 @@
 
 @inject ISnackbar Snackbar
 @inject NavigationManager Navig
-@inject ISettingsCRUDService settingsService
+@inject ISettingsService SettingsService
 
 <AddEditTemplate 
     PageTitle="Settings"
@@ -34,19 +34,19 @@
                                 <MudText Typo="Typo.body2">Unit is the day</MudText>
                             </MudItem>
                             <MudItem xs="12">
-                                <MudText Typo="Typo.body1"><b>Red</b> when target date is reached or behind</MudText>
+                                <MudText Typo="Typo.body1"><b>Red</b> when target date is reached, behind or below the orange boundaries</MudText>
                             </MudItem>
                             <MudItem xs="12">
                                 <MudText Typo="Typo.body1"><b>Orange</b> when between:</MudText>
                             </MudItem>
                             <MudItem xs="6" >
                                 <MudTextField Label="Orange low" 
-                                                @bind-Value="_settings.OrangeLow"  For="@(() => _settings.OrangeLow)"
+                                                @bind-Value="_settings.PlannedActivitiesSettings.OrangeLow"  For="@(() => _settings.PlannedActivitiesSettings.OrangeLow)"
                                                 Immediate="true"/>
                             </MudItem>
                             <MudItem xs="6">
                                 <MudTextField Label="Orange high" 
-                                                @bind-Value="_settings.OrangeHigh"  For="@(() => _settings.OrangeHigh)"
+                                                @bind-Value="_settings.PlannedActivitiesSettings.OrangeHigh"  For="@(() => _settings.PlannedActivitiesSettings.OrangeHigh)"
                                                 Immediate="true"/>
                             </MudItem>
                             <MudItem xs="12">
@@ -54,12 +54,12 @@
                             </MudItem>
                             <MudItem xs="6">
                                 <MudTextField Label="Green low" 
-                                                @bind-Value="_settings.GreenLow"  For="@(() => _settings.GreenLow)"
+                                                @bind-Value="_settings.PlannedActivitiesSettings.GreenLow"  For="@(() => _settings.PlannedActivitiesSettings.GreenLow)"
                                                 Immediate="true"/>
                             </MudItem>
                             <MudItem xs="6">
                                 <MudTextField Label="Green high" 
-                                                @bind-Value="_settings.GreenHigh"  For="@(() => _settings.GreenHigh)"
+                                                @bind-Value="_settings.PlannedActivitiesSettings.GreenHigh"  For="@(() => _settings.PlannedActivitiesSettings.GreenHigh)"
                                                 Immediate="true"/>
                             </MudItem>
                             <MudItem xs="12">
@@ -76,7 +76,7 @@
 </AddEditTemplate>
 
 @code {
-    private SettingView _settings = new SettingView();
+    private SettingsView _settings = new SettingsView();
 
     private MudForm _form;
     private SettingsModelFluentValidator _settingsValidator = new SettingsModelFluentValidator();
@@ -91,45 +91,15 @@
         {
             _busy = true;
 
-            Setting[] dbSettings = await settingsService.GetAllAsync();
+            Setting[] dbSettings = await SettingsService.GetAllAsync();
 
             //Decomposition of the settings for the progress of the planned activities
-            SetPlannedActivitiesSettings(dbSettings);
+            _settings.PlannedActivitiesSettings = SettingsService.MapPlannedActivitySettingsToView(dbSettings);
         }
         finally
         {
             _busy = false;
         }
-    }
-
-    private void SetPlannedActivitiesSettings(Setting[] dbSettings)
-    {
-        _settings.OrangeLow = GetIntegerSetting(dbSettings, SettingsKeys.OrangeLow);
-        _settings.OrangeHigh = GetIntegerSetting(dbSettings, SettingsKeys.OrangeHigh);
-        _settings.GreenLow = GetIntegerSetting(dbSettings, SettingsKeys.GreenLow);
-        _settings.GreenHigh = GetIntegerSetting(dbSettings, SettingsKeys.GreenHigh);
-    }
-
-    private int? GetIntegerSetting(Setting[] dbSettings, string key)
-    {
-        Setting? setting = FindSetting(dbSettings, key);
-        if (setting is not null)
-        {
-            int convResult;
-            bool conversionOk = int.TryParse(setting.Value, out convResult);
-
-            if (conversionOk)
-            {
-                return convResult;
-            }
-        }
-
-        return null;
-    }
-
-    private Setting? FindSetting(Setting[] dbSettings, string key)
-    {
-        return dbSettings.FirstOrDefault(s => s.Key == key);
     }
 
     private void Cancel()
@@ -172,8 +142,8 @@
 
     private void CheckIfPlannedActivitySettingsMakeSense()
     {
-        if (_settings.GreenLow.HasValue && _settings.OrangeHigh.HasValue &&
-            (_settings.GreenLow - _settings.OrangeHigh != 1))
+        if (_settings.PlannedActivitiesSettings.GreenLow.HasValue && _settings.PlannedActivitiesSettings.OrangeHigh.HasValue &&
+            (_settings.PlannedActivitiesSettings.GreenLow - _settings.PlannedActivitiesSettings.OrangeHigh != 1))
         {
             Snackbar.Add("It would make more sense to have the orange high the day just before the green low", MudBlazor.Severity.Info);
         }
@@ -185,20 +155,20 @@
         List<Setting> settingsToCreate = new List<Setting>();
         List<Setting> settingsToDelete = new List<Setting>();
 
-        Setting[] dbSettings = await settingsService.GetAllAsync();
+        Setting[] dbSettings = await SettingsService.GetAllAsync();
         
-        ReviewSettings(dbSettings, SettingsKeys.OrangeLow, _settings.OrangeLow, settingsToCreate, settingsToUpdate, settingsToDelete);
-        ReviewSettings(dbSettings, SettingsKeys.OrangeHigh, _settings.OrangeHigh, settingsToCreate, settingsToUpdate, settingsToDelete);
-        ReviewSettings(dbSettings, SettingsKeys.GreenLow, _settings.GreenLow, settingsToCreate, settingsToUpdate, settingsToDelete);
-        ReviewSettings(dbSettings, SettingsKeys.GreenHigh, _settings.GreenHigh, settingsToCreate, settingsToUpdate, settingsToDelete);
+        ReviewSettings(dbSettings, SettingsKeys.OrangeLow, _settings.PlannedActivitiesSettings.OrangeLow, settingsToCreate, settingsToUpdate, settingsToDelete);
+        ReviewSettings(dbSettings, SettingsKeys.OrangeHigh, _settings.PlannedActivitiesSettings.OrangeHigh, settingsToCreate, settingsToUpdate, settingsToDelete);
+        ReviewSettings(dbSettings, SettingsKeys.GreenLow, _settings.PlannedActivitiesSettings.GreenLow, settingsToCreate, settingsToUpdate, settingsToDelete);
+        ReviewSettings(dbSettings, SettingsKeys.GreenHigh, _settings.PlannedActivitiesSettings.GreenHigh, settingsToCreate, settingsToUpdate, settingsToDelete);
 
-        await settingsService.PerformDbUpdates(settingsToCreate, settingsToUpdate, settingsToDelete);
+        await SettingsService.PerformDbUpdates(settingsToCreate, settingsToUpdate, settingsToDelete);
     }
 
     private void ReviewSettings(Setting[] dbSettings, string settingKey, int? settingValue, 
                                 List<Setting> settingsToCreate, List<Setting> settingsToUpdate, List<Setting> settingsToDelete)
     {
-        Setting? s = FindSetting(dbSettings, settingKey);
+        Setting? s = SettingsService.FindSetting(dbSettings, settingKey);
         if (s == null && settingValue.HasValue)
         {
             Setting newSetting = new Setting
@@ -225,35 +195,35 @@
     }
 
     //Local class for the fluent validator
-    public class SettingsModelFluentValidator : AbstractValidator<SettingView>
+    public class SettingsModelFluentValidator : AbstractValidator<SettingsView>
     {
         public SettingsModelFluentValidator()
         {
-            RuleFor(s => s.OrangeLow).NotNull().When(s => s.OrangeHigh is not null).
+            RuleFor(s => s.PlannedActivitiesSettings.OrangeLow).NotNull().When(s => s.PlannedActivitiesSettings.OrangeHigh is not null).
                         WithMessage("Both or none of the orange limits shall be defined").
-                        LessThan(s => s.OrangeHigh).When(s => s.OrangeHigh is not null).
+                        LessThan(s => s.PlannedActivitiesSettings.OrangeHigh).When(s => s.PlannedActivitiesSettings.OrangeHigh is not null).
                         WithMessage("The low limit shall be lower than the high limit");
-            RuleFor(s => s.OrangeHigh).NotNull().When(s => s.OrangeLow is not null).
+            RuleFor(s => s.PlannedActivitiesSettings.OrangeHigh).NotNull().When(s => s.PlannedActivitiesSettings.OrangeLow is not null).
                         WithMessage("Both or none of the orange limits shall be defined")
-                        .GreaterThan(s => s.OrangeLow).When(s => s.OrangeLow is not null).
+                        .GreaterThan(s => s.PlannedActivitiesSettings.OrangeLow).When(s => s.PlannedActivitiesSettings.OrangeLow is not null).
                         WithMessage("The high limit shall be greater than the low limit");  
 
-            RuleFor(s => s.GreenLow).NotNull().When(s => s.GreenHigh is not null).
+            RuleFor(s => s.PlannedActivitiesSettings.GreenLow).NotNull().When(s => s.PlannedActivitiesSettings.GreenHigh is not null).
                         WithMessage("Both or none of the green limits shall be defined").
-                        LessThan(s => s.GreenHigh).When(s => s.GreenHigh is not null).
+                        LessThan(s => s.PlannedActivitiesSettings.GreenHigh).When(s => s.PlannedActivitiesSettings.GreenHigh is not null).
                         WithMessage("The low limit shall be lower than the high limit");
-            RuleFor(s => s.GreenHigh).NotNull().When(s => s.GreenLow is not null).
+            RuleFor(s => s.PlannedActivitiesSettings.GreenHigh).NotNull().When(s => s.PlannedActivitiesSettings.GreenLow is not null).
                         WithMessage("Both or none of the green limits shall be defined")
-                        .GreaterThan(s => s.GreenLow).When(s => s.GreenLow is not null).
+                        .GreaterThan(s => s.PlannedActivitiesSettings.GreenLow).When(s => s.PlannedActivitiesSettings.GreenLow is not null).
                         WithMessage("The high limit shall be greater than the low limit");  
 
-            RuleFor(s => s.GreenLow).GreaterThan(s => s.OrangeHigh).When(s => s.OrangeHigh is not null).
+            RuleFor(s => s.PlannedActivitiesSettings.GreenLow).GreaterThan(s => s.PlannedActivitiesSettings.OrangeHigh).When(s => s.PlannedActivitiesSettings.OrangeHigh is not null).
                         WithMessage("Number of days remaning to be in green zone shall be greater than the number of days remaining to be in orange zone");    
 		}
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
         {
-            var result = await ValidateAsync(ValidationContext<SettingView>.CreateWithOptions((SettingView)model, x => x.IncludeProperties(propertyName)));
+            var result = await ValidateAsync(ValidationContext<SettingsView>.CreateWithOptions((SettingsView)model, x => x.IncludeProperties(propertyName)));
             if (result.IsValid)
                 return Array.Empty<string>();
             return result.Errors.Select(e => e.ErrorMessage);

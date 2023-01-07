@@ -1,6 +1,4 @@
-    namespace tictacApp.ViewModels;
-    
-    public class SettingView
+    public class PlannedActivitySettingsView
     {
         public int? OrangeLow { get; set; }
         public int? OrangeHigh { get; set; }
