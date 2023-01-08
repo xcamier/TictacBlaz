@@ -2,7 +2,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Data;
 
-public class Actor: IId
+public class Actor: IId, IIsInactive
 {
     public int Id { get; set; }
     public string? Name { get; set; }

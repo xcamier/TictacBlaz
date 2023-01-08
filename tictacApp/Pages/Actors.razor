@@ -4,7 +4,7 @@
 @using tictacApp.Helpers
 @using tictacApp.Interfaces
 
-@inject IGenericCRUDService CRUDService
+@inject IActorsCRUDService CRUDService
 @inject ISnackbar Snackbar
 
 
@@ -14,6 +14,11 @@
         <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
                     Href="/actors/addActor" Class="d-inline-flex">Add Actor</MudButton>
     </ButtonsAreaContent>
+
+    <FiltersAreaContent>
+        <MudSwitch T="bool" Color="Color.Primary" Label="Inactives Only"
+                    Checked="@_displayInactivesOnly" CheckedChanged="@(async (e) => await DisplayInactivesChanged(this, e))"  />
+    </FiltersAreaContent>
 
     <ListAreaContent>
         <MudTable Items="@_actors" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
@@ -41,6 +46,7 @@
 
 @code {
     private Actor[]? _actors;
+    private bool _displayInactivesOnly = false;
     private bool _loading = false;
     private bool _busy = false;
     private bool _error = false;
@@ -56,7 +62,7 @@
         try
         {
             _loading = true;
-            _actors = await CRUDService.GetAllAsync<Actor>();
+            _actors = await CRUDService.GetAllAsync(_displayInactivesOnly);
         }
         finally
         {
@@ -104,5 +110,11 @@
     {
         _error = false;
         _errorMessage = string.Empty;
+    }
+
+    private async Task DisplayInactivesChanged(object Sender, bool newValue)
+    {
+        _displayInactivesOnly = newValue;
+        await GetActorsAsync();
     }
 }

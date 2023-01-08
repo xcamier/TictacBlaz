@@ -40,6 +40,7 @@ builder.Services.AddSingleton<IGenericCRUDService, GenericCRUDService>();
 builder.Services.AddSingleton<IGenericCRUDServiceWithParents, GenericCRUDServiceWithParents>();
 builder.Services.AddSingleton<IPlannedActivityCRUDService, PlannedActivityCRUDService>();
 builder.Services.AddSingleton<ICharacteristicCRUDService, CharacteristicCRUDService>();
+builder.Services.AddSingleton<IActorsCRUDService, ActorCRUDService>();
 
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 

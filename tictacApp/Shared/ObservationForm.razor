@@ -8,6 +8,7 @@
 
 @inject NavigationManager Navigation
 @inject IGenericCRUDService CRUDService
+@inject IActorsCRUDService ActorsCRUDService
 @inject IMapper Mapper
 
 @inject ItemSelectionService<CharacteristicView, ObservationView> CharacteristicSelectionServiceV;
@@ -176,7 +177,7 @@
 
     private async Task GetActorsAsync()
     {
-        Actor[] dbActors = await CRUDService.GetAllAsync<Actor>();
+        Actor[] dbActors = await ActorsCRUDService.GetAllAsync(false);
         _actors = Mapper.Map<ActorView[]>(dbActors);
     }
 

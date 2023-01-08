@@ -2,7 +2,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Data;
 
-public abstract class PlannedActivity: IIdLabel, IDescription, IParent
+public abstract class PlannedActivity: IIdLabel, IDescription, IParent, IIsClosed
 {
     public int Id { get; set; }
     public string? Label { get; set; }

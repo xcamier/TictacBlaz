@@ -10,22 +10,19 @@ public class GenericCRUDServiceWithParents: GenericCRUDService, IGenericCRUDServ
     {
     }
 
-    public async Task<T[]> GetAllAsync<T>(int? parentId) where T: class, IParent
+    public async Task<T[]> GetAllAsync<T>(int? parentId, bool showClosedOnly) where T: class, IParent, IIsClosed
     {
         using var context = _dbFactory.CreateDbContext();
         
+        var query = context.Set<T>().
+                        Where(t => t.IsClosed == showClosedOnly);
+
         if (parentId.HasValue)
         {
-            return await context.Set<T>().
-                                    Where(t => t.ParentId.HasValue && t.ParentId == parentId).
-                                    ToArrayAsync();
+            query = query.Where(t => t.ParentId.HasValue && t.ParentId == parentId);
         }
-        else
-        {
-            return await context.Set<T>().
-                                    Where(t => !t.ParentId.HasValue).
-                                    ToArrayAsync();
-        }
+
+        return await query.ToArrayAsync();
     }
 
     public async Task<KeyValuePair<int, string?>[]> GetParentsAsync<T>(int? id) where T: class, IIdLabel, IParent

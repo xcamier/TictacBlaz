@@ -40,6 +40,11 @@
         }
     </ButtonsAreaContent>
 
+    <FiltersAreaContent>
+        <MudSwitch T="bool" Color="Color.Primary" Label="Closed Only"
+                    Checked="@_displayClosedOnly" CheckedChanged="@(async (e) => await DisplayClosedChanged(this, e))"  />
+    </FiltersAreaContent>
+
     <ListAreaContent>
         <MudTable Items="@_plannedActivities" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
                     Class="ml-2 mr-2 mt-4">
@@ -113,6 +118,7 @@
     [Parameter]
     public string BackToLogWhenEditing { get; set; }
 
+    private bool _displayClosedOnly = false;
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private TPlannedActivity[]? _plannedActivities;
     private bool _loading = false;
@@ -130,7 +136,7 @@
 
         await BuildBreadcrumb();
         await GetSettings();
-        await GetObjectivesAsync();
+        await GetPLannedActivitiesAsync();
     }
 
     private async Task BuildBreadcrumb()
@@ -147,12 +153,12 @@
         _activitiesSettings = SettingsService.MapPlannedActivitySettingsToView(settings);
     }
 
-    private async Task GetObjectivesAsync()
+    private async Task GetPLannedActivitiesAsync()
     {
         try
         {
             _loading = true;
-            _plannedActivities = await PlannedActivitiesService.GetAllAsync<TPlannedActivity>(ParentActivityId);
+            _plannedActivities = await PlannedActivitiesService.GetAllAsync<TPlannedActivity>(ParentActivityId, _displayClosedOnly);
         }
         finally
         {
@@ -178,7 +184,7 @@
             if (res )
             {
                 Snackbar.Add("Deletion successful", Severity.Success);
-                await GetObjectivesAsync();
+                await GetPLannedActivitiesAsync();
             }
             else
             {
@@ -317,5 +323,11 @@
         {
             return "";
         }   
+    }
+
+    private async Task DisplayClosedChanged(object Sender, bool newValue)
+    {
+        _displayClosedOnly = newValue;
+        await GetPLannedActivitiesAsync();
     }
 }

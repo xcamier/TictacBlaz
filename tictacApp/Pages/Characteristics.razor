@@ -25,6 +25,11 @@
                    OnClick="@(() => AddCharacteristic(ParentCharacteristicId))" Class="d-inline-flex">Add Characteristic</MudButton>
     </ButtonsAreaContent>
 
+   <FiltersAreaContent>
+        <MudSwitch T="bool" Color="Color.Primary" Label="Closed Only"
+                    Checked="@_displayClosedOnly" CheckedChanged="@(async (e) => await DisplayClosedChanged(this, e))"  />
+    </FiltersAreaContent>
+
     <ListAreaContent>
         <MudTable Items="@_characteristics" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
                     Class="ml-2 mr-2 mt-4">
@@ -88,6 +93,7 @@
     [Parameter]
     public int? ParentCharacteristicId { get; set; } = null;
 
+    private bool _displayClosedOnly = false;
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private Characteristic[]? _characteristics;
     private bool _loading = false;
@@ -121,7 +127,7 @@
         {
             _loading = true;
             _characteristics = await CharacteristicsService.GetAllAsync(ParentCharacteristicId, 
-                                                                        !_canGoOneLevelAbove);
+                                                                        !_canGoOneLevelAbove, _displayClosedOnly);
         }
         finally
         {
@@ -203,5 +209,11 @@
         }
 
         return str;
+    }
+
+    private async Task DisplayClosedChanged(object Sender, bool newValue)
+    {
+        _displayClosedOnly = newValue;
+        await GetCharacteristicsAsync();
     }
 }

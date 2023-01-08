@@ -8,80 +8,76 @@
 @inject ISnackbar Snackbar
 @inject ObservationsService ObservationsService
 @inject IGenericCRUDService CRUDService
-
-
-<PageTitle>Observations</PageTitle>
-
-<MudText Class="ml-2 mb-4" Typo="Typo.h5">Observations</MudText>
+@inject IActorsCRUDService ActorsCRUDService
 
 @if (_observations is not null && _areDependenciesOk)
 {
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
-        <MudGrid>
-            <MudItem xs="12">
-                <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
-                    <MudButton StartIcon="@AppIcons.Add" Href="observations/addObservation">Add Observation</MudButton>
-                </MudButtonGroup>
-            </MudItem>
-            <MudItem xs="3">
-                <MudSelect T=int Label="Select an actor"
-                                    Value="_selectedActorId" ValueChanged="OnActorChange">
-                        @foreach (Actor actor in _actors)
-                        {
-                            <MudSelectItem Value="@actor.Id">@actor.Name</MudSelectItem>
-                        }
-                </MudSelect>             
-            </MudItem>
-            <MudItem xs="3">
-                <MudDatePicker Label="Between" Placeholder="Select Date"
-                        Editable="true" DisableToolbar="true" 
-                        Date="_startDate" DateChanged="OnStartDateChange"/>  
-            </MudItem>
-            <MudItem xs="3">
-                <MudDatePicker Label="and" Placeholder="Select Date"
-                        Editable="true" DisableToolbar="true"
-                        Date="_endDate" DateChanged="OnEndDateChange" />  
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
+    <ListTemplate PageTitle="Observations" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
-    <MudTable Items="@_observations" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                Class="ml-2 mr-2 mt-4">
-        <ColGroup>
-            <col style="width: 5%;"/>
-            <col />
-            <col style="width: 5%;"/>
-            <col style="width: 20%;"/>
-            <col style="width: 120px;"/>
-        </ColGroup>
-        <HeaderContent>
-            <MudTh>Date</MudTh>
-            <MudTh>Description</MudTh>
-            <MudTh>Type</MudTh>
-            <MudTh>Actor</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Start Date">@context.ObservationDate.Value.ToString("d")</MudTd>
-            <MudTd DataLabel="Time Spent">@context.Description</MudTd>
-            <MudTd DataLabel="Time Spent"> 
-                <MudIcon Icon="@(@context.IsPositive ? @AppIcons.Positive : @AppIcons.Negative)"    
-                        Color="@(@context.IsPositive ? @Color.Success : @Color.Error)">
-                </MudIcon> 
-            </MudTd>
-            <MudTd DataLabel="Time Spent">@context.Actor.Name</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/observations/{context.Id}/editObservation")" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObservationAsync(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+        <ButtonsAreaContent>
+            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                Href="observations/addObservation">Add Observation</MudButton>
+        </ButtonsAreaContent>
 
+        <FiltersAreaContent>
+            <MudGrid>
+                <MudItem xs="3">
+                    <MudSelect T=int Label="Select an actor"
+                                        Value="_selectedActorId" ValueChanged="OnActorChange">
+                            @foreach (Actor actor in _actors)
+                            {
+                                <MudSelectItem Value="@actor.Id">@actor.Name</MudSelectItem>
+                            }
+                    </MudSelect>             
+                </MudItem>
+                <MudItem xs="3">
+                    <MudDatePicker Label="Between" Placeholder="Select Date"
+                            Editable="true" DisableToolbar="true" 
+                            Date="_startDate" DateChanged="OnStartDateChange"/>  
+                </MudItem>
+                <MudItem xs="3">
+                    <MudDatePicker Label="and" Placeholder="Select Date"
+                            Editable="true" DisableToolbar="true"
+                            Date="_endDate" DateChanged="OnEndDateChange" />  
+                </MudItem>
+            </MudGrid>
+        </FiltersAreaContent>
 
-    @if (_error)
-    {
-        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
-    }
+        <ListAreaContent>
+            <MudTable Items="@_observations" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                        Class="ml-2 mr-2 mt-4">
+                <ColGroup>
+                    <col style="width: 5%;"/>
+                    <col />
+                    <col style="width: 5%;"/>
+                    <col style="width: 20%;"/>
+                    <col style="width: 120px;"/>
+                </ColGroup>
+                <HeaderContent>
+                    <MudTh>Date</MudTh>
+                    <MudTh>Description</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Actor</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Start Date">@context.ObservationDate.Value.ToString("d")</MudTd>
+                    <MudTd DataLabel="Time Spent">@context.Description</MudTd>
+                    <MudTd DataLabel="Time Spent"> 
+                        <MudIcon Icon="@(@context.IsPositive ? @AppIcons.Positive : @AppIcons.Negative)"    
+                                Color="@(@context.IsPositive ? @Color.Success : @Color.Error)">
+                        </MudIcon> 
+                    </MudTd>
+                    <MudTd DataLabel="Time Spent">@context.Actor.Name</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/observations/{context.Id}/editObservation")" />
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObservationAsync(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </ListAreaContent>
+
+    </ListTemplate>
 }
 else if (!_areDependenciesOk) 
 {
@@ -200,7 +196,7 @@ else if (_observations == null)
 
     private async Task GetActorsAsync()
     {
-        _actors = await CRUDService.GetAllAsync<Actor>(); 
+        _actors = await ActorsCRUDService.GetAllAsync(false); 
     }
 
     private async Task CheckDependencies()
