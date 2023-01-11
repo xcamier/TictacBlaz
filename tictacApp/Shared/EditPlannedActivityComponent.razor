@@ -1,14 +1,17 @@
 @typeparam TPlannedActivity where TPlannedActivity: PlannedActivity, new()
 
 @using Microsoft.EntityFrameworkCore
+@using AutoMapper
 
+@using tictacApp.ViewModels
 @using tictacApp.Data
 @using tictacApp.DataAccess
 @using tictacApp.Interfaces
 
 @inject NavigationManager Navigation
-@inject IGenericCRUDServiceWithParents CRUDService
+@inject IPlannedActivityCRUDService CRUDService
 @inject ISnackbar Snackbar
+@inject IMapper Mapper
 
 
 @if (_plannedActivity is not null)
@@ -22,7 +25,10 @@
                 Error=@_error
                 ErrorMessage=@_errorMessage
                 CancelRequest="Cancel"
-                ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
+                ValidationResult="@(async (success) => await ValidationResultAsync(success))"
+                AddComment="@(async (comment) => await AddCommentAsync(comment))"
+                EditComment="@(async (comment) => await EditCommentAsync(comment))"
+                DeleteComment="@(async (comment) => await DeleteCommentAsync(comment))" />
 }
 
 @code {
@@ -53,6 +59,27 @@
 
             //persists until the component is destroyed as we have to keep the connection until we save or dismiss
             _dbContext  = CRUDService.GetNewDBContext(); 
+            await GetPlannedActivityAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetPlannedActivityAsync()
+    {
+        try
+        {
+            _busy = true;
+            ResetErrorMessage();
 
             TPlannedActivity? plannedActivity = await CRUDService.FindFromIdAsync<TPlannedActivity>(_dbContext, PlannedActivityId);
             if (plannedActivity != null)
@@ -74,11 +101,14 @@
         {
             _busy = false;
         }
-
-        await base.OnInitializedAsync();
     }
 
     private async Task ValidationResultAsync(bool success)
+    {
+        await ValidationResultAsync(success, false);
+    }
+
+    private async Task ValidationResultAsync(bool success, bool stayOnThePage)
     {
         if (_busy)
         {
@@ -108,7 +138,10 @@
             if (savingRes )
             {
                 Snackbar.Add($"{Context} modified successfully", Severity.Success);
-                GoBackToList();
+                if (!stayOnThePage)
+                {
+                    GoBackToList();
+                }
             }
             else
             {
@@ -138,6 +171,99 @@
             dbex.Entries[0].OriginalValues.SetValues(dbValues);
             ResetErrorMessage();
             _busy = false;
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+
+    //Do the work in DB and refresh
+    private async Task AddCommentAsync(CommentView comment)
+    {
+        if (!_busy)
+        {
+            var newDbComment = Mapper.Map<Comment>(comment);
+            _plannedActivity.Comments.Add(newDbComment);
+            await ValidationResultAsync(true, true);
+            await GetPlannedActivityAsync();
+        }
+    }
+
+    //Do the work in DB and refresh
+    private async Task EditCommentAsync(CommentView comment)
+    {
+        if (_busy)
+            return;
+
+        try
+        {
+            Comment? commentToUpdate = await CRUDService.FindCommentFromIdAsync(_dbContext, comment.Id);
+            
+            bool res = false;
+            string msg = string.Empty;
+            if (commentToUpdate is not null)
+            {
+                //res = await CRUDService.DeleteCommentAsync(_dbContext, commentToUpdate);
+                Mapper.Map<CommentView, Comment>(comment, commentToUpdate);
+                await ValidationResultAsync(true, true);
+            }
+            else
+            {
+                Snackbar.Add("Could not find the comment to update.", MudBlazor.Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+    }
+
+    //Do the work in DB and refresh
+    private async Task DeleteCommentAsync(CommentView comment)
+    {
+        if (_busy)
+            return;
+
+        try
+        {
+            _busy = true;
+
+            Comment? commentToRemove = await CRUDService.FindCommentFromIdAsync(_dbContext, comment.Id);
+            
+            bool res = false;
+            string msg = string.Empty;
+            if (commentToRemove is not null)
+            {
+                res = await CRUDService.DeleteCommentAsync(_dbContext, commentToRemove);
+                if (!res)
+                {
+                    msg = "Could not delete the comment.";
+                }
+            }
+            else
+            {
+                msg = "Could not find the comment.";
+            }
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Comment deleted successfully", Severity.Success);
+                await GetPlannedActivityAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error when deleting the comment: {msg}", Severity.Warning);
+            }
         }
         catch (Exception ex)
         {

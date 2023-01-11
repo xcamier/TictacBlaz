@@ -69,7 +69,8 @@ var mapperConfiguration = new MapperConfiguration(configuration =>
     configuration.AddProfile(new MappingActor());
     configuration.AddProfile(new MappingProject());
     configuration.AddProfile(new MappingObjective());
-    configuration.AddProfile(new MappingChracteristic());
+    configuration.AddProfile(new MappingCharacteristic());
+    configuration.AddProfile(new MappingComment());
 });
 
 var mapper = mapperConfiguration.CreateMapper();

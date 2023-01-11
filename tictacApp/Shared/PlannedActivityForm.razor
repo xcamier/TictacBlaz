@@ -4,7 +4,10 @@
 @using tictacApp.Helpers
 @using tictacApp.Validators
 @using tictacApp.Interfaces
+@using tictacApp.ViewModels
+@using AutoMapper
 
+@inject IMapper Mapper
 @inject IPlannedActivityCRUDService CRUDService
 
 <AddEditTemplate 
@@ -71,10 +74,31 @@
         }
 
     </AddEditContent>
- 
 </AddEditTemplate>
 
+<!-- The comments area -->
+@if (!IsAdd)
+{
+    <MudGrid Justify="Justify.Center" Class="mt-2">
+        <MudItem xs="6">
 
+            <MudItem xs="12">
+                <MudDivider />
+            </MudItem>
+            <MudItem xs="12" Class="mt-2">
+                <CommentsAreaComponent
+                    Comments=@_comments
+                    Busy=@Busy
+                    AddComment="@(async (comment) => await AddCommentAsync(comment))"
+                    EditComment="@(async (comment) => await EditCommentAsync(comment))"
+                    DeleteComment="@(async (comment) => await DeleteCommentAsync(comment))">
+                
+                </CommentsAreaComponent>
+            </MudItem>
+
+        </MudItem>
+    </MudGrid>
+}
 
 @code {
     [Parameter]
@@ -88,6 +112,15 @@
 
     [Parameter]
     public TPlannedActivity? PlannedActivity { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> AddComment { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> EditComment { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> DeleteComment { get; set; }
 
     [Parameter]
     public string Context { get; set; }
@@ -104,12 +137,22 @@
     private string _mode => IsAdd ? "Add" : "Edit";
     private MudForm _form;
     private string _pageTitle = string.Empty;
-    private string _statusLabel = ProgressStatus.OnTrack;
+    private CommentView[]? _comments;
 
     private LabelAndDescriptionFluentValidator<TPlannedActivity> _validator = 
                 new LabelAndDescriptionFluentValidator<TPlannedActivity>(Constants.LabelMinLength, 
                                                                     Constants.LabelLongLength, 
                                                                     Constants.DescriptionStandardLength);
+
+    protected override void OnParametersSet()
+    {
+        if (PlannedActivity is not null && PlannedActivity.Comments is not null)
+        {
+            _comments = Mapper.Map<ICollection<Comment>, CommentView[]>(PlannedActivity.Comments);
+        }
+
+        base.OnParametersSet();
+    }
 
     protected override void OnInitialized()
     {
@@ -132,6 +175,27 @@
         }
 
         return ValidationResult.InvokeAsync(false);
+    }
+
+    //Addition request is received from the sub component that displays the comment
+    //The request is transmitted to the parent component
+    private async Task<Task> AddCommentAsync(CommentView comment)
+    {
+        return AddComment.InvokeAsync(comment);
+    }
+
+    //Edition request is received from the sub component that displays the comment
+    //The request is transmitted to the parent component
+    private async Task<Task> EditCommentAsync(CommentView comment)
+    {
+        return EditComment.InvokeAsync(comment);
+    }
+
+    //Comment deletion request is received from the sub component that displays the comment
+    //the request is transmitted to the parent component
+    private async Task<Task> DeleteCommentAsync(CommentView comment)
+    {
+        return DeleteComment.InvokeAsync(comment);
     }
 
     private string GetStatusLabel() 

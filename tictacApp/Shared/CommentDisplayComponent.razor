@@ -1,0 +1,80 @@
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+
+<!-- Component to display the comment as an area with text and two buttons to edit/delete the comment
+     When delete is clicked, the comment is deleted 
+     When Edit is clicked, the text is replaced by the edition area -->
+
+<MudPaper Class="pa-2">
+
+    @if (@Comment is null)
+    {
+        <MudText Typo="Typo.body1">No comment to display</MudText>
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="@(_inEditMode ? 12 : 10)">
+                <MudItem xs="12">
+                    <MudText Typo="Typo.caption">@Comment.CommentDateTime.ToString("f")</MudText>
+                </MudItem>
+
+                @if (!_inEditMode)
+                {
+                    <MudItem xs="12" Class="mt-2">
+                        <MudText Typo="Typo.body1">@Comment.CommentText</MudText>
+                    </MudItem>
+                }
+                else
+                {
+                    <CommentEditionComponent
+                            Comment="@Comment"
+                            Busy=false
+                            AddOrEditComment="@(async (comment) => await EditCommentAsync(comment))"
+                            CancelComment="@(() => SwitchToEditMode(false))">
+                    </CommentEditionComponent>
+                }
+
+            </MudItem>
+
+            @if (!_inEditMode)
+            {
+                <MudItem xs="2" Class="d-flex flex-row-reverse">
+                    <MudFab StartIcon="@AppIcons.Delete" Size="Size.Small" OnClick="@(async () => await DeleteCommentAsync())" />
+                    <MudFab StartIcon="@AppIcons.Edit" Size="Size.Small" OnClick="@(() => SwitchToEditMode(true))"/>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+</MudPaper>
+
+
+@code {
+    [Parameter]
+    public CommentView? Comment { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> DeleteComment { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> EditComment { get; set; }
+
+    private bool _inEditMode = false;
+
+    private async Task<Task> EditCommentAsync(CommentView? comment)
+    {
+        _inEditMode = false;
+        return EditComment.InvokeAsync(comment);
+    }
+
+    private async Task<Task> DeleteCommentAsync()
+    { 
+        return DeleteComment.InvokeAsync(Comment);
+    }
+
+    private void SwitchToEditMode(bool state)
+    { 
+        _inEditMode = state;
+    }
+}

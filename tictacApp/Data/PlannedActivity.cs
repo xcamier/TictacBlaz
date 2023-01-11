@@ -2,7 +2,7 @@ using tictacApp.Interfaces;
 
 namespace tictacApp.Data;
 
-public abstract class PlannedActivity: IIdLabel, IDescription, IParent, IIsClosed
+public abstract class PlannedActivity: IIdLabel, IDescription, IParent, IIsClosed, IComments
 {
     public int Id { get; set; }
     public string? Label { get; set; }
@@ -13,6 +13,7 @@ public abstract class PlannedActivity: IIdLabel, IDescription, IParent, IIsClose
     public bool IsClosed { get; set; }
     public bool IsFinalized { get; set; }
     public DateTime? FinalizationDate { get; set; }
+    public ICollection<Comment>? Comments { get; set; }
 
     public int? ParentId { get; set; }
 

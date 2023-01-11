@@ -11,6 +11,7 @@ public class PlannedActivityView: IIdLabel, IDescription, IParent
     public bool IsClosed { get; set; }
     public bool IsFinalized { get; set; }
     public DateTime? FinalizationDate { get; set; }
+    public ICollection<CommentView>? Comments { get; set; }
 
     public int? ParentId { get; set; }
 }

@@ -1,0 +1,88 @@
+@using FluentValidation;
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+@using AutoMapper
+
+@inject IMapper Mapper
+
+<MudForm Model="@_backupComment" @ref="@_form" Validation="@(_validator.ValidateValue)" ValidationDelay="0"> 
+    <MudGrid Class="pa-4">
+        <MudItem xs="12">
+            <MudTextField T="string" Label="Comment" Variant="Variant.Text" Lines="5" 
+                            @bind-Value="_backupComment.CommentText" For="@(() => _backupComment.CommentText)" 
+                            Immediate="true"/>
+        </MudItem>
+        <MudItem xs="12" Class="mt-2 d-flex justify-space-between">
+            <MudButton Variant="Variant.Filled" Size="Size.Small" Disabled="@Busy"  
+                        OnClick="@(async () => await HandleSubmitAsync(true))">Save</MudButton>
+            
+            <MudButton Variant="Variant.Filled" Size="Size.Small" Disabled="@Busy" 
+                        OnClick="@(() => Cancel())">Cancel</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudForm> 
+
+@code {
+    [Parameter]
+    public CommentView? Comment { get; set; }    
+
+    [Parameter]
+    public EventCallback<CommentView> AddOrEditComment { get; set; }
+
+    [Parameter]
+    public EventCallback CancelComment { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private CommentView _backupComment; //variable used to manage the cancel: is cancel => the original value is not altered
+    private MudForm _form;
+    private CommentFluentValidator _validator = new CommentFluentValidator();
+
+
+    protected override void OnParametersSet()
+    {
+        if (Comment is not null)
+        {
+            _backupComment = Mapper.Map<CommentView>(Comment);
+        }
+
+        base.OnParametersSet();
+    }
+
+    private void Cancel()
+    {
+        CancelComment.InvokeAsync();
+    }
+
+    private async Task<Task> HandleSubmitAsync(bool isValid)
+    {
+        await _form.Validate();
+        if (_form.IsValid)
+        {
+            Mapper.Map<CommentView, CommentView>(_backupComment, Comment);
+            return AddOrEditComment.InvokeAsync(Comment);
+        }
+ 
+        return AddOrEditComment.InvokeAsync(null);
+    }
+
+    public class CommentFluentValidator: AbstractValidator<CommentView>
+    {
+        public CommentFluentValidator()
+        {
+            RuleFor(c => c.CommentText).NotEmpty().
+                    WithMessage("You must enter a text for the comment").
+                    MaximumLength(Constants.DescriptionFullLength);
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<CommentView>.
+                                    CreateWithOptions((CommentView)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}    

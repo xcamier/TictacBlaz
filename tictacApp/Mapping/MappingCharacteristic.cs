@@ -2,9 +2,9 @@ using AutoMapper;
 using tictacApp.Data;
 using tictacApp.ViewModels;
 
-public class MappingChracteristic : Profile
+public class MappingCharacteristic : Profile
 {
-    public MappingChracteristic()
+    public MappingCharacteristic()
     {
         CreateMap<Characteristic, CharacteristicView>();  
     }

@@ -23,6 +23,7 @@ public class TictacDBContext : DbContext
         project.Property(p => p.Description).HasMaxLength(Constants.DescriptionStandardLength);
         project.HasOne(p => p.ParentProject).
                     WithMany(p => p.SubProjects).HasForeignKey(p => p.ParentId);
+        project.HasMany(p => p.Comments).WithOne(c => (Project)c.PlannedActivity);
 
         var characterstic = modelBuilder.Entity<Characteristic>();
         characterstic.HasKey(c => c.Id);
@@ -45,6 +46,7 @@ public class TictacDBContext : DbContext
         objective.Property(o => o.Description).HasMaxLength(Constants.DescriptionStandardLength);
         objective.HasOne(o => o.ParentObjective).
                                 WithMany(o => o.SubObjectives).HasForeignKey(o => o.ParentId);
+        objective.HasMany(o => o.Comments).WithOne(o => (Objective)o.PlannedActivity);
 
         var timeLog = modelBuilder.Entity<TimeLog>();
         timeLog.HasKey(t => t.Id);
@@ -89,6 +91,19 @@ public class TictacDBContext : DbContext
         setting.HasKey(s => s.Key);
         setting.Property(s => s.Key).HasMaxLength(Constants.LabelShortLength);
         setting.Property(s => s.Value).HasMaxLength(Constants.LabelShortLength);
+
+        var comment = modelBuilder.Entity<Comment>();
+        comment.HasKey(c => c.Id);
+        comment.Property(c => c.CommentText).IsRequired();
+        comment.Property(c => c.CommentText).HasMaxLength(Constants.DescriptionFullLength);
+        comment.HasOne(c => c.PlannedActivity).WithMany(c => c.Comments).HasForeignKey(c => c.PlannedActivityId);
+        comment.HasMany(c => c.Attachments).WithOne(c => c.Comment).HasForeignKey(c => c.CommentId);
+
+        var attachment = modelBuilder.Entity<Attachment>();
+        attachment.HasKey(a => a.Id);
+        attachment.Property(a => a.Name).IsRequired();
+        attachment.Property(a => a.Path).IsRequired();
+        attachment.HasOne(a => a.Comment).WithMany(a => a.Attachments).HasForeignKey(a => a.CommentId);
    }
 
     public DbSet<Project> Projects { get; set; }
@@ -101,4 +116,6 @@ public class TictacDBContext : DbContext
     public DbSet<Actor> Actors { get; set; }
     public DbSet<Observation> Observations { get; set; }
     public DbSet<Setting> Settings { get; set; }
+    public DbSet<Comment> Comments { get; set; }
+    public DbSet<Attachment> Attachments { get; set; }
 }

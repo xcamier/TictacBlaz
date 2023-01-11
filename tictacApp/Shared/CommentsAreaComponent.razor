@@ -1,0 +1,114 @@
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+
+<!-- The display of the comments list -->
+@if (@Comments is null || @Comments.Length == 0)
+{
+    <MudText Typo="Typo.body1">There are no comment yet.</MudText>
+}
+else
+{
+    @foreach (var comment in Comments)
+    {
+        <MudPaper Class="mt-2">
+
+            <CommentDisplayComponent  
+                    Comment="@comment"
+                    EditComment="@(async (comment)  => await EditCommentAsync(comment))"
+                    DeleteComment="@(async (comment)  => await DeleteCommentAsync(comment))">
+                
+            </CommentDisplayComponent>
+
+        </MudPaper>
+    }
+}
+
+<!-- The display of the comments edition -->
+@if (!_IsCommentAreaVisible)
+{
+    <MudButton Variant="Variant.Filled" StartIcon="@AppIcons.Comment" Class="mt-4" Size="Size.Medium"
+                OnClick="@ShowHideCommentArea">
+        Comment
+    </MudButton>
+}
+else
+{
+    <MudPaper Class="mt-6">
+
+        <CommentEditionComponent
+                Comment="@_newComment"
+                Busy="@Busy"
+                AddOrEditComment="@(async (comment) => await AddCommentAsync(comment))"
+                CancelComment="@(async () => Cancel())">
+        </CommentEditionComponent>
+
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> ValidationResult { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> AddComment { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentView> EditComment { get; set; }      
+
+    [Parameter]
+    public EventCallback<CommentView> DeleteComment { get; set; }
+
+    [Parameter]
+    public CommentView[]? Comments { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    private bool _IsCommentAreaVisible = false;
+    private CommentView? _newComment;
+
+    public void ShowHideCommentArea()
+    {
+        _IsCommentAreaVisible = !_IsCommentAreaVisible;
+        if (_IsCommentAreaVisible)
+        {
+            InitNewComment();
+        }
+    }
+
+    private void InitNewComment()
+    {
+        _newComment = new CommentView()
+        {
+            CommentDateTime = DateTime.Now,
+            CommentText = string.Empty
+        };
+    }
+
+    private void Cancel()
+    {
+        _IsCommentAreaVisible = false;
+    }
+
+    //Edition request is received from the sub component that displays the comment
+    //The request is transmitted to the parent component
+    private async Task<Task> AddCommentAsync(CommentView comment)
+    {
+        _IsCommentAreaVisible = false;
+        return AddComment.InvokeAsync(comment);
+    }
+
+    //Edition request is received from the sub component that displays the comment
+    //The request is transmitted to the parent component
+    private async Task<Task> EditCommentAsync(CommentView comment)
+    {
+        return EditComment.InvokeAsync(comment);
+    }
+
+    //Comment deletion request is received from the sub component that displays the comment
+    //the request is transmitted to the parent component
+    private async Task<Task> DeleteCommentAsync(CommentView comment)
+    {
+        return DeleteComment.InvokeAsync(comment);
+    }
+}
