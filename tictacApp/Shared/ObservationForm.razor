@@ -17,7 +17,7 @@
     @ref="@_form" Validation="@(_observationValidator.ValidateValue)" ValidationDelay="0">
 
     <MudGrid Justify="Justify.Center" Class="mt-2">
-        <MudItem xs="6">
+        <MudItem xs="7">
             <MudCard>
                 <MudCardHeader>
                     <CardHeaderContent>
@@ -29,16 +29,25 @@
                 {
                     <MudCardContent>
                         <MudGrid>
-                            <MudItem xs="6">
+                            <MudItem xs="4">
                                 <MudDatePicker Label="Date of the observation" Placeholder="Select Date"
                                                 Editable="true" DisableToolbar="true"
                                                 @bind-Date="Observation.ObservationDate" For="@(() => Observation.ObservationDate)" />                                
                             </MudItem>
-                            <MudItem xs="6">
+                            <MudItem xs="4" Class="d-flex justify-center">
                                 <MudCheckBox T=bool MudCheckBox Checked="@Observation.IsPositive" CheckedChanged="OnNatureOfFeedbackChanged" 
                                             Label="@_isPositiveAsText"
                                             Color="@_thumbColor" CheckedIcon=@AppIcons.Positive UncheckedIcon=@AppIcons.Negative>
                                 </MudCheckBox>                               
+                            </MudItem>
+                            <MudItem xs="4">  
+                                <MudItem xs="12" Class="d-flex justify-center">
+                                    <MudRating @bind-SelectedValue="Observation.SelectedRating" For="@(() => Observation.SelectedRating)"
+                                                HoveredValueChanged="HandleHoveredValueChanged" />
+                                </MudItem>
+                                <MudItem xs="12" Class="d-flex justify-center">
+                                    <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">@LabelText</MudText>
+                                </MudItem>
                             </MudItem>
                             <MudItem xs="12">
                                 <MudSelect Label="Select an actor"
@@ -237,6 +246,25 @@
     {
         _valToDisplay = $"Selected tag{(_selectedTags.Count() > 1 ? "s" : "")}: {string.Join(", ", _selectedTags.Select(x => x.Label))}";
     }
+
+
+
+    private int? activeVal;
+
+    private void HandleHoveredValueChanged(int? val) => activeVal = val;
+
+    private string LabelText => (activeVal ?? Observation.SelectedRating) switch
+    {
+        1 => Observation.IsPositive ? "Nice" : "Not very important",
+        2 => Observation.IsPositive ? "Cool" : "Could have been better",
+        3 => Observation.IsPositive ? "Good" : "Disturbing",
+        4 => Observation.IsPositive ? "Very good" : "Impacting",
+        5 => Observation.IsPositive ? "Awesome!" : "Critical",
+        _ => Observation.IsPositive ? "How much was it positive?" : "How much was it negative?"
+    };
+
+
+
 
     //Local class for the fluent validator
     public class ObservationModelFluentValidator : AbstractValidator<ObservationView>
