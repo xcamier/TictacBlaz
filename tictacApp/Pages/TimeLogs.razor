@@ -42,20 +42,23 @@ else
     <MudTable Items="@_timeLogs" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
                 Class="ml-2 mr-2 mt-4">
         <ColGroup>
+            <col style="width: 10%;"/>
+            <col style="width: 10%;"/>
+            <col style="width: 10%;"/>
             <col />
-            <col />
-            <col style="width: 50%;"/>
             <col style="width: 120px;"/>
         </ColGroup>
         <HeaderContent>
-            <MudTh>Start Date</MudTh>
-            <MudTh>Time Spent</MudTh>
+            <MudTh>Start Time</MudTh>
+            <MudTh>End Time</MudTh>
+            <MudTh Style=" text-align:center;">Time Spent</MudTh>
             <MudTh>Description</MudTh>
             <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Start Date">@context.StartDate</MudTd>
-            <MudTd DataLabel="Time Spent">@context.TimeSpentInHHMM</MudTd>
+            <MudTd DataLabel="Start Time">@context.StartDate.Value.ToString("t")</MudTd>
+            <MudTd DataLabel="End Time">@context.StartDate.Value.AddMinutes(@context.TimeSpentInMin).ToString("t")</MudTd>
+            <MudTd DataLabel="Time Spent" Style="text-align:right;">@context.TimeSpentInHHMM</MudTd>
             <MudTd DataLabel="Time Spent">@context.Description</MudTd>
             <MudTd DataLabel="Actions">
                 <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/logs/{context.Id}/editLog")" />
@@ -63,7 +66,6 @@ else
             </MudTd>
         </RowTemplate>
     </MudTable>
-
 
     @if (_error)
     {
@@ -165,6 +167,7 @@ else
     private async Task GetTimeLogsAsync()
     {
         _timeLogs = await TimeLogsService.GetTimeLogsAsync(_selectedDay);
+        _timeLogs = _timeLogs.OrderByDescending(tl => tl.StartDate).ToArray();
         _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToString(tl.TimeSpentInMin));  
 
         _totalForDay = FormattersHelper.MinToString(_timeLogs.Sum(s => s.TimeSpentInMin));
