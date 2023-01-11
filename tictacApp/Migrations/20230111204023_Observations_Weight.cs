@@ -5,13 +5,13 @@
 namespace tictacApp.Migrations
 {
     /// <inheritdoc />
-    public partial class ObservationsRating : Migration
+    public partial class ObservationsWeight : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "SelectedRating",
+                name: "Weight",
                 table: "Observations",
                 type: "INTEGER",
                 nullable: false,
@@ -22,7 +22,7 @@ namespace tictacApp.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "SelectedRating",
+                name: "Weight",
                 table: "Observations");
         }
     }

@@ -9,7 +9,7 @@ public class Observation : IId, IDescription, ICharacteristics, ITags
     public string Description { get; set; }
     public bool IsPositive { get; set; }
     public string? Evidences { get; set; }
-    public int SelectedRating { get; set; } = 0;
+    public int Weight { get; set; } = 0;
 
     public int ActorId { get; set; }
     public Actor Actor { get; set; }

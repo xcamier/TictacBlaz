@@ -42,7 +42,7 @@
                             </MudItem>
                             <MudItem xs="4">  
                                 <MudItem xs="12" Class="d-flex justify-center">
-                                    <MudRating @bind-SelectedValue="Observation.SelectedRating" For="@(() => Observation.SelectedRating)"
+                                    <MudRating @bind-SelectedValue="Observation.Weight" For="@(() => Observation.Weight)"
                                                 HoveredValueChanged="HandleHoveredValueChanged" />
                                 </MudItem>
                                 <MudItem xs="12" Class="d-flex justify-center">
@@ -253,7 +253,7 @@
 
     private void HandleHoveredValueChanged(int? val) => activeVal = val;
 
-    private string LabelText => (activeVal ?? Observation.SelectedRating) switch
+    private string LabelText => (activeVal ?? Observation.Weight) switch
     {
         1 => Observation.IsPositive ? "Nice" : "Not very important",
         2 => Observation.IsPositive ? "Cool" : "Could have been better",

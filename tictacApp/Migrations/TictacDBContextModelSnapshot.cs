@@ -252,7 +252,7 @@ namespace tictacApp.Migrations
                     b.Property<DateTime?>("ObservationDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SelectedRating")
+                    b.Property<int>("Weight")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

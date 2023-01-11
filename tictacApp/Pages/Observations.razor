@@ -49,26 +49,31 @@
                 <ColGroup>
                     <col style="width: 5%;"/>
                     <col />
-                    <col style="width: 5%;"/>
                     <col style="width: 20%;"/>
+                    <col style="width: 5%;"/>
+                    <col style="width: 10%;" />
                     <col style="width: 120px;"/>
                 </ColGroup>
                 <HeaderContent>
                     <MudTh>Date</MudTh>
                     <MudTh>Description</MudTh>
-                    <MudTh>Type</MudTh>
                     <MudTh>Actor</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh Style=" text-align:center;">Weight</MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="Start Date">@context.ObservationDate.Value.ToString("d")</MudTd>
                     <MudTd DataLabel="Time Spent">@context.Description</MudTd>
+                    <MudTd DataLabel="Time Spent">@context.Actor.Name</MudTd>
                     <MudTd DataLabel="Time Spent"> 
                         <MudIcon Icon="@(@context.IsPositive ? @AppIcons.Positive : @AppIcons.Negative)"    
                                 Color="@(@context.IsPositive ? @Color.Success : @Color.Error)">
                         </MudIcon> 
                     </MudTd>
-                    <MudTd DataLabel="Time Spent">@context.Actor.Name</MudTd>
+                    <MudTd DataLabel="Weight">
+                       <MudRating SelectedValue=@context.Weight Size="Size.Small" ReadOnly="true" />
+                    </MudTd>
                     <MudTd DataLabel="Actions">
                         <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/observations/{context.Id}/editObservation")" />
                         <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteObservationAsync(context))" />

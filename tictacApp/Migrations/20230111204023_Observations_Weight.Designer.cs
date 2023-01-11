@@ -11,8 +11,8 @@ using tictacApp.DataAccess;
 namespace tictacApp.Migrations
 {
     [DbContext(typeof(TictacDBContext))]
-    [Migration("20230111191851_Observations_Rating")]
-    partial class ObservationsRating
+    [Migration("20230111204023_Observations_Weight")]
+    partial class ObservationsWeight
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -255,7 +255,7 @@ namespace tictacApp.Migrations
                     b.Property<DateTime?>("ObservationDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SelectedRating")
+                    b.Property<int>("Weight")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
