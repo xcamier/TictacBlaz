@@ -207,6 +207,8 @@
     private async Task GetTagsAsync()
     {
         Tag[] dbTags = await TagsService.GetAllAsync<Tag>();
+        dbTags = dbTags.OrderBy(t => t.Label).ToArray();
+
         _tags = Mapper.Map<TagView[]>(dbTags);
     }
     
