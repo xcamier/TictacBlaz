@@ -15,11 +15,11 @@ public class GenericCRUDServiceWithParents: GenericCRUDService, IGenericCRUDServ
         using var context = _dbFactory.CreateDbContext();
         
         var query = context.Set<T>().
-                        Where(t => t.IsClosed == showClosedOnly);
+                        Where(t => t.ParentId.HasValue == parentId.HasValue && t.IsClosed == showClosedOnly);
 
         if (parentId.HasValue)
         {
-            query = query.Where(t => t.ParentId.HasValue && t.ParentId == parentId);
+            query = query.Where(t => t.ParentId == parentId);
         }
 
         return await query.ToArrayAsync();
