@@ -8,7 +8,7 @@
 
 @using AutoMapper
 
-@inject IGenericCRUDServiceWithParents PlannedActivitiesService
+@inject IPlannedActivityCRUDService PlannedActivitiesService
 @inject ISettingsService SettingsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -75,15 +75,19 @@
                 </MudTd>
 
                 <MudTd DataLabel="Actions">
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubActivity(context.Id))" />
+                    <MudIconButton Size="@Size.Small" Icon=@GetHasChildrenIcon(context.Id) Title=@GetHasChildrenTooltip(context.Id)
+                                    OnClick="@(() => GoToSubActivity(context.Id))" />
                     @if (IsInSelection)
                     {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" OnClick="@(() => @Select(context))" />
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" Title="@($"Select this {@Context}")" 
+                                    OnClick="@(() => @Select(context))" />
                     }
                     else
                     {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/{RootUri}/{context.Id}/{EditUri}")" />
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeletePlannedActivityAsync(context))" />
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" Title="@($"Modify {@Context}")" 
+                                    HRef="@($"/{RootUri}/{context.Id}/{EditUri}")" />
+                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" Title="@($"Delete {@Context}")" 
+                                    OnClick="@(async () => await DeletePlannedActivityAsync(context))" />
                     }
                 </MudTd>
             </RowTemplate>
@@ -128,7 +132,7 @@
     private string _pageTitle = string.Empty;
 
     private PlannedActivitySettingsView _activitiesSettings;
-
+    private IEnumerable<PlannedActivityChildrenInfoView> _activitiesWithChildren;
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,7 +140,8 @@
 
         await BuildBreadcrumb();
         await GetSettings();
-        await GetPLannedActivitiesAsync();
+        await GetPlannedActivitiesAsync();
+        await GetPlannedActivitiesChildrenInfo();
     }
 
     private async Task BuildBreadcrumb()
@@ -153,7 +158,7 @@
         _activitiesSettings = SettingsService.MapPlannedActivitySettingsToView(settings);
     }
 
-    private async Task GetPLannedActivitiesAsync()
+    private async Task GetPlannedActivitiesAsync()
     {
         try
         {
@@ -184,7 +189,7 @@
             if (res )
             {
                 Snackbar.Add("Deletion successful", Severity.Success);
-                await GetPLannedActivitiesAsync();
+                await GetPlannedActivitiesAsync();
             }
             else
             {
@@ -257,9 +262,11 @@
         Navigation.NavigateTo(url);
     }
 
+    //Color of the progress bar
     private Color GetStatusColor(bool isBehind) 
         => isBehind ? Color.Error : Color.Success;
 
+#region Definition of the date color
     private bool IsTooLate(DateTime? targetDate)
     {
         if (!targetDate.HasValue)
@@ -275,6 +282,7 @@
 
         return targetDate.Value <= now;
     }
+
 
     private bool IsInDangerZone(DateTime? targetDate)
     {
@@ -324,10 +332,53 @@
             return "";
         }   
     }
+#endregion Definition of the date color
+
+#region Definition of the drill down icon color
+    private async Task GetPlannedActivitiesChildrenInfo()
+    {
+        if (_plannedActivities is not null)
+        {
+            IEnumerable<int> plannedActivitiesIds = _plannedActivities.Select(pa => pa.Id);
+            IEnumerable<int> plannedActivitiesWithChildren = 
+                                await PlannedActivitiesService.GetIdOfPlannedActivitiesWithChildren<TPlannedActivity>(plannedActivitiesIds.ToArray());
+            
+            List<PlannedActivityChildrenInfoView> tmp = new  List<PlannedActivityChildrenInfoView>();
+            foreach (int id in plannedActivitiesIds)
+            {
+                PlannedActivityChildrenInfoView activity = new PlannedActivityChildrenInfoView()
+                {
+                    PlannedActivityId = id,
+                    HasChildren = plannedActivitiesWithChildren.Any(c => c == id)
+                };
+                tmp.Add(activity);
+            }
+            _activitiesWithChildren = tmp;
+        }
+    }
+
+    private string GetHasChildrenIcon(int plannedActivityId) 
+        => HasChildren(plannedActivityId) ? AppIcons.ViewWithContent : AppIcons.View;
+
+    private string GetHasChildrenTooltip(int plannedActivityId)
+        => HasChildren(plannedActivityId) ? $"Show children {Context}" : $"Create children {Context}";
+
+    private bool HasChildren(int plannedActivityId)
+    {
+        if (_activitiesWithChildren is not null)
+        {
+            PlannedActivityChildrenInfoView? res = _activitiesWithChildren.FirstOrDefault(pa => pa.PlannedActivityId == plannedActivityId);
+
+            return (res is not null && res.HasChildren);
+        }
+
+        return false;
+    }
+#endregion  Definition of the drill down icon color
 
     private async Task DisplayClosedChanged(object Sender, bool newValue)
     {
         _displayClosedOnly = newValue;
-        await GetPLannedActivitiesAsync();
+        await GetPlannedActivitiesAsync();
     }
 }

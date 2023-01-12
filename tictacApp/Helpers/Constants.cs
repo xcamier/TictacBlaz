@@ -21,6 +21,7 @@ public static class AppIcons
     public const string Edit = @Icons.Outlined.Edit;
     public const string Delete = @Icons.Outlined.Delete;
     public const string View = @Icons.Outlined.Pageview;
+    public const string ViewWithContent = @Icons.Filled.Pageview;
     public const string Add = @Icons.Material.Filled.PostAdd;
     public const string Objective = @Icons.Outlined.Lightbulb;
     public const string Select = @Icons.Outlined.CheckBox;

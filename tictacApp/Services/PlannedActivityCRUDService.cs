@@ -36,6 +36,17 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
         return null;
     }
 
+    public async Task<IEnumerable<int>> GetIdOfPlannedActivitiesWithChildren<T>(int[] plannedActivitiesIds) where T : class, IId, IParent
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        var foundIds = context.Set<T>().Where(pa => pa.ParentId != null && plannedActivitiesIds.Contains(pa.ParentId.Value)).
+                                            Select(pa => pa.ParentId.Value).
+                                            Distinct();
+
+        return await foundIds.ToListAsync();
+    }
+
     public async Task<bool> DeleteCommentAsync(TictacDBContext? dbContext,  Comment commentToDelete)
     {
         if (dbContext is not null && commentToDelete != null)

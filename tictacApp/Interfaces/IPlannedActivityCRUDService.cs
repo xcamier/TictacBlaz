@@ -6,6 +6,8 @@ namespace tictacApp.Interfaces;
 public interface IPlannedActivityCRUDService: IGenericCRUDServiceWithParents
 {
     new Task<T?> FindFromIdAsync<T>(TictacDBContext? dbContext, int id) where T : class, IId, IComments;
+
+    Task<IEnumerable<int>> GetIdOfPlannedActivitiesWithChildren<T>(int[] plannedActivitiesIds) where T : class, IId, IParent;
     
     Task<Comment?> FindCommentFromIdAsync(TictacDBContext? dbContext, int id);  
 
