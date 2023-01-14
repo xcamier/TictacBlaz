@@ -9,18 +9,9 @@
 @inject TimeLogsService TimeLogsService
 @inject IGenericCRUDService GenericTimelogsService
 
+<ListTemplate PageTitle="Time logs" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
-<PageTitle>Time logs</PageTitle>
-
-<MudText Class="ml-2 mb-4" Typo="Typo.h5">Time Logs</MudText>
-
-@if (_timeLogs == null)
-{
-    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
-}
-else
-{
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+    <ButtonsAreaContent>
         <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="d-inline-flex">
             <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore" OnClick="@PrevDayAsync"></MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.NavigateNext" Disabled="@_forbidNextDay" OnClick="@NextDayAsync"></MudIconButton>
@@ -28,52 +19,49 @@ else
         </MudButtonGroup>
 
         <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
-            <MudButton StartIcon="@AppIcons.Add" Href="logs/addLog">Add Log</MudButton>
+            <MudButton StartIcon="@AppIcons.AddLog" Href="/logs/addLog">Add Log</MudButton>
+            <MudButton StartIcon="@AppIcons.QuickLog" OnClick="@CreateQuickLog" Class="ml-2">Quick Log</MudButton>
         </MudButtonGroup>
-    </MudPaper>
+    </ButtonsAreaContent>   
 
-    <MudPaper Class="d-inline-flex ml-2 pa-4">
-        <MudText>Total for @_selectedDay.ToLongDateString(): @_totalForDay</MudText>
-    </MudPaper>
-    <MudPaper Class="d-inline-flex pa-4">
-        <MudText>Total for the week: @_totalForWeek</MudText>
-    </MudPaper>
+    <ListAreaContent>
+        <MudPaper Class="d-inline-flex ml-2 pa-4">
+            <MudText>Total for @_selectedDay.ToLongDateString(): @_totalForDay</MudText>
+        </MudPaper>
+        <MudPaper Class="d-inline-flex pa-4">
+            <MudText>Total for the week: @_totalForWeek</MudText>
+        </MudPaper>
 
-    <MudTable Items="@_timeLogs" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                Class="ml-2 mr-2 mt-4">
-        <ColGroup>
-            <col style="width: 10%;"/>
-            <col style="width: 10%;"/>
-            <col style="width: 10%;"/>
-            <col />
-            <col style="width: 120px;"/>
-        </ColGroup>
-        <HeaderContent>
-            <MudTh>Start Time</MudTh>
-            <MudTh>End Time</MudTh>
-            <MudTh Style=" text-align:center;">Time Spent</MudTh>
-            <MudTh>Description</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Start Time">@context.StartDate.Value.ToString("t")</MudTd>
-            <MudTd DataLabel="End Time">@context.StartDate.Value.AddMinutes(@context.TimeSpentInMin).ToString("t")</MudTd>
-            <MudTd DataLabel="Time Spent" Style="text-align:right;">@context.TimeSpentInHHMM</MudTd>
-            <MudTd DataLabel="Time Spent">@context.Description</MudTd>
-            <MudTd DataLabel="Actions">
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/logs/{context.Id}/editLog")" />
-                <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-
-    @if (_error)
-    {
-        <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@_errorMessage</MudAlert>
-    }
-}
-
-
+        <MudTable Items="@_timeLogs" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                    Class="ml-2 mr-2 mt-4">
+            <ColGroup>
+                <col style="width: 10%;"/>
+                <col style="width: 10%;"/>
+                <col style="width: 10%;"/>
+                <col />
+                <col style="width: 120px;"/>
+            </ColGroup>
+            <HeaderContent>
+                <MudTh>Start Time</MudTh>
+                <MudTh>End Time</MudTh>
+                <MudTh Style=" text-align:center;">Time Spent</MudTh>
+                <MudTh>Description</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Start Time">@context.StartDate.Value.ToString("t")</MudTd>
+                <MudTd DataLabel="End Time">@context.StartDate.Value.AddMinutes(@context.TimeSpentInMin).ToString("t")</MudTd>
+                <MudTd DataLabel="Time Spent" Style="text-align:right;">@context.TimeSpentInHHMM</MudTd>
+                <MudTd DataLabel="Time Spent">@context.Description</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/logs/{context.Id}/editLog")" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </ListAreaContent>
+    
+</ListTemplate>
 
 @code {
     private TimeLog[]? _timeLogs;
@@ -174,6 +162,51 @@ else
         
         int totalForWeek = await TimeLogsService.GetTimeSpentInWeek(_selectedDay);
         _totalForWeek = FormattersHelper.MinToString(totalForWeek);
+    }
+
+    private async Task CreateQuickLog()
+    {
+           if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            TimeLog timeLogEntity = new TimeLog()
+            {
+                StartDate = DateTime.Now,
+                TimeSpentInMin = 1,
+                Description="Quick timelog - TO REPLACE WITH REAL ACTIVITY"
+            };
+            IEnumerable<int> selectedChars = new List<int>();
+            IEnumerable<int> selectedTags = new List<int>();
+
+            bool res = await TimeLogsService.AddAsync<TimeLog>(timeLogEntity, selectedChars, selectedTags);
+
+            ResetErrorMessage();
+
+            if (res)
+            {
+                Snackbar.Add("Quick Timelog added successfully", Severity.Success);
+                await GetTimeLogsAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error when adding the quick timelog", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private void ResetErrorMessage()

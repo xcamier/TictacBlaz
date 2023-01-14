@@ -33,6 +33,8 @@ public static class AppIcons
     public const string Calculate = @Icons.Material.Outlined.Calculate;
     public const string Comment = @Icons.Material.Filled.Comment;
     public const string List = @Icons.Material.Outlined.ListAlt;
+    public const string AddLog = @Icons.Material.Filled.MoreTime;
+    public const string QuickLog = @Icons.Material.Filled.AvTimer;
 }
 
 public static class ProgressStatus
