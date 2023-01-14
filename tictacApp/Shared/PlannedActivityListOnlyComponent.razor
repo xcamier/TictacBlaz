@@ -73,10 +73,10 @@
     public EventCallback<PlannedActivityView> GoToActivityInListAsync { get; set; }
 
     [Parameter]
-    public PlannedActivityView[] PlannedActivities { get; set; }
+    public PlannedActivityView[]? PlannedActivities { get; set; }
 
     [Parameter]
-    public IEnumerable<int> PlannedActivitiesWithChildren { get; set; }
+    public IEnumerable<int>? PlannedActivitiesWithChildren { get; set; }
 
     [Parameter]
     public bool Loading { get; set; }
@@ -90,9 +90,7 @@
     [Parameter]
     public PlannedActivitySettingsView ActivitiesSettings { get; set; }
 
-    private IEnumerable<PlannedActivityChildrenInfoView> _activitiesWithChildren;
 
-    
     //Do not display the same actions when checking activities at risk and
     //being in the original list
     private bool IsActivityAtRisk() 
@@ -173,26 +171,6 @@
 #endregion Definition of the date color
 
 #region Definition of the drill down icon color
-    private async Task GetPlannedActivitiesChildrenInfo()
-    {
-        if (PlannedActivities is not null)
-        {
-            IEnumerable<int> plannedActivitiesIds = PlannedActivities.Select(pa => pa.Id);
-           
-            List<PlannedActivityChildrenInfoView> tmp = new  List<PlannedActivityChildrenInfoView>();
-            foreach (int id in plannedActivitiesIds)
-            {
-                PlannedActivityChildrenInfoView activity = new PlannedActivityChildrenInfoView()
-                {
-                    PlannedActivityId = id,
-                    HasChildren = PlannedActivitiesWithChildren.Any(c => c == id)
-                };
-                tmp.Add(activity);
-            }
-            _activitiesWithChildren = tmp;
-        }
-    }
-
     private string GetHasChildrenIcon(int plannedActivityId) 
         => HasChildren(plannedActivityId) ? AppIcons.ViewWithContent : AppIcons.View;
 
@@ -201,11 +179,9 @@
 
     private bool HasChildren(int plannedActivityId)
     {
-        if (_activitiesWithChildren is not null)
+        if (PlannedActivitiesWithChildren is not null)
         {
-            PlannedActivityChildrenInfoView? res = _activitiesWithChildren.FirstOrDefault(pa => pa.PlannedActivityId == plannedActivityId);
-
-            return (res is not null && res.HasChildren);
+            return PlannedActivitiesWithChildren.Any(pa => pa == plannedActivityId);
         }
 
         return false;

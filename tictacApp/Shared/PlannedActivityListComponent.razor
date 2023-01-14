@@ -46,52 +46,20 @@
     </FiltersAreaContent>
 
     <ListAreaContent>
-        <MudTable Items="@_plannedActivities" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
-                    Class="ml-2 mr-2 mt-4">
-            <ColGroup>
-                <col style="width: 20%;" />
-                <col />
-                <col style="width: 8%;" />
-                <col style="width: 5%;" />
-                <col style="width: 120px;"/>
-            </ColGroup>
-            <HeaderContent>
-                <MudTh>Label</MudTh>
-                <MudTh>Description</MudTh>
-                <MudTh>Target</MudTh>
-                <MudTh>Completion</MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Label">@context.Label</MudTd>
-                <MudTd DataLabel="Description">@context.Description</MudTd>
-                <MudTd DataLabel="Target" Style="@GetTargetDateColor(context.TargetDate)">@context.TargetDate?.ToString("d")</MudTd>
-                <MudTd DataLabel="Completion">
-                    <MudProgressLinear Color=@GetStatusColor(context.IsBehind) Size="Size.Large" Value=@context.CompletionPercent>
-                         <MudText Typo="Typo.subtitle1" Color="Color.Dark">
-                            <b>@context.CompletionPercent</b>
-                        </MudText>
-                    </MudProgressLinear>
-                </MudTd>
 
-                <MudTd DataLabel="Actions">
-                    <MudIconButton Size="@Size.Small" Icon=@GetHasChildrenIcon(context.Id) Title=@GetHasChildrenTooltip(context.Id)
-                                    OnClick="@(() => GoToSubActivity(context.Id))" />
-                    @if (IsInSelection)
-                    {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" Title="@($"Select this {@Context}")" 
-                                    OnClick="@(() => @Select(context))" />
-                    }
-                    else
-                    {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" Title="@($"Modify {@Context}")" 
-                                    HRef="@($"/{RootUri}/{context.Id}/{EditUri}")" />
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" Title="@($"Delete {@Context}")" 
-                                    OnClick="@(async () => await DeletePlannedActivityAsync(context))" />
-                    }
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
+        <PlannedActivityListOnlyComponent
+            PlannedActivities=@_plannedActivities
+            PlannedActivitiesWithChildren=@_activitiesWithChildren
+            ActivitiesSettings=@_activitiesSettings
+            Loading=@_loading
+            IsInSelection=@IsInSelection
+            Context=@Context
+            SelectEventAsync="@((selected) => Select(selected))"
+            GoToSubActivityEventAsync="@((id) => GoToSubActivity(id))"
+            EditPlannedActivityEventAsync="@((activityToEdit) => EditActivity(activityToEdit))"
+            DeletePlannedActivityEventAsync="@(async (activityToDelete) => await DeletePlannedActivityAsync(activityToDelete))" >
+        </PlannedActivityListOnlyComponent>
+
     </ListAreaContent>
 
 </ListTemplate>
@@ -124,7 +92,8 @@
 
     private bool _displayClosedOnly = false;
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
-    private TPlannedActivity[]? _plannedActivities;
+    private PlannedActivityView[]? _plannedActivities;
+    private TPlannedActivity[]? _dbPlannedActivities;
     private bool _loading = false;
     private bool _busy = false;
     private bool _error = false;
@@ -132,7 +101,7 @@
     private string _pageTitle = string.Empty;
 
     private PlannedActivitySettingsView _activitiesSettings;
-    private IEnumerable<PlannedActivityChildrenInfoView> _activitiesWithChildren;
+    private IEnumerable<int> _activitiesWithChildren = new List<int>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -163,7 +132,8 @@
         try
         {
             _loading = true;
-            _plannedActivities = await PlannedActivitiesService.GetAllAsync<TPlannedActivity>(ParentActivityId, _displayClosedOnly);
+            _dbPlannedActivities = await PlannedActivitiesService.GetAllAsync<TPlannedActivity>(ParentActivityId, _displayClosedOnly);
+            _plannedActivities = Mapper.Map<PlannedActivityView[]>(_dbPlannedActivities);
         }
         finally
         {
@@ -171,7 +141,13 @@
         }
     }
 
-    private async Task DeletePlannedActivityAsync(TPlannedActivity activityToRemove)
+    private void EditActivity(PlannedActivityView activityToEdit)
+    {
+        string uri =$"/{RootUri}/{activityToEdit.Id}/{EditUri}";
+        Navigation.NavigateTo(uri);
+    }
+
+    private async Task DeletePlannedActivityAsync(PlannedActivityView activityToRemove)
     {
         if (_busy)
         {
@@ -182,7 +158,13 @@
         {
             _busy = true;
 
-            bool res = await PlannedActivitiesService.DeleteAsync<TPlannedActivity>(activityToRemove);
+            TPlannedActivity? dbActivityToRemove = _dbPlannedActivities?.FirstOrDefault(pa => pa.Id == activityToRemove.Id);
+
+            bool res = false;
+            if (dbActivityToRemove is not null)
+            {
+                res = await PlannedActivitiesService.DeleteAsync<TPlannedActivity>(dbActivityToRemove);
+            }
 
             ResetErrorMessage();
 
@@ -237,12 +219,10 @@
         Navigation.NavigateTo(url);
     }
 
-    private void Select(TPlannedActivity selectedActivity)
+    private void Select(PlannedActivityView selectedActivity)
     {
         ItemSelectionService.HasSelected = true;
-
-        PlannedActivityView selectedObjectiveView = Mapper.Map<PlannedActivityView>(selectedActivity);
-        ItemSelectionService.Selection.Add(selectedObjectiveView);
+        ItemSelectionService.Selection.Add(selectedActivity);
 
         NavigateBackToCaller();
     }
@@ -262,119 +242,15 @@
         Navigation.NavigateTo(url);
     }
 
-    //Color of the progress bar
-    private Color GetStatusColor(bool isBehind) 
-        => isBehind ? Color.Error : Color.Success;
-
-#region Definition of the date color
-    private bool IsTooLate(DateTime? targetDate)
-    {
-        if (!targetDate.HasValue)
-            return false;
-
-        DateTime now = DateTime.Now.Date; 
-        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
-
-        if (_activitiesSettings.OrangeLow.HasValue)
-        {
-            return remainingDays < _activitiesSettings.OrangeLow;
-        }
-
-        return targetDate.Value <= now;
-    }
-
-
-    private bool IsInDangerZone(DateTime? targetDate)
-    {
-        return IsInZone(targetDate, _activitiesSettings.OrangeLow, _activitiesSettings.OrangeHigh);
-    }
-
-    private bool IsInGreenZone(DateTime? targetDate)
-    {
-        return IsInZone(targetDate, _activitiesSettings.GreenLow, _activitiesSettings.GreenHigh);
-    }
-
-    private bool IsInZone(DateTime? targetDate, int? low, int? high)
-    {
-        if (!targetDate.HasValue || !low.HasValue || !high.HasValue) 
-            return false;
-
-        DateTime now = DateTime.Now.Date; 
-        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
-
-        return (remainingDays >= low && remainingDays <= high);
-    }
-
-    private static double CalculateRemainingDays(DateTime now, DateTime targetDate)
-    {
-        DateTime end = targetDate.Date.AddDays(1).AddSeconds(-1);
-        TimeSpan remaining = end - now;
-
-        return Math.Round(remaining.TotalDays);
-    }
-
-    private string GetTargetDateColor(DateTime? targetDate)
-    {
-        if (IsTooLate(targetDate))
-        {
-            return "Color: red;";
-        }
-        else if (IsInDangerZone(targetDate))
-        {
-            return "Color: orange;";
-        }
-        else if (IsInGreenZone(targetDate))
-        {
-            return "Color: green;";
-        }
-        else
-        {
-            return "";
-        }   
-    }
-#endregion Definition of the date color
-
-#region Definition of the drill down icon color
     private async Task GetPlannedActivitiesChildrenInfo()
     {
         if (_plannedActivities is not null)
         {
             IEnumerable<int> plannedActivitiesIds = _plannedActivities.Select(pa => pa.Id);
-            IEnumerable<int> plannedActivitiesWithChildren = 
+            _activitiesWithChildren = 
                                 await PlannedActivitiesService.GetIdOfPlannedActivitiesWithChildren<TPlannedActivity>(plannedActivitiesIds.ToArray());
-            
-            List<PlannedActivityChildrenInfoView> tmp = new  List<PlannedActivityChildrenInfoView>();
-            foreach (int id in plannedActivitiesIds)
-            {
-                PlannedActivityChildrenInfoView activity = new PlannedActivityChildrenInfoView()
-                {
-                    PlannedActivityId = id,
-                    HasChildren = plannedActivitiesWithChildren.Any(c => c == id)
-                };
-                tmp.Add(activity);
-            }
-            _activitiesWithChildren = tmp;
         }
     }
-
-    private string GetHasChildrenIcon(int plannedActivityId) 
-        => HasChildren(plannedActivityId) ? AppIcons.ViewWithContent : AppIcons.View;
-
-    private string GetHasChildrenTooltip(int plannedActivityId)
-        => HasChildren(plannedActivityId) ? $"Show children {Context}" : $"Create children {Context}";
-
-    private bool HasChildren(int plannedActivityId)
-    {
-        if (_activitiesWithChildren is not null)
-        {
-            PlannedActivityChildrenInfoView? res = _activitiesWithChildren.FirstOrDefault(pa => pa.PlannedActivityId == plannedActivityId);
-
-            return (res is not null && res.HasChildren);
-        }
-
-        return false;
-    }
-#endregion  Definition of the drill down icon color
 
     private async Task DisplayClosedChanged(object Sender, bool newValue)
     {

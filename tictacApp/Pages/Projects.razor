@@ -4,7 +4,6 @@
 @page "/projectSelector/{ParentProjectId:int}"
 
 @using tictacApp.Data
-@using tictacApp.Shared
 
 @inject NavigationManager Navigation
 
@@ -17,7 +16,8 @@
     AddUri = "addProject"
     EditUri = "editProject"
     BackToLogWhenAdding="addLogFromProjectSelection"
-    BackToLogWhenEditing="editLogFromProjectSelection" />
+    BackToLogWhenEditing="editLogFromProjectSelection">
+</PlannedActivityListComponent>
 
 
 @code {

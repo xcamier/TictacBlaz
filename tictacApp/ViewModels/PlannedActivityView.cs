@@ -17,9 +17,3 @@ public class PlannedActivityView: IIdLabel, IDescription, IParent
 
     public int? ParentId { get; set; }
 }
-
-public class PlannedActivityChildrenInfoView
-{
-    public int PlannedActivityId { get; set; }
-    public bool HasChildren { get; set; }
-}

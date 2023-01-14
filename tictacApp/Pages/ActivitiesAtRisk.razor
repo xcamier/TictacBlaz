@@ -15,7 +15,6 @@
         ActivitiesSettings=@_activitiesSettings
         Projects=@_projects
         Objectives=@_objectives
-        PlannedActivitiesWithChildren=@_projectsWithChildren
         Loading=@_loading
         Error=@_error
         ErrorMessage=@_errorMessage
@@ -28,8 +27,6 @@
     private PlannedActivitySettingsView _activitiesSettings;
     private PlannedActivityView[] _projects;
     private PlannedActivityView[] _objectives;
-    private IEnumerable<int> _projectsWithChildren;
-    private IEnumerable<int> _objectivesWithChildren;
 
     private bool _loading = false;
     private bool _error = false;
@@ -51,7 +48,6 @@
         {
             await GetSettings();
             await GetPlannedActivitiesExpectedAsync(numberOfDays);
-            await GetPlannedActivitiesChildrenAsync();
         }
         catch (Exception ex)
         {
@@ -78,17 +74,6 @@
         
         _projects = Mapper.Map<PlannedActivityView[]>(projects);
         _objectives = Mapper.Map<PlannedActivityView[]>(objectives);
-    }
-
-    private async Task GetPlannedActivitiesChildrenAsync()
-    {
-        int[] projectIds = _projects.Select(p => p.Id).ToArray();
-        int[] objectiveIds = _objectives.Select(o => o.Id).ToArray();
-
-        _projectsWithChildren = 
-                            await PlannedActivitiesService.GetIdOfPlannedActivitiesWithChildren<Project>(projectIds);
-        _objectivesWithChildren = 
-                            await PlannedActivitiesService.GetIdOfPlannedActivitiesWithChildren<Objective>(objectiveIds);
     }
 
     private void NavigateToList(PlannedActivityView activity)

@@ -4,7 +4,6 @@
 @page "/objectiveSelector/{ParentObjectiveId:int}"
 
 @using tictacApp.Data
-@using tictacApp.Shared
 
 @inject NavigationManager Navigation
 
@@ -17,7 +16,8 @@
     AddUri = "addObjective"
     EditUri = "editObjective"
     BackToLogWhenAdding="addLogFromObjectiveSelection"
-    BackToLogWhenEditing="editLogFromObjectiveSelection" />
+    BackToLogWhenEditing="editLogFromObjectiveSelection">
+</PlannedActivityListComponent> 
 
 
 @code {
