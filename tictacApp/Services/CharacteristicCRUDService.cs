@@ -32,4 +32,15 @@ public class CharacteristicCRUDService : GenericCRUDServiceWithParents, ICharact
 
         return await query.ToArrayAsync();
     }
+
+    public async Task<IEnumerable<int>> GetIdOfCharacteristicsWithChildren(int[] characteristicsIds)
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        var foundIds = context.Characteristics.Where(c => c.ParentId != null && characteristicsIds.Contains(c.ParentId.Value)).
+                                            Select(c => c.ParentId.Value).
+                                            Distinct();
+
+        return await foundIds.ToListAsync();
+    }
 }

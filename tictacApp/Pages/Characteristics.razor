@@ -77,10 +77,13 @@
                 <MudTd DataLabel="Actions">
                     @if (_canGoOneLevelAbove)
                     {
-                        <MudIconButton Size="@Size.Small" Icon="@AppIcons.View" OnClick="@(() => GoToSubCharacteristic(context.Id))" />
+                        <MudIconButton Size="@Size.Small" Icon=@GetHasChildrenIcon(context.Id) Title="Show Children Characteristics"
+                                        OnClick="@(() => GoToSubCharacteristic(context.Id))" />
                     }
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/characteristics/{context.Id}/editCharacteristic")" />
-                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteCharacteristicAsync(context))" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" Title="Modify Characteristic"
+                                     HRef="@($"/characteristics/{context.Id}/editCharacteristic")" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" Title="Delete Characteristic" 
+                                    OnClick="@(async () => await DeleteCharacteristicAsync(context))" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
@@ -100,8 +103,8 @@
     private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
-
     private bool _canGoOneLevelAbove = true;
+    private IEnumerable<int>? _characteristicsWithChildren;
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,6 +115,7 @@
         _canGoOneLevelAbove = !_hasTwoLevelsOfParents;
 
         await GetCharacteristicsAsync();
+        await GetCharacteristicChildrenInfo();
     }
 
     private async Task BuildBreadcrumb()
@@ -215,5 +219,28 @@
     {
         _displayClosedOnly = newValue;
         await GetCharacteristicsAsync();
+    }
+
+    private string GetHasChildrenIcon(int characteristicId) 
+        => HasChildren(characteristicId) ? AppIcons.ViewWithContent : AppIcons.View;
+
+    private bool HasChildren(int characteristicId)
+    {
+        if (_characteristicsWithChildren is not null)
+        {
+            return _characteristicsWithChildren.Any(pa => pa == characteristicId);
+        }
+
+        return false;
+    }
+
+    private async Task GetCharacteristicChildrenInfo()
+    {
+        if (_characteristics is not null)
+        {
+            IEnumerable<int> characteristicsIds = _characteristics.Select(pa => pa.Id);
+            _characteristicsWithChildren = 
+                                await CharacteristicsService.GetIdOfCharacteristicsWithChildren(characteristicsIds.ToArray());
+        }
     }
 }
