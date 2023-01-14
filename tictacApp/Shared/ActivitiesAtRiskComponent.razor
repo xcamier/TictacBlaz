@@ -1,0 +1,101 @@
+@using tictacApp.ViewModels
+    
+<ListTemplate PageTitle=@PageTitle Loading=@Loading Error=@Error ErrorMessage=@ErrorMessage>
+
+    <FiltersAreaContent>
+        <MudGrid>
+            <MudItem xs="3">
+                <MudSelect T="int" Label="Select period" Placeholder="Please Select" ValueChanged="OnValueChanged" Value=@_value>
+                    @if (ActivitiesSettings is not null && ActivitiesSettings.OrangeHigh.HasValue)
+                    {
+                        <MudSelectItem Value=ActivitiesSettings.OrangeHigh.Value>Based on settings</MudSelectItem>
+                    }
+                    <MudSelectItem Value=1>Today</MudSelectItem>
+                    <MudSelectItem Value=7>Within 7 days</MudSelectItem>
+                    <MudSelectItem Value=15>Within 15 days</MudSelectItem>
+                    <MudSelectItem Value=30>Within 30 days</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </FiltersAreaContent>
+
+    <ListAreaContent>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.subtitle1" Class="ml-2">Projects</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <PlannedActivityListOnlyComponent 
+                    PlannedActivities=@Projects
+                    PlannedActivitiesWithChildren=@PlannedActivitiesWithChildren
+                    Loading=@Loading
+                    Context="Activities at risk"
+                    ActivitiesSettings=@ActivitiesSettings
+                    GoToActivityInListAsync="@(async (activityToSelect)  => await GoToActivityInListAsync.InvokeAsync(activityToSelect))">
+                </PlannedActivityListOnlyComponent>
+            </MudItem>
+            <MudItem xs="12">
+                <MudDivider Class="ml-2 mr-2 mt-2 mb-2"></MudDivider>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText Typo="Typo.subtitle1" Class="ml-2">Objectives</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <PlannedActivityListOnlyComponent 
+                    PlannedActivities=@Objectives
+                    PlannedActivitiesWithChildren=@PlannedActivitiesWithChildren
+                    Loading=@Loading
+                    Context="Activities at risk"
+                    ActivitiesSettings=@ActivitiesSettings
+                    GoToActivityInListAsync="@(async (activityToSelect)  => await GoToActivityInListAsync.InvokeAsync(activityToSelect))">
+                </PlannedActivityListOnlyComponent>
+            </MudItem>
+        </MudGrid>
+
+    </ListAreaContent>
+
+</ListTemplate>
+
+
+
+@code {
+    [Parameter]
+    public EventCallback<PlannedActivityView> GoToActivityInListAsync { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnFilterChangedAsync { get; set; }
+
+    [Parameter]
+    public PlannedActivityView[]? Projects { get; set; }
+
+    [Parameter]
+    public PlannedActivityView[]? Objectives { get; set; }
+
+    [Parameter]
+    public IEnumerable<int> PlannedActivitiesWithChildren { get; set; }
+
+    [Parameter]
+    public PlannedActivitySettingsView ActivitiesSettings { get; set; }
+
+    [Parameter]
+    public string PageTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public bool Error { get; set; }
+
+    [Parameter]
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    private int _value = 1;
+
+    
+    private void OnValueChanged(int numberOfDays)
+    {
+        _value = numberOfDays;
+        OnFilterChangedAsync.InvokeAsync(numberOfDays);
+    }
+}

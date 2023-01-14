@@ -1,0 +1,215 @@
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+
+<MudTable Items="@PlannedActivities" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@Loading" LoadingProgressColor="Color.Info"
+            Class="ml-2 mr-2 mt-4">
+    <ColGroup>
+        <col style="width: 20%;" />
+        <col />
+        <col style="width: 8%;" />
+        <col style="width: 5%;" />
+        <col style="@(IsActivityAtRisk() ? "width: 70px;" : "width: 120px;")"/>
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>Label</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh>Target</MudTh>
+        <MudTh>Completion</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Label">@context.Label</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Target" Style="@GetTargetDateColor(context.TargetDate)">@context.TargetDate?.ToString("d")</MudTd>
+        <MudTd DataLabel="Completion">
+            <MudProgressLinear Color=@GetStatusColor(context.IsBehind) Size="Size.Large" Value=@context.CompletionPercent>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                    <b>@context.CompletionPercent</b>
+                </MudText>
+            </MudProgressLinear>
+        </MudTd>
+
+        <MudTd DataLabel="Actions">
+            @if (@IsActivityAtRisk())
+            {
+                <MudIconButton Size="@Size.Small" Icon="@AppIcons.List" Title="Find in list"
+                                OnClick="@(async () => await GoToActivityInListAsync.InvokeAsync(context))" />                
+            }
+            else
+            {
+                <MudIconButton Size="@Size.Small" Icon=@GetHasChildrenIcon(context.Id) Title=@GetHasChildrenTooltip(context.Id)
+                                OnClick="@(async () => await GoToSubActivityEventAsync.InvokeAsync(context.Id))" />
+                @if (IsInSelection)
+                {
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Select" Title="@($"Select this {@Context}")" 
+                                OnClick="@(async () => await SelectEventAsync.InvokeAsync(context))" />
+                }
+                else
+                {
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" Title="@($"Modify {@Context}")" 
+                                OnClick="@(async () => await EditPlannedActivityEventAsync.InvokeAsync(context))" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" Title="@($"Delete {@Context}")" 
+                                OnClick="@(async () => await DeletePlannedActivityEventAsync.InvokeAsync(context))" />
+                }
+            }
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter]
+    public EventCallback<PlannedActivityView> DeletePlannedActivityEventAsync { get; set; }
+
+    [Parameter]
+    public EventCallback<PlannedActivityView> EditPlannedActivityEventAsync { get; set; }
+
+    [Parameter]
+    public EventCallback<int> GoToSubActivityEventAsync { get; set; }
+
+    [Parameter]
+    public EventCallback<PlannedActivityView> SelectEventAsync { get; set; }
+    
+    [Parameter]
+    public EventCallback<PlannedActivityView> GoToActivityInListAsync { get; set; }
+
+    [Parameter]
+    public PlannedActivityView[] PlannedActivities { get; set; }
+
+    [Parameter]
+    public IEnumerable<int> PlannedActivitiesWithChildren { get; set; }
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public bool IsInSelection { get; set; } = false;
+
+    [Parameter]
+    public string Context { get; set; } = string.Empty;
+
+    [Parameter]
+    public PlannedActivitySettingsView ActivitiesSettings { get; set; }
+
+    private IEnumerable<PlannedActivityChildrenInfoView> _activitiesWithChildren;
+
+    
+    //Do not display the same actions when checking activities at risk and
+    //being in the original list
+    private bool IsActivityAtRisk() 
+        => Context.ToUpper().Contains("RISK");
+    
+
+    //Color of the progress bar
+    private Color GetStatusColor(bool isBehind) 
+        => isBehind ? Color.Error : Color.Success;
+
+
+#region Definition of the date color
+    private bool IsTooLate(DateTime? targetDate)
+    {
+        if (!targetDate.HasValue)
+            return false;
+
+        DateTime now = DateTime.Now.Date; 
+        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
+
+        if (ActivitiesSettings.OrangeLow.HasValue)
+        {
+            return remainingDays < ActivitiesSettings.OrangeLow;
+        }
+
+        return targetDate.Value <= now;
+    }
+
+
+    private bool IsInDangerZone(DateTime? targetDate)
+    {
+        return IsInZone(targetDate, ActivitiesSettings.OrangeLow, ActivitiesSettings.OrangeHigh);
+    }
+
+    private bool IsInGreenZone(DateTime? targetDate)
+    {
+        return IsInZone(targetDate, ActivitiesSettings.GreenLow, ActivitiesSettings.GreenHigh);
+    }
+
+    private bool IsInZone(DateTime? targetDate, int? low, int? high)
+    {
+        if (!targetDate.HasValue || !low.HasValue || !high.HasValue) 
+            return false;
+
+        DateTime now = DateTime.Now.Date; 
+        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
+
+        return (remainingDays >= low && remainingDays <= high);
+    }
+
+    private static double CalculateRemainingDays(DateTime now, DateTime targetDate)
+    {
+        DateTime end = targetDate.Date.AddDays(1).AddSeconds(-1);
+        TimeSpan remaining = end - now;
+
+        return Math.Round(remaining.TotalDays);
+    }
+
+    private string GetTargetDateColor(DateTime? targetDate)
+    {
+        if (IsTooLate(targetDate))
+        {
+            return "Color: red;";
+        }
+        else if (IsInDangerZone(targetDate))
+        {
+            return "Color: orange;";
+        }
+        else if (IsInGreenZone(targetDate))
+        {
+            return "Color: green;";
+        }
+        else
+        {
+            return "";
+        }   
+    }
+#endregion Definition of the date color
+
+#region Definition of the drill down icon color
+    private async Task GetPlannedActivitiesChildrenInfo()
+    {
+        if (PlannedActivities is not null)
+        {
+            IEnumerable<int> plannedActivitiesIds = PlannedActivities.Select(pa => pa.Id);
+           
+            List<PlannedActivityChildrenInfoView> tmp = new  List<PlannedActivityChildrenInfoView>();
+            foreach (int id in plannedActivitiesIds)
+            {
+                PlannedActivityChildrenInfoView activity = new PlannedActivityChildrenInfoView()
+                {
+                    PlannedActivityId = id,
+                    HasChildren = PlannedActivitiesWithChildren.Any(c => c == id)
+                };
+                tmp.Add(activity);
+            }
+            _activitiesWithChildren = tmp;
+        }
+    }
+
+    private string GetHasChildrenIcon(int plannedActivityId) 
+        => HasChildren(plannedActivityId) ? AppIcons.ViewWithContent : AppIcons.View;
+
+    private string GetHasChildrenTooltip(int plannedActivityId)
+        => HasChildren(plannedActivityId) ? $"Show children {Context}" : $"Create children {Context}";
+
+    private bool HasChildren(int plannedActivityId)
+    {
+        if (_activitiesWithChildren is not null)
+        {
+            PlannedActivityChildrenInfoView? res = _activitiesWithChildren.FirstOrDefault(pa => pa.PlannedActivityId == plannedActivityId);
+
+            return (res is not null && res.HasChildren);
+        }
+
+        return false;
+    }
+#endregion  Definition of the drill down icon color
+
+}

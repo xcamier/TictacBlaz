@@ -8,6 +8,8 @@ public class PlannedActivityView: IIdLabel, IDescription, IParent
     public string? Label { get; set; }
     public string? Description { get; set; }
     public DateTime? TargetDate { get; set; }
+    public bool IsBehind { get; set; }
+    public int CompletionPercent { get; set; }
     public bool IsClosed { get; set; }
     public bool IsFinalized { get; set; }
     public DateTime? FinalizationDate { get; set; }

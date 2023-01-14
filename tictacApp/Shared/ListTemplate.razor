@@ -18,9 +18,12 @@
 }
 else
 {
-    <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
-        @ButtonsAreaContent
-    </MudPaper>
+    @if (@ButtonsAreaContent is not null)
+    {
+        <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
+            @ButtonsAreaContent
+        </MudPaper>
+    }
 
     @if (FiltersAreaContent is not null)
     {

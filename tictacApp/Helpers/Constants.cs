@@ -32,6 +32,7 @@ public static class AppIcons
     public const string Characteristic = @Icons.Material.Filled.Anchor;
     public const string Calculate = @Icons.Material.Outlined.Calculate;
     public const string Comment = @Icons.Material.Filled.Comment;
+    public const string List = @Icons.Material.Outlined.ListAlt;
 }
 
 public static class ProgressStatus

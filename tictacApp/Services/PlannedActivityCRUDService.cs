@@ -11,6 +11,15 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
     {
     }
 
+    public async Task<T[]> GetAllAsync<T>(DateTime limitDate) where T: class, ITargetDate, IIsClosed
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Set<T>().
+                                Where(pa => pa.IsClosed == false && pa.TargetDate != null && pa.TargetDate <= limitDate).
+                                ToArrayAsync();
+    }
+
 
     async Task<T?> IPlannedActivityCRUDService.FindFromIdAsync<T>(TictacDBContext? dbContext, int id) 
                                                                      where T : class
