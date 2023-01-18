@@ -69,11 +69,18 @@
     private async Task GetPlannedActivitiesExpectedAsync(int numberOfDays)
     {   
         DateTime targetDate = DateTime.Now.AddDays(numberOfDays);
-        var projects = await PlannedActivitiesService.GetAllAsync<Project>(targetDate);
-        var objectives = await PlannedActivitiesService.GetAllAsync<Objective>(targetDate);
-        
-        _projects = Mapper.Map<PlannedActivityView[]>(projects);
-        _objectives = Mapper.Map<PlannedActivityView[]>(objectives);
+        Project[]? projects = await PlannedActivitiesService.GetAllAsync<Project>(targetDate);
+        if (projects is not null)
+        {
+            projects = projects.OrderBy(p => p.TargetDate).ThenBy(p => p.CompletionPercent).ToArray();
+            _projects = Mapper.Map<PlannedActivityView[]>(projects);
+        }
+        Objective[]? objectives = await PlannedActivitiesService.GetAllAsync<Objective>(targetDate);
+        if (objectives is not null)
+        {
+            objectives = objectives.OrderBy(o => o.TargetDate).ThenBy(o => o.CompletionPercent).ToArray();
+            _objectives = Mapper.Map<PlannedActivityView[]>(objectives);
+        }
     }
 
     private void NavigateToList(PlannedActivityView activity)
