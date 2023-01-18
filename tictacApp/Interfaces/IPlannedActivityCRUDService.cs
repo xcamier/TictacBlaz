@@ -5,7 +5,7 @@ namespace tictacApp.Interfaces;
 
 public interface IPlannedActivityCRUDService: IGenericCRUDServiceWithParents
 {
-    Task<T[]> GetAllAsync<T>(DateTime limitDate) where T: class, ITargetDate, IIsClosed;
+    Task<T[]> GetAllAsync<T>(DateTime limitDate) where T: PlannedActivity;
 
     new Task<T?> FindFromIdAsync<T>(TictacDBContext? dbContext, int id) where T : class, IId, IComments;
 
