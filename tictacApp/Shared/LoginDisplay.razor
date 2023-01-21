@@ -1,0 +1,33 @@
+@inject IWebHostEnvironment Env
+
+<AuthorizeView>
+    <Authorized>
+        <!-- The app is not design to manage multiple users => restrict the user management when in production -->
+        @if (Env.IsDevelopment())
+        {
+            <MudLink Color="Color.Inherit" Href="Identity/Account/Manage">@context.User.Identity?.Name</MudLink>
+        }
+        else
+        {
+            <MudText Color="Color.Inherit">@context.User.Identity?.Name</MudText>
+        }
+
+        <form method="post" action="Identity/Account/Logout">
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Edge="Edge.End"
+                            ButtonType="ButtonType.Submit" Title="Log out" />
+
+        </form>
+    </Authorized>
+    <NotAuthorized>
+        <!-- The app is not design to manage multiple users => user registration is performed once when testing 
+              locally then disabled when in production -->
+        @if (Env.IsDevelopment())
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.AppRegistration" Color="Color.Inherit" Edge="Edge.End" 
+                            Href="Identity/Account/Register" Title="Register"/>
+        }
+
+        <MudIconButton Icon="@Icons.Material.Filled.Login" Color="Color.Inherit" Edge="Edge.End"
+                        Href="Identity/Account/Login" Title="Log in" />
+    </NotAuthorized>
+</AuthorizeView>
