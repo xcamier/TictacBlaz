@@ -1,4 +1,5 @@
 ﻿@page "/"
+@attribute [Authorize]
 
 @using tictacApp.Helpers
 @using tictacApp.Data
@@ -8,6 +9,7 @@
 @inject ISnackbar Snackbar
 @inject TimeLogsService TimeLogsService
 @inject IGenericCRUDService GenericTimelogsService
+@inject NavigationManager Navig
 
 <ListTemplate PageTitle="Time logs" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
 
@@ -64,6 +66,9 @@
 </ListTemplate>
 
 @code {
+    [CascadingParameter] 
+    protected Task<AuthenticationState> AuthStat { get; set; }
+
     private TimeLog[]? _timeLogs;
     private bool _loading = false;
     private DateOnly _selectedDay = DateOnly.FromDateTime(DateTime.Now);
@@ -73,6 +78,7 @@
     private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,7 +92,6 @@
         {
             _loading = false;
         }
-
     }
 
     private async Task DeleteTimeLogAsync(TimeLog timeLogToRemove)

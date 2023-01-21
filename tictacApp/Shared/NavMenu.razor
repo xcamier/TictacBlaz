@@ -1,19 +1,38 @@
-﻿<MudNavMenu>
-    <MudNavLink Match="NavLinkMatch.All" Href="/">Activity Logs</MudNavLink>
-    <MudNavLink Match="NavLinkMatch.All" Href="/observations">Observations</MudNavLink>
-    <MudNavLink Match="NavLinkMatch.All" Href="/activitiesatrisk">Activities at Risk</MudNavLink>
-    <MudNavGroup Title="Configure" Expanded="true">
-        <MudNavLink Match="NavLinkMatch.All" Href="/projects">Projects</MudNavLink>
-        <MudNavLink Match="NavLinkMatch.All" Href="/objectives">Objectives</MudNavLink>
-        <MudNavLink Match="NavLinkMatch.All" Href="/characteristics">Characteristics</MudNavLink>
-        <MudDivider Class="my-2"/>
-        <MudNavLink Match="NavLinkMatch.All" Href="/tags">Tags</MudNavLink>
-        <MudNavLink Match="NavLinkMatch.All" Href="/grades">Grades</MudNavLink>
-        <MudNavLink Match="NavLinkMatch.All" Href="/characteristicsGroups">Groups of characteristics</MudNavLink>
-        <MudNavLink Match="NavLinkMatch.All" Href="/actors">Actors</MudNavLink>
-        <MudDivider Class="my-2"/>
-        <MudNavLink Match="NavLinkMatch.All" Href="/settings">Settings</MudNavLink>
-    </MudNavGroup>
+﻿@using tictacApp.Helpers
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<IdentityUser> UserManager
+
+<MudNavMenu>
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Match="NavLinkMatch.All" Href="/">Activity Logs</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All" Href="/observations">Observations</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All" Href="/activitiesatrisk">Activities at Risk</MudNavLink>
+            <MudNavGroup Title="Configure" Expanded="true">
+                <MudNavLink Match="NavLinkMatch.All" Href="/projects">Projects</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Href="/objectives">Objectives</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Href="/characteristics">Characteristics</MudNavLink>
+                <MudDivider Class="my-2"/>
+                <MudNavLink Match="NavLinkMatch.All" Href="/tags">Tags</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Href="/grades">Grades</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Href="/characteristicsGroups">Groups of characteristics</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Href="/actors">Actors</MudNavLink>
+                <MudDivider Class="my-2"/>
+                <MudNavLink Match="NavLinkMatch.All" Href="/settings">Settings</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+        <NotAuthorized>
+            @if (UserManager.Users.Any())
+            {
+                <MudNavLink Icon="@AppIcons.Login" Match="NavLinkMatch.All" Href="Identity/Account/Login">Log in</MudNavLink>
+            }
+            else
+            {
+                <MudNavLink Icon="@AppIcons.Register" Match="NavLinkMatch.All" Href="Identity/Account/Register">Register the main user</MudNavLink>                
+            }
+        </NotAuthorized>
+    </AuthorizeView>
 </MudNavMenu>
 
 

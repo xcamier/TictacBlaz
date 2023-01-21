@@ -1,0 +1,26 @@
+@using tictacApp.Helpers
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<IdentityUser> UserManager
+    
+<AuthorizeView>
+    <Authorized>
+        <MudText Color="Color.Inherit">@context.User.Identity?.Name</MudText>
+
+        <form method="post" action="Identity/Account/Logout">
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Edge="Edge.End"
+                            ButtonType="ButtonType.Submit" Title="Log out" />
+
+        </form>
+    </Authorized>
+    <NotAuthorized>
+        <MudIconButton Icon="@AppIcons.Register" Color="Color.Inherit" Edge="Edge.End" 
+                        Href="Identity/Account/Register" Title="Register"/>
+
+        @if (UserManager.Users.Any())
+        {
+            <MudIconButton Icon="@AppIcons.Login" Color="Color.Inherit" Edge="Edge.End"
+                            Href="Identity/Account/Login" Title="Log in" />
+        }
+    </NotAuthorized>
+</AuthorizeView>

@@ -1,21 +1,20 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using tictacApp.Data;
 using tictacApp.Helpers;
 
 namespace tictacApp.DataAccess;
 
-public class TictacDBContext : DbContext
+public class TictacDBContext : IdentityDbContext
 {
-    public TictacDBContext(DbContextOptions options) : base(options)
-    {
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionbuilder)
+    public TictacDBContext(DbContextOptions<TictacDBContext> options) : base(options)
     {
     }
  
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         var project = modelBuilder.Entity<Project>();
         project.HasBaseType<PlannedActivity>();
         project.Property(p => p.Label).IsRequired();

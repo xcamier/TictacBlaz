@@ -35,6 +35,8 @@ public static class AppIcons
     public const string List = @Icons.Material.Outlined.ListAlt;
     public const string AddLog = @Icons.Material.Filled.MoreTime;
     public const string QuickLog = @Icons.Material.Filled.AvTimer;
+    public const string Login = @Icons.Material.Filled.Login;
+    public const string Register = @Icons.Material.Filled.AppRegistration;
 }
 
 public static class ProgressStatus

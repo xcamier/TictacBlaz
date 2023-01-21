@@ -1,12 +1,38 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<IdentityUser> UserManager
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (UserManager.Users.Any())
+                    {
+                        <MudAlert Class="mt-2 ml-2 mr-2" Severity="Severity.Info" Variant="Variant.Outlined">
+                            You need to <MudLink Href="Identity/Account/Login">login</MudLink> to access this page.
+                        </MudAlert> 
+                    }
+                    else
+                    {
+                        <MudAlert Class="mt-2 ml-2 mr-2" Severity="Severity.Info" Variant="Variant.Outlined">
+                            You need to <MudLink Href="Identity/Account/Register">register</MudLink> the main user, then to login to access this page.
+                        </MudAlert> 
+                    }
+                </NotAuthorized>
+                <Authorizing>
+                    <p>Checking authorizations...</p>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <MudAlert Class="mt-2 ml-2 mr-2" Severity="Severity.Warning" Variant="Variant.Outlined">
+                    Sorry, there's nothing at this address.
+                </MudAlert> 
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
