@@ -12,14 +12,38 @@
     </ColGroup>
     <HeaderContent>
         <MudTh>Label</MudTh>
-        <MudTh>Description</MudTh>
+        @if (@DisplayPath)
+        {
+            <MudTh>Path / Description</MudTh>
+        }
+        else
+        {
+            <MudTh>Description</MudTh>
+        }
         <MudTh>Target</MudTh>
         <MudTh>Completion</MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Label">@context.Label</MudTd>
-        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Description">
+            @if(@DisplayPath)
+            {
+                <p><MudText Typo="Typo.caption">@context.BreadcrumbPath</MudText></p>
+                @if (!string.IsNullOrEmpty(@context.Description))
+                {
+                    <p><MudText Typo="Typo.body2">@context.Description</MudText></p>  
+                }
+                else
+                {
+                <br> 
+                }
+            }
+            else
+            {
+                @context.Description
+            }
+        </MudTd>
         <MudTd DataLabel="Target" Style="@GetTargetDateColor(context.TargetDate)">@context.TargetDate?.ToString("d")</MudTd>
         <MudTd DataLabel="Completion">
             <MudProgressLinear Color=@GetStatusColor(context.IsBehind) Size="Size.Large" Value=@context.CompletionPercent>
@@ -90,6 +114,8 @@
     [Parameter]
     public PlannedActivitySettingsView ActivitiesSettings { get; set; }
 
+    [Parameter]
+    public bool DisplayPath { get; set; } = false;
 
     //Do not display the same actions when checking activities at risk and
     //being in the original list

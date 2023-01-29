@@ -16,4 +16,7 @@ public class PlannedActivityView: IIdLabel, IDescription, IParent
     public ICollection<CommentView>? Comments { get; set; }
 
     public int? ParentId { get; set; }
+
+    //Calculated properties
+    public string BreadcrumbPath { get; set; } = string.Empty;
 }
