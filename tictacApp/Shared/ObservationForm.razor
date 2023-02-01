@@ -193,6 +193,8 @@
     private async Task GetTagsAsync()
     {
         Tag[] dbTags = await CRUDService.GetAllAsync<Tag>();
+        dbTags = dbTags.OrderBy(t => t.Label).ToArray();
+        
         _tags = Mapper.Map<TagView[]>(dbTags);
     }
 
