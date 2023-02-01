@@ -1,0 +1,23 @@
+@using Helpers
+
+<MudMessageBox @ref="_mbox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can <b><i>not</i></b> be undone.
+    </MessageContent>
+    <YesButton>
+        <MudButton Class="ml-2" Variant="Variant.Filled" Color="Color.Error" StartIcon="@AppIcons.Delete">Delete</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+@code {
+    private MudMessageBox _mbox;
+
+    public async Task<bool?> ShowAsync()
+    {
+        var options = new DialogOptions { FullWidth=true, MaxWidth=MaxWidth.ExtraSmall };
+        bool? result = await _mbox.Show(options);
+        
+        return result;
+    }
+
+}

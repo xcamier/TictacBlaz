@@ -32,6 +32,8 @@
                 </MudTd>
             </RowTemplate>
         </MudTable>
+
+        <DeleteBoxComponent @ref="_mbox" />
     </ListAreaContent>
 
 </ListTemplate>
@@ -59,6 +61,7 @@
     private bool _error = false;
     private string _errorMessage = string.Empty;
 
+    private DeleteBoxComponent _mbox;
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,12 +89,16 @@
     private async Task DeleteItemAsync(TItem itemToRemove)
     {
         if (_busy)
-        {
             return;
-        }
 
         try
         {
+            bool? result = await _mbox.ShowAsync();
+            StateHasChanged();
+
+            if (result == null)
+                return;
+
             _busy = true;
 
             bool res = await CRUDService.DeleteAsync<TItem>(itemToRemove);
