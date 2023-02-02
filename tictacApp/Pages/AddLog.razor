@@ -1,4 +1,5 @@
 @page "/logs/addLog"
+@page "/logs/addLog/{TimeLogId:int}"
 @page "/logs/addLogFromProjectSelection"
 @page "/logs/addLogFromObjectiveSelection"
 @page "/logs/addLogFromCharacteristicSelection"
@@ -23,9 +24,11 @@
 
 @if (_timeLog is not null && _areDependenciesOk)
 {
-    <TimeLogForm Busy=@_busy 
+    <TimeLogForm   Busy=@_busy 
                    TimeLog=@_timeLog 
                    IsAdd=true
+                   Error=@_error
+                   ErrorMessage=@_errorMessage
                    CancelRequest="Cancel"
                    BackFromSelection=@_backFromSelection
                    ValidationResult="@(async (success) => await ValidationResultAsync(success))" />
@@ -44,6 +47,9 @@ else if (!_areDependenciesOk)
 
 
 @code {
+    [Parameter]
+    public int TimeLogId { get; set; } = -1;
+
     private TimeLogView? _timeLog;
     private bool _busy;
     private bool _error;
@@ -53,6 +59,7 @@ else if (!_areDependenciesOk)
     Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
 
     private bool _backFromSelection = false;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -98,15 +105,22 @@ else if (!_areDependenciesOk)
             else
             {
                 DateTime now = DateTime.Now;
-                _timeLog = new TimeLogView(CRUDService)
+                if (TimeLogId > 0)
                 {
-                    StartDate = now,
-                    TimeSpan = now.TimeOfDay
-                };
+                    _timeLog = await DuplicateTimelog(TimeLogId, now);
+                }
+                else
+                {
+                    _timeLog = CreateTimelog(now);
+                }
+
             }
         }
         catch (Exception ex)
         {
+            //TODO: as the components are not initialized, the 
+            //error message is updated in the variable but not accessible to the 
+            //components => the error is not displayed
             _error = true;
             _errorMessage = ex.Message;
         }
@@ -116,6 +130,34 @@ else if (!_areDependenciesOk)
         }
 
         await base.OnInitializedAsync();
+    }
+
+    private async Task<TimeLogView> DuplicateTimelog(int sourceId, DateTime now)
+    {
+        TimeLogView newTimeLog = new TimeLogView(CRUDService);
+        TimeLog? dbTimelog = await TimeLogsService.FindFromIdAsync<TimeLog>(TimeLogId);
+        if (dbTimelog != null)
+        {
+            Mapper.Map(dbTimelog, newTimeLog);
+            newTimeLog.Id = 0;
+            newTimeLog.StartDate = now;
+        }
+        else
+        {
+            _error = true;
+            _errorMessage = $"Unable to find the timelog with id: {TimeLogId}";
+        }
+
+        return newTimeLog;
+    }
+
+    private TimeLogView CreateTimelog(DateTime now)
+    {
+        return new TimeLogView(CRUDService)
+                    {
+                        StartDate = now,
+                        TimeSpan = now.TimeOfDay
+                    };
     }
 
     private async Task CheckDependencies()

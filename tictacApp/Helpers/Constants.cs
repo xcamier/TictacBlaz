@@ -37,6 +37,7 @@ public static class AppIcons
     public const string QuickLog = @Icons.Material.Filled.AvTimer;
     public const string Login = @Icons.Material.Filled.Login;
     public const string Register = @Icons.Material.Filled.AppRegistration;
+    public const string Duplicate = @Icons.Material.Filled.ContentCopy;
 }
 
 public static class ProgressStatus

@@ -17,7 +17,7 @@
         <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="d-inline-flex">
             <MudIconButton Icon="@Icons.Material.Filled.NavigateBefore" OnClick="@PrevDayAsync"></MudIconButton>
             <MudIconButton Icon="@Icons.Material.Filled.NavigateNext" Disabled="@_forbidNextDay" OnClick="@NextDayAsync"></MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.Today" OnClick="@TodayAsync"></MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Today" Title="Today" OnClick="@TodayAsync"></MudIconButton>
         </MudButtonGroup>
 
         <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
@@ -57,6 +57,7 @@
                 <MudTd DataLabel="Time Spent">@context.Description</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudIconButton Size="@Size.Small" Icon="@AppIcons.Edit" HRef="@($"/logs/{context.Id}/editLog")" />
+                    <MudIconButton Size="@Size.Small" Icon="@AppIcons.Duplicate" HRef="@($"/logs/addLog/{context.Id}")" />
                     <MudIconButton Size="@Size.Small" Icon="@AppIcons.Delete" OnClick="@(async () => await DeleteTimeLogAsync(context))" />
                 </MudTd>
             </RowTemplate>
