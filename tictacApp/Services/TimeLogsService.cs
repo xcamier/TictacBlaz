@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using tictacApp.Data;
 using tictacApp.DataAccess;
+using tictacApp.Helpers;
 
 namespace tictacApp.Services;
 
@@ -36,5 +37,42 @@ public class TimeLogsService: TimelogObservation<TimeLog>
         return await context.TimeLogs.
                         Where(t => t.StartDate >= startDate && t.StartDate < endDate).
                         SumAsync(s => s.TimeSpentInMin);
+    }
+
+    public async Task<bool> CheckIfPreviousTimelogIsAQuicklog(DateTime currentDate)
+    {
+        DateTime dt = currentDate.Date;
+
+        TimeLog? lastTimeLog = await GetLastTimelog(dt);
+        
+        return IsTimelogAQuicklog(lastTimeLog);
+    }
+
+    public async Task<TimeLog?> GetPreviousTimelogIfItIsAQuicklog(DateTime currentDate)
+    {
+        DateTime dt = currentDate.Date;
+
+        TimeLog? lastTimeLog = await GetLastTimelog(dt);
+
+        bool isTimelogAQuicklog = IsTimelogAQuicklog(lastTimeLog);
+        
+        return isTimelogAQuicklog ? lastTimeLog : null;
+    }
+
+    private async Task<TimeLog?> GetLastTimelog(DateTime dt)
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.TimeLogs.
+                                Where(tl => tl.StartDate >= dt).
+                                OrderByDescending(tl => tl.StartDate).
+                                FirstOrDefaultAsync();
+    }
+    
+    private bool IsTimelogAQuicklog(TimeLog? timelog)
+    {
+        return (timelog is not null && 
+                    timelog.Description != null &&
+                    timelog.Description.Contains(DefaultTexts.QuickTimelog));
     }
 }

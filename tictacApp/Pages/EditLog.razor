@@ -53,12 +53,15 @@ else if (!_areDependenciesOk)
     [Parameter]
     public int TimeLogId { get; set; }
 
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "TimeSpentInMin")]
+    public int TimeSpentInMin { get; set; } = 0;
+
     private TimeLogView? _timeLog;
 
     private bool _busy;
     private bool _error;
     private string _errorMessage = string.Empty;
-    private bool _concurrencyError = false;
 
     private bool _areDependenciesOk = false;
     Tuple<string, string>[] _dependencies = new Tuple<string, string>[0];
@@ -113,6 +116,10 @@ else if (!_areDependenciesOk)
                 if (dbTimelog != null)
                 {
                     Mapper.Map(dbTimelog, _timeLog);
+                    if (TimeSpentInMin > 0)
+                    {
+                        _timeLog.TimeSpentInMin = TimeSpentInMin;
+                    }
                 }
                 else
                 {
@@ -150,7 +157,6 @@ else if (!_areDependenciesOk)
         {
             Snackbar.Add("Unable to modify the timelog", Severity.Warning);
 
-            _concurrencyError = false;
             ResetErrorMessage();
             return;
         }
@@ -202,9 +208,6 @@ else if (!_areDependenciesOk)
         }
         catch (DbUpdateConcurrencyException dbex)
         {
-            // concurrency issues!
-            _concurrencyError = true;
-
             // get values from database
             var dbValues = dbex.Entries[0].GetDatabaseValues();
 

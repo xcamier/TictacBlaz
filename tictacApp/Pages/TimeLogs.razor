@@ -1,6 +1,7 @@
 ﻿@page "/"
 @attribute [Authorize]
 
+@using Microsoft.AspNetCore.WebUtilities
 @using tictacApp.Helpers
 @using tictacApp.Data
 @using tictacApp.Services
@@ -20,9 +21,11 @@
             <MudIconButton Icon="@Icons.Material.Filled.Today" Title="Today" OnClick="@TodayAsync"></MudIconButton>
         </MudButtonGroup>
 
-        <MudButtonGroup DisableElevation="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="d-inline-flex ml-4">
-            <MudButton StartIcon="@AppIcons.AddLog" Href="/logs/addLog">Add Log</MudButton>
-            <MudButton StartIcon="@AppIcons.QuickLog" OnClick="@CreateQuickLog" Class="ml-2">Quick Log</MudButton>
+        <MudButtonGroup DisableElevation="true"  OverrideStyles="false"  Class="d-inline-flex ml-4">
+            <MudButton StartIcon="@AppIcons.AddLog" Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" 
+                        Href="/logs/addLog">Add Log</MudButton>
+            <MudButton StartIcon="@AppIcons.QuickLog" Variant="Variant.Filled" Size="Size.Small" Color=@(_isPreviousTimelogAQuicklog ? Color.Success : Color.Primary) 
+                        OnClick="@SetupQuickLog" Class="ml-2">Quick Log</MudButton>
         </MudButtonGroup>
     </ButtonsAreaContent>   
 
@@ -81,6 +84,7 @@
     private bool _busy = false;
     private bool _error = false;
     private string _errorMessage = string.Empty;
+    private bool _isPreviousTimelogAQuicklog = false;
 
     private DeleteBoxComponent _mbox;
 
@@ -91,6 +95,7 @@
             _loading = true;
 
             await GetTimeLogsAsync();
+            await SetQuickLogButtonColor();
         }
         finally
         {
@@ -121,6 +126,7 @@
             {
                 Snackbar.Add("Timelog deleted successfully", Severity.Success);
                 await GetTimeLogsAsync();
+                await SetQuickLogButtonColor();
             }
             else
             {
@@ -177,9 +183,9 @@
         _totalForWeek = FormattersHelper.MinToString(totalForWeek);
     }
 
-    private async Task CreateQuickLog()
+    private async Task SetupQuickLog()
     {
-           if (_busy)
+        if (_busy)
         {
             return;
         }
@@ -187,29 +193,17 @@
         try
         {
             _busy = true;
-
-            TimeLog timeLogEntity = new TimeLog()
+            DateTime now = DateTime.Now;
+            bool hasAlreadyAQuicklog = await CheckIfHasAlreadyAQuicklog(now);
+            if (hasAlreadyAQuicklog)
             {
-                StartDate = DateTime.Now,
-                TimeSpentInMin = 1,
-                Description="Quick timelog - TO REPLACE WITH REAL ACTIVITY"
-            };
-            IEnumerable<int> selectedChars = new List<int>();
-            IEnumerable<int> selectedTags = new List<int>();
-
-            bool res = await TimeLogsService.AddAsync<TimeLog>(timeLogEntity, selectedChars, selectedTags);
-
-            ResetErrorMessage();
-
-            if (res)
-            {
-                Snackbar.Add("Quick Timelog added successfully", Severity.Success);
-                await GetTimeLogsAsync();
+                await ProcessPreviousQuicklog(now);
             }
             else
             {
-                Snackbar.Add("Error when adding the quick timelog", Severity.Warning);
+                await CreateNewQuicklog(now);
             }
+            await SetQuickLogButtonColor();
         }
         catch (Exception ex)
         {
@@ -220,6 +214,63 @@
         {
             _busy = false;
         }
+    }
+
+    private async Task<bool> CheckIfHasAlreadyAQuicklog(DateTime now)
+    {
+        return await TimeLogsService.CheckIfPreviousTimelogIsAQuicklog(now);
+    }
+
+    private async Task ProcessPreviousQuicklog(DateTime now)
+    {
+        TimeLog? timelog = await TimeLogsService.GetPreviousTimelogIfItIsAQuicklog(now);
+        if (timelog is not null)
+        {
+            TimeSpan? res = now - timelog.StartDate;
+            int inMins = 0;
+            if (res is not null)
+            {
+                inMins = Convert.ToInt32(Math.Round(res.Value.TotalMinutes));
+            }
+
+            string url = $"/logs/{timelog.Id}/editLog";
+            Dictionary<string, string?> param = new Dictionary<string, string?>() { { "TimeSpentInMin", inMins.ToString() } };
+
+            Uri? newUrl = new Uri(QueryHelpers.AddQueryString(url, param));
+
+            Navig.NavigateTo(newUrl.LocalPath);
+        }
+    }
+
+    private async Task CreateNewQuicklog(DateTime now)
+    {
+        TimeLog timeLogEntity = new TimeLog()
+        {
+            StartDate = now,
+            TimeSpentInMin = 1,
+            Description = DefaultTexts.QuickTimelog
+        };
+        IEnumerable<int> selectedChars = new List<int>();
+        IEnumerable<int> selectedTags = new List<int>();
+
+        bool res = await TimeLogsService.AddAsync<TimeLog>(timeLogEntity, selectedChars, selectedTags);
+
+        ResetErrorMessage();
+
+        if (res)
+        {
+            Snackbar.Add("Quick Timelog added successfully", Severity.Success);
+            await GetTimeLogsAsync();
+        }
+        else
+        {
+            Snackbar.Add("Error when adding the quick timelog", Severity.Warning);
+        }
+    }
+
+    private async Task SetQuickLogButtonColor()
+    {
+        _isPreviousTimelogAQuicklog = await TimeLogsService.CheckIfPreviousTimelogIsAQuicklog(DateTime.Now);
     }
 
     private void ResetErrorMessage()

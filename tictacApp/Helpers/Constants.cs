@@ -53,3 +53,8 @@ public static class SettingsKeys
     public const string GreenLow = "green_low";
     public const string GreenHigh = "green_high";
 }
+
+public static class DefaultTexts
+{
+    public const string QuickTimelog = "Quick timelog - TO REPLACE WITH REAL ACTIVITY";
+}
