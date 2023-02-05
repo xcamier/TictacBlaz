@@ -1,0 +1,70 @@
+@page "/projectskanban"
+
+@using tictacApp.ViewModels
+@using tictacApp.Data
+@using tictacApp.Interfaces
+@using AutoMapper
+
+@inject ISettingsService SettingsService
+@inject IPlannedActivityCRUDService PlannedActivitiesService
+@inject IMapper Mapper
+
+<PlannedActivityCardComponent
+    PageTitle="Projects Kanban View"
+    Activities=@_projects
+    Loading=@_loading
+    Error=@_error
+    ErrorMessage=@_errorMessage
+    ActivitiesSettings=@_activitiesSettings>
+</PlannedActivityCardComponent>
+
+@code {
+    private PlannedActivitySettingsView? _activitiesSettings;
+    private PlannedActivityView[] _projects;
+    private bool _loading = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task Refresh()
+    {
+        try
+        {
+            _loading = true;
+
+            await GetSettings();
+            await GetPlannedActivitiesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = $"Error when loading the data: {ex.Message}"; 
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task GetSettings()
+    {
+        Setting[] settings = await SettingsService.GetAllAsync();
+        _activitiesSettings = SettingsService.MapPlannedActivitySettingsToView(settings);
+    }
+
+    private async Task GetPlannedActivitiesAsync()
+    { 
+        Project[]? projects = await PlannedActivitiesService.GetAllNotClosedAsync<Project>();
+        if (projects is not null)
+        {
+            _projects = Mapper.Map<PlannedActivityView[]>(projects);
+        }
+    }
+}
+

@@ -38,6 +38,8 @@ public static class AppIcons
     public const string Login = @Icons.Material.Filled.Login;
     public const string Register = @Icons.Material.Filled.AppRegistration;
     public const string Duplicate = @Icons.Material.Filled.ContentCopy;
+    public const string Fold = @Icons.Material.Filled.ArrowDropDown;
+    public const string UnFold = @Icons.Material.Filled.ArrowDropUp;
 }
 
 public static class ProgressStatus

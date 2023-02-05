@@ -41,6 +41,9 @@
     [Parameter]
     public string RootUri { get; set; }
 
+    [Parameter]
+    public string Origin { get; set; }
+
     private TPlannedActivity? _plannedActivity = new TPlannedActivity();
 
     private TictacDBContext? _dbContext;
@@ -285,14 +288,24 @@
     private void GoBackToList()
     {
         string url = string.Empty;
-        if (_plannedActivity.ParentId.HasValue)
+        if (string.IsNullOrEmpty(Origin))
         {
-            url = $"/{RootUri}/{_plannedActivity.ParentId}";
+            if (_plannedActivity.ParentId.HasValue)
+            {
+                url = $"/{RootUri}/{_plannedActivity.ParentId}";
+            }
+            else
+            {
+                url = $"/{RootUri}";
+            }
         }
-        else
+        else if (Origin == "kanban")
         {
-            url = $"/{RootUri}";
+            url = "/projectskanban";
         }
+        else 
+            throw new NotImplementedException("Origin unknown");
+
         Navigation.NavigateTo(url);
     }
 

@@ -23,6 +23,14 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
                                 ToArrayAsync();
     }
 
+    public async Task<T[]> GetAllNotClosedAsync<T>() where T: PlannedActivity
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Set<T>().
+                                Where(pa => pa.IsClosed == false).
+                                ToArrayAsync();
+    }
 
     async Task<T?> IPlannedActivityCRUDService.FindFromIdAsync<T>(TictacDBContext? dbContext, int id) 
                                                                      where T : class

@@ -129,63 +129,17 @@
 
 
 #region Definition of the date color
-    private bool IsTooLate(DateTime? targetDate)
-    {
-        if (!targetDate.HasValue)
-            return false;
-
-        DateTime now = DateTime.Now.Date; 
-        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
-
-        if (ActivitiesSettings.OrangeLow.HasValue)
-        {
-            return remainingDays < ActivitiesSettings.OrangeLow;
-        }
-
-        return targetDate.Value <= now;
-    }
-
-
-    private bool IsInDangerZone(DateTime? targetDate)
-    {
-        return IsInZone(targetDate, ActivitiesSettings.OrangeLow, ActivitiesSettings.OrangeHigh);
-    }
-
-    private bool IsInGreenZone(DateTime? targetDate)
-    {
-        return IsInZone(targetDate, ActivitiesSettings.GreenLow, ActivitiesSettings.GreenHigh);
-    }
-
-    private bool IsInZone(DateTime? targetDate, int? low, int? high)
-    {
-        if (!targetDate.HasValue || !low.HasValue || !high.HasValue) 
-            return false;
-
-        DateTime now = DateTime.Now.Date; 
-        double remainingDays = CalculateRemainingDays(now, targetDate.Value);
-
-        return (remainingDays >= low && remainingDays <= high);
-    }
-
-    private static double CalculateRemainingDays(DateTime now, DateTime targetDate)
-    {
-        DateTime end = targetDate.Date.AddDays(1).AddSeconds(-1);
-        TimeSpan remaining = end - now;
-
-        return Math.Round(remaining.TotalDays);
-    }
-
     private string GetTargetDateColor(DateTime? targetDate)
     {
-        if (IsTooLate(targetDate))
+        if (ActivityRiskHelper.IsTooLate(targetDate, ActivitiesSettings.OrangeLow))
         {
             return "Color: red;";
         }
-        else if (IsInDangerZone(targetDate))
+        else if (ActivityRiskHelper.IsInDangerZone(targetDate, ActivitiesSettings))
         {
             return "Color: orange;";
         }
-        else if (IsInGreenZone(targetDate))
+        else if (ActivityRiskHelper.IsInGreenZone(targetDate, ActivitiesSettings))
         {
             return "Color: green;";
         }

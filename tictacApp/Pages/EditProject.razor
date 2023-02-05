@@ -7,9 +7,14 @@
             TPlannedActivity=Project
             PlannedActivityId=@ProjectId
             Context="Project"
-            RootUri="projects" />
+            RootUri="projects"
+            Origin=@Origin />
 
 @code {
     [Parameter]
     public int ProjectId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "Origin")]
+    public string Origin { get; set; } = string.Empty;
 }

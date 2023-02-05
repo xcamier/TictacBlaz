@@ -1,0 +1,306 @@
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+
+<PageTitle>@PageTitle</PageTitle>
+
+<MudText Class="ml-2 mb-4" Typo="Typo.h5">@PageTitle</MudText>
+
+@if (Error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+}
+
+@if (Loading)
+{
+    <MudText Class="ml-2 mb-4" Typo="Typo.body1">Loading...</MudText>
+}
+else
+{
+    <MudGrid Spacing="0" Justify="Justify.Center" Class="ml-2 mr-2 mt-4">
+        <!-- Header -->
+        @foreach (var header in _headers)
+        {
+            <MudItem xs="2">
+                <MudPaper Height="30px" Elevation="1" Class="d-flex align-center justify-center">
+                    <MudText Align="Align.Center">@header</MudText>
+                </MudPaper>
+            </MudItem>            
+        }
+
+        <!-- Body -->
+        @foreach (ActivityRow row in _rows)
+        {
+            @foreach (ActivityRowItem rowItem in row.Activities)
+            {
+                <MudItem xs="2"  Style="@(row.GroupIndex % 2 == 0 ? $"background:{Colors.Grey.Lighten5};" : "")">
+                    @if (rowItem is not null)
+                    {
+                        <MudDivider Vertical="true" FlexItem="true" />   
+                        <MudCard Elevation="1" Class="mt-1 mb-1">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudLink Typo="Typo.subtitle2"  Color="@GetTargetDateColor(rowItem.Activity.TargetDate)"
+                                                Href="@($"/projects/{@rowItem.Activity.Id}/editProject?Origin=kanban")">
+                                        @rowItem.Activity.Label
+                                    </MudLink>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@(@rowItem.IsDescriptionDisplayed ? @AppIcons.Fold : @AppIcons.UnFold)"
+                                                    Color="Color.Default" Size="Size.Small"
+                                                    OnClick="@(() => ShowHideDescription(rowItem))" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            @if (rowItem.IsDescriptionDisplayed)
+                            {
+                                <MudCardContent>
+                                    <MudText Typo="Typo.body2">@rowItem.Activity.Description</MudText>
+                                </MudCardContent>
+                            }
+                        </MudCard>
+                    }
+                    else
+                    {
+                        <MudDivider Vertical="true"  Style="backgound:red" />
+                    }
+                </MudItem>
+            }
+
+            @if (IsLastOfGroup(row))
+            {
+                <MudItem xs="12" Style="@(row.GroupIndex % 2 == 0 ? $"background:{Colors.Grey.Lighten5};" : "")">
+                    <MudDivider />
+                </MudItem>
+            }
+        }
+    </MudGrid>
+}
+
+@if (Error)
+{
+    <MudAlert Class="mt-4" Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+}
+
+@code {
+    [Parameter]
+    public string PageTitle { get; set; }
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public bool Error { get; set; }
+
+    [Parameter]
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    [Parameter]
+    public IEnumerable<PlannedActivityView> Activities { get; set; }
+
+    [Parameter]
+    public PlannedActivitySettingsView ActivitiesSettings { get; set; }
+
+    private MudTheme Theme = new MudTheme();
+
+    private List<string> _headers { get; set; } = new List<string>();
+
+    private List<ActivityRow> _rows { get; set; } = new List<ActivityRow>();
+
+    protected override Task OnInitializedAsync()
+    {
+        //header of the columns for the kanban view
+        //if modified, make sure to updated GetColNumFromCompletionPercent()
+        _headers = new List<string>() { "Not Started", "Below 25%", "25-50%", "50-75%", "Over 75%", "Finished" };
+        
+        OrderActivities(Activities);
+        
+        return base.OnInitializedAsync();
+    }
+
+    private void OrderActivities(IEnumerable<PlannedActivityView> activities)
+    {
+        List<ParentsAndSlibings> allParentsAndSlibings = GroupByParentChildren(activities);
+        
+        int groupIndex = 1;
+        foreach (ParentsAndSlibings parentAndSlibings in allParentsAndSlibings)
+        {
+            ActivityRow row = GetRow(groupIndex, parentAndSlibings.Parent);
+            _rows.Add(row);
+
+            foreach (var slibing in parentAndSlibings.Slibings)
+            {
+                row = GetRow(groupIndex, slibing);
+                _rows.Add(row);
+            }
+            
+            groupIndex++;
+        }
+    }
+
+    private ActivityRow GetRow(int groupIndex, Slibing activity)
+    {
+        ActivityRow row = new ActivityRow();
+        row.GroupIndex = groupIndex;
+
+        ActivityRowItem rowItem = new ActivityRowItem()
+        {
+            Rank = activity.Rank,
+            Activity = activity.Activity,
+            IsDescriptionDisplayed = false
+        };
+
+        int colNum = GetColNumFromCompletionPercent(rowItem.Activity.CompletionPercent, rowItem.Activity.IsFinalized);
+        row.Activities[colNum] = rowItem;
+
+        return row;
+    }
+
+    private ActivityRow GetRow(int groupIndex, PlannedActivityView activity)
+    {
+        ActivityRow row = new ActivityRow();
+        row.GroupIndex = groupIndex;
+
+        ActivityRowItem rowItem = new ActivityRowItem()
+        {
+            Rank = -1,
+            Activity = activity,
+            IsDescriptionDisplayed = true
+        };
+
+        int colNum = GetColNumFromCompletionPercent(rowItem.Activity.CompletionPercent, rowItem.Activity.IsFinalized);
+        row.Activities[colNum] = rowItem;
+
+        return row;
+    }
+
+    private int GetColNumFromCompletionPercent(int completionPercent, bool isFinalized)
+    {
+        if (isFinalized)
+        {
+            return 5;
+        }
+        else if (completionPercent == 0)
+        {
+            return 0;
+        }
+        else if (completionPercent > 0 && completionPercent < 25)
+        {
+            return 1;
+        }
+        else if (completionPercent >= 25 && completionPercent < 50)
+        {
+            return 2;
+        } 
+        else if (completionPercent >= 50 && completionPercent < 75)
+        {
+            return 3;
+        }
+        else if (completionPercent >= 75)
+        {
+            return 4;
+        }
+        else throw new NotImplementedException("Unable to understand to which column the activity should go.");
+    }
+
+    private List<ParentsAndSlibings> GroupByParentChildren(IEnumerable<PlannedActivityView> activities)
+    {
+        //Get All parents
+        var allParents = activities.Where(a => a.ParentId == null);
+
+        //Get All children
+        var allChildren = activities.Where(a => a.ParentId != null);
+
+        List<ParentsAndSlibings> allParentsAndSlibings = new List<ParentsAndSlibings>();
+        //For each parent, we find the children, grand children... 
+        foreach (PlannedActivityView firstLevelParent in allParents)
+        {
+            ParentsAndSlibings parentsAndSlibings = new ParentsAndSlibings(firstLevelParent);
+
+            List<Slibing> slibingsOfTheParent = new List<Slibing>();
+            BuildSlibingList(slibingsOfTheParent, allChildren, firstLevelParent.Id, 0);
+            parentsAndSlibings.Slibings = slibingsOfTheParent;
+
+            allParentsAndSlibings.Add(parentsAndSlibings);
+        }
+
+        return allParentsAndSlibings;
+    }
+
+    private void BuildSlibingList(List<Slibing> allSlibings, IEnumerable<PlannedActivityView> allChildren, int parentId, int rank)
+    {
+        IEnumerable<PlannedActivityView> slibings = allChildren.Where(c => c.ParentId == parentId);
+        foreach (PlannedActivityView slibing in slibings)
+        {
+            Slibing sb = new Slibing();
+            sb.Rank = rank;
+            sb.Activity = slibing;
+            allSlibings.Add(sb);
+
+            BuildSlibingList(allSlibings, allChildren, slibing.Id, rank+1);
+        }
+    }
+
+    private void ShowHideDescription(ActivityRowItem item)
+    {
+        item.IsDescriptionDisplayed = !item.IsDescriptionDisplayed;
+    }
+
+    private bool IsLastOfGroup(ActivityRow currentRow)
+    {
+        ActivityRow? lastRow = _rows.LastOrDefault(r => r.GroupIndex == currentRow.GroupIndex);
+
+        return (lastRow is not null && lastRow == currentRow);
+    }
+
+#region Definition of the date color
+    private Color GetTargetDateColor(DateTime? targetDate)
+    {
+        if (ActivityRiskHelper.IsTooLate(targetDate, ActivitiesSettings.OrangeLow))
+        {
+            return Color.Error;
+        }
+        else if (ActivityRiskHelper.IsInDangerZone(targetDate, ActivitiesSettings))
+        {
+            return Color.Warning;
+        }
+        else if (ActivityRiskHelper.IsInGreenZone(targetDate, ActivitiesSettings))
+        {
+            return Color.Success;
+        }
+        else
+        {
+            return Color.Default;
+        }   
+    }
+#endregion Definition of the date color
+
+
+    class ActivityRowItem 
+    {
+        public PlannedActivityView Activity { get; set; }
+        public int Rank { get; set; }
+        public bool IsDescriptionDisplayed { get; set; }
+    }
+
+    class ActivityRow 
+    {
+        public int GroupIndex { get; set; }
+        public ActivityRowItem[] Activities { get; set; } =  new ActivityRowItem[6];
+    }
+
+    class ParentsAndSlibings 
+    {
+        public PlannedActivityView Parent { get; set; } = new PlannedActivityView();
+        public List<Slibing> Slibings { get; set; } = new List<Slibing>();
+
+        public ParentsAndSlibings(PlannedActivityView parent)
+        {
+            Parent = parent;
+        }
+    }
+
+    class Slibing 
+    {
+        public int Rank { get; set; }
+        public PlannedActivityView Activity { get; set; }
+    }
+}
