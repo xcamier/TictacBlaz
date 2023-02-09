@@ -236,9 +236,9 @@
             string url = $"/logs/{timelog.Id}/editLog";
             Dictionary<string, string?> param = new Dictionary<string, string?>() { { "TimeSpentInMin", inMins.ToString() } };
 
-            Uri? newUrl = new Uri(QueryHelpers.AddQueryString(url, param));
+            Uri? newUrl = new Uri(QueryHelpers.AddQueryString(url, param), UriKind.Relative);
 
-            Navig.NavigateTo(newUrl.LocalPath);
+            Navig.NavigateTo(newUrl.OriginalString);
         }
     }
 
