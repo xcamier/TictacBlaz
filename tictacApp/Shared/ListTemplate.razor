@@ -25,7 +25,7 @@ else
         </MudPaper>
     }
 
-    @if (FiltersAreaContent is not null)
+    @if (FiltersAreaContent is not null && ShowFilterArea)
     {
         <MudPaper Class="ml-2 mr-2 pa-4 mb-4">
             @FiltersAreaContent
@@ -65,5 +65,9 @@ else
     [Parameter]
     public RenderFragment? ListAreaContent { get; set; }
 
- 
+    [Parameter]
+    //In some circumstances, we may want to optionally display/hide the filter area as a whole.
+    //As it has a content it is not null but we don't want to display the area
+    //=> that bool lets you forcing the hiding
+    public bool ShowFilterArea { get; set; } = true;
 }

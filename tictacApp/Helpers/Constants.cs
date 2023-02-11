@@ -40,6 +40,7 @@ public static class AppIcons
     public const string Duplicate = @Icons.Material.Filled.ContentCopy;
     public const string Fold = @Icons.Material.Filled.ArrowDropDown;
     public const string UnFold = @Icons.Material.Filled.ArrowDropUp;
+    public const string Search = @Icons.Material.Filled.Search;
 }
 
 public static class ProgressStatus

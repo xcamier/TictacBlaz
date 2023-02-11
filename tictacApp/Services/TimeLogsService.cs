@@ -23,6 +23,17 @@ public class TimeLogsService: TimelogObservation<TimeLog>
                         ToArrayAsync();
     }
 
+    public async Task<TimeLog[]> GetTimeLogsAsync(string searchStrig)
+    {
+        using var context = _dbFactory.CreateDbContext();
+        
+        return await context.TimeLogs.
+                        Where(t => t.Description != null && t.Description.Contains(searchStrig)).
+                        OrderByDescending(t => t.StartDate).
+                        Take(50).
+                        ToArrayAsync();
+    }
+
     public async Task<int> GetTimeSpentInWeek(DateOnly currentDate)
     {
         using var context = _dbFactory.CreateDbContext();

@@ -12,7 +12,7 @@
 @inject IGenericCRUDService GenericTimelogsService
 @inject NavigationManager Navig
 
-<ListTemplate PageTitle="Time logs" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
+<ListTemplate PageTitle="Time logs" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage ShowFilterArea=@_searchMode>
 
     <ButtonsAreaContent>
         <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="d-inline-flex">
@@ -26,20 +26,39 @@
                         Href="/logs/addLog">Add Log</MudButton>
             <MudButton StartIcon="@AppIcons.QuickLog" Variant="Variant.Filled" Size="Size.Small" Color=@(_isPreviousTimelogAQuicklog ? Color.Success : Color.Primary) 
                         OnClick="@SetupQuickLog" Class="ml-2">Quick Log</MudButton>
+            <MudButton StartIcon="@AppIcons.Search" Variant="Variant.Filled" Size="Size.Small" Color=@(_searchMode ? Color.Success : Color.Primary) 
+                        OnClick="@ToogleSearchMode" Class="ml-8">Search</MudButton>
         </MudButtonGroup>
     </ButtonsAreaContent>   
 
+    <FiltersAreaContent>    
+        <MudGrid>
+            <MudItem xs="3">
+                <MudTextField  DebounceInterval="500" OnDebounceIntervalElapsed="HandleIntervalElapsed" 
+                                Label="Search" Variant="Variant.Text"
+                                Adornment="Adornment.End" AdornmentIcon="@AppIcons.Search" AdornmentColor="Color.Secondary"
+                                @bind-Value="_search" />
+            </MudItem>
+        </MudGrid>
+    </FiltersAreaContent>
+    
     <ListAreaContent>
-        <MudPaper Class="d-inline-flex ml-2 pa-4">
-            <MudText>Total for @_selectedDay.ToLongDateString(): @_totalForDay</MudText>
-        </MudPaper>
-        <MudPaper Class="d-inline-flex pa-4">
-            <MudText>Total for the week: @_totalForWeek</MudText>
-        </MudPaper>
-
+        @if (!_searchMode)
+        {
+            <MudPaper Class="d-inline-flex ml-2 pa-4">
+                <MudText>Total for @_selectedDay.ToLongDateString(): @_totalForDay</MudText>
+            </MudPaper>
+            <MudPaper Class="d-inline-flex pa-4">
+                <MudText>Total for the week: @_totalForWeek</MudText>
+            </MudPaper>
+        }
         <MudTable Items="@_timeLogs" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
                     Class="ml-2 mr-2 mt-4">
             <ColGroup>
+                @if (_searchMode)
+                {
+                    <col style="width: 10%;"/>
+                }
                 <col style="width: 10%;"/>
                 <col style="width: 10%;"/>
                 <col style="width: 10%;"/>
@@ -47,6 +66,10 @@
                 <col style="width: 120px;"/>
             </ColGroup>
             <HeaderContent>
+                @if (_searchMode)
+                {
+                    <MudTh>Timelog Date</MudTh>
+                }                    
                 <MudTh>Start Time</MudTh>
                 <MudTh>End Time</MudTh>
                 <MudTh Style=" text-align:center;">Time Spent</MudTh>
@@ -54,6 +77,10 @@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
+                @if (_searchMode)
+                {
+                    <MudTh>@context.StartDate.Value.ToString("m")</MudTh>
+                } 
                 <MudTd DataLabel="Start Time">@context.StartDate.Value.ToString("t")</MudTd>
                 <MudTd DataLabel="End Time">@context.StartDate.Value.AddMinutes(@context.TimeSpentInMin).ToString("t")</MudTd>
                 <MudTd DataLabel="Time Spent" Style="text-align:right;">@context.TimeSpentInHHMM</MudTd>
@@ -85,6 +112,8 @@
     private bool _error = false;
     private string _errorMessage = string.Empty;
     private bool _isPreviousTimelogAQuicklog = false;
+    private string _search = string.Empty;
+    private bool _searchMode = false;
 
     private DeleteBoxComponent _mbox;
 
@@ -174,13 +203,24 @@
     private async Task GetTimeLogsAsync()
     {
         _timeLogs = await TimeLogsService.GetTimeLogsAsync(_selectedDay);
-        _timeLogs = _timeLogs.OrderByDescending(tl => tl.StartDate).ToArray();
-        _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToString(tl.TimeSpentInMin));  
+        FinalizeTimeLogsDisplay();
 
         _totalForDay = FormattersHelper.MinToString(_timeLogs.Sum(s => s.TimeSpentInMin));
         
         int totalForWeek = await TimeLogsService.GetTimeSpentInWeek(_selectedDay);
         _totalForWeek = FormattersHelper.MinToString(totalForWeek);
+    }
+
+    private async Task GetTimeLogsAsync(string search)
+    {
+        _timeLogs = await TimeLogsService.GetTimeLogsAsync(search);
+        FinalizeTimeLogsDisplay();
+    }
+
+    private void FinalizeTimeLogsDisplay()
+    {
+        _timeLogs = _timeLogs.OrderByDescending(tl => tl.StartDate).ToArray();
+        _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToString(tl.TimeSpentInMin));  
     }
 
     private async Task SetupQuickLog()
@@ -236,7 +276,7 @@
             string url = $"/logs/{timelog.Id}/editLog";
             Dictionary<string, string?> param = new Dictionary<string, string?>() { { "TimeSpentInMin", inMins.ToString() } };
 
-            Uri? newUrl = new Uri(QueryHelpers.AddQueryString(url, param), UriKind.Relative);
+            Uri newUrl = new Uri(QueryHelpers.AddQueryString(url, param), UriKind.Relative);
 
             Navig.NavigateTo(newUrl.OriginalString);
         }
@@ -271,6 +311,34 @@
     private async Task SetQuickLogButtonColor()
     {
         _isPreviousTimelogAQuicklog = await TimeLogsService.CheckIfPreviousTimelogIsAQuicklog(DateTime.Now);
+    }
+
+    private async Task ToogleSearchMode()
+    {
+        _searchMode = !_searchMode;
+
+        if (_searchMode)
+        {
+            _timeLogs = new TimeLog[0]; //Empty the list 
+        }
+        else
+        {
+            _search = string.Empty;
+            await GetTimeLogsAsync();
+        }
+
+    }
+
+    private async Task HandleIntervalElapsed(string debouncedText)
+    {
+        if (string.IsNullOrEmpty(debouncedText))
+        {   
+            _timeLogs = new TimeLog[0]; //Empty the list 
+        }
+        else
+        {
+            await GetTimeLogsAsync(debouncedText);
+        }
     }
 
     private void ResetErrorMessage()
