@@ -34,7 +34,7 @@ public class TimeLogsService: TimelogObservation<TimeLog>
                         ToArrayAsync();
     }
 
-    public async Task<int> GetTimeSpentInWeek(DateOnly currentDate)
+    public async Task<int> GetTimeSpentInWeekAsync(DateOnly currentDate)
     {
         using var context = _dbFactory.CreateDbContext();
         
@@ -50,27 +50,27 @@ public class TimeLogsService: TimelogObservation<TimeLog>
                         SumAsync(s => s.TimeSpentInMin);
     }
 
-    public async Task<bool> CheckIfPreviousTimelogIsAQuicklog(DateTime currentDate)
+    public async Task<bool> CheckIfPreviousTimelogIsAQuicklogAsync(DateTime currentDate)
     {
         DateTime dt = currentDate.Date;
 
-        TimeLog? lastTimeLog = await GetLastTimelog(dt);
+        TimeLog? lastTimeLog = await GetLastTimelogAsync(dt);
         
         return IsTimelogAQuicklog(lastTimeLog);
     }
 
-    public async Task<TimeLog?> GetPreviousTimelogIfItIsAQuicklog(DateTime currentDate)
+    public async Task<TimeLog?> GetPreviousTimelogIfItIsAQuicklogAsync(DateTime currentDate)
     {
         DateTime dt = currentDate.Date;
 
-        TimeLog? lastTimeLog = await GetLastTimelog(dt);
+        TimeLog? lastTimeLog = await GetLastTimelogAsync(dt);
 
         bool isTimelogAQuicklog = IsTimelogAQuicklog(lastTimeLog);
         
         return isTimelogAQuicklog ? lastTimeLog : null;
     }
 
-    private async Task<TimeLog?> GetLastTimelog(DateTime dt)
+    private async Task<TimeLog?> GetLastTimelogAsync(DateTime dt)
     {
         using var context = _dbFactory.CreateDbContext();
 

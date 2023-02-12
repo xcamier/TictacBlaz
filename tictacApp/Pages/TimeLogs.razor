@@ -25,16 +25,16 @@
             <MudButton StartIcon="@AppIcons.AddLog" Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" 
                         Href="/logs/addLog">Add Log</MudButton>
             <MudButton StartIcon="@AppIcons.QuickLog" Variant="Variant.Filled" Size="Size.Small" Color=@(_isPreviousTimelogAQuicklog ? Color.Success : Color.Primary) 
-                        OnClick="@SetupQuickLog" Class="ml-2">Quick Log</MudButton>
+                        OnClick="@SetupQuickLogAsync" Class="ml-2">Quick Log</MudButton>
             <MudButton StartIcon="@AppIcons.Search" Variant="Variant.Filled" Size="Size.Small" Color=@(_searchMode ? Color.Success : Color.Primary) 
-                        OnClick="@ToogleSearchMode" Class="ml-8">Search</MudButton>
+                        OnClick="@ToogleSearchModeAsync" Class="ml-8">Search</MudButton>
         </MudButtonGroup>
     </ButtonsAreaContent>   
 
     <FiltersAreaContent>    
         <MudGrid>
             <MudItem xs="3">
-                <MudTextField  DebounceInterval="500" OnDebounceIntervalElapsed="HandleIntervalElapsed" 
+                <MudTextField  DebounceInterval="500" OnDebounceIntervalElapsed="HandleIntervalElapsedAsync" 
                                 Label="Search" Variant="Variant.Text"
                                 Adornment="Adornment.End" AdornmentIcon="@AppIcons.Search" AdornmentColor="Color.Secondary"
                                 @bind-Value="_search" />
@@ -124,7 +124,7 @@
             _loading = true;
 
             await GetTimeLogsAsync();
-            await SetQuickLogButtonColor();
+            await SetQuickLogButtonColorAsync();
         }
         finally
         {
@@ -155,7 +155,7 @@
             {
                 Snackbar.Add("Timelog deleted successfully", Severity.Success);
                 await GetTimeLogsAsync();
-                await SetQuickLogButtonColor();
+                await SetQuickLogButtonColorAsync();
             }
             else
             {
@@ -207,7 +207,7 @@
 
         _totalForDay = FormattersHelper.MinToString(_timeLogs.Sum(s => s.TimeSpentInMin));
         
-        int totalForWeek = await TimeLogsService.GetTimeSpentInWeek(_selectedDay);
+        int totalForWeek = await TimeLogsService.GetTimeSpentInWeekAsync(_selectedDay);
         _totalForWeek = FormattersHelper.MinToString(totalForWeek);
     }
 
@@ -223,7 +223,7 @@
         _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToString(tl.TimeSpentInMin));  
     }
 
-    private async Task SetupQuickLog()
+    private async Task SetupQuickLogAsync()
     {
         if (_busy)
         {
@@ -234,16 +234,16 @@
         {
             _busy = true;
             DateTime now = DateTime.Now;
-            bool hasAlreadyAQuicklog = await CheckIfHasAlreadyAQuicklog(now);
+            bool hasAlreadyAQuicklog = await CheckIfHasAlreadyAQuicklogAsync(now);
             if (hasAlreadyAQuicklog)
             {
-                await ProcessPreviousQuicklog(now);
+                await ProcessPreviousQuicklogAsync(now);
             }
             else
             {
-                await CreateNewQuicklog(now);
+                await CreateNewQuicklogAsync(now);
             }
-            await SetQuickLogButtonColor();
+            await SetQuickLogButtonColorAsync();
         }
         catch (Exception ex)
         {
@@ -256,14 +256,14 @@
         }
     }
 
-    private async Task<bool> CheckIfHasAlreadyAQuicklog(DateTime now)
+    private async Task<bool> CheckIfHasAlreadyAQuicklogAsync(DateTime now)
     {
-        return await TimeLogsService.CheckIfPreviousTimelogIsAQuicklog(now);
+        return await TimeLogsService.CheckIfPreviousTimelogIsAQuicklogAsync(now);
     }
 
-    private async Task ProcessPreviousQuicklog(DateTime now)
+    private async Task ProcessPreviousQuicklogAsync(DateTime now)
     {
-        TimeLog? timelog = await TimeLogsService.GetPreviousTimelogIfItIsAQuicklog(now);
+        TimeLog? timelog = await TimeLogsService.GetPreviousTimelogIfItIsAQuicklogAsync(now);
         if (timelog is not null)
         {
             TimeSpan? res = now - timelog.StartDate;
@@ -282,7 +282,7 @@
         }
     }
 
-    private async Task CreateNewQuicklog(DateTime now)
+    private async Task CreateNewQuicklogAsync(DateTime now)
     {
         TimeLog timeLogEntity = new TimeLog()
         {
@@ -308,12 +308,12 @@
         }
     }
 
-    private async Task SetQuickLogButtonColor()
+    private async Task SetQuickLogButtonColorAsync()
     {
-        _isPreviousTimelogAQuicklog = await TimeLogsService.CheckIfPreviousTimelogIsAQuicklog(DateTime.Now);
+        _isPreviousTimelogAQuicklog = await TimeLogsService.CheckIfPreviousTimelogIsAQuicklogAsync(DateTime.Now);
     }
 
-    private async Task ToogleSearchMode()
+    private async Task ToogleSearchModeAsync()
     {
         _searchMode = !_searchMode;
 
@@ -329,7 +329,7 @@
 
     }
 
-    private async Task HandleIntervalElapsed(string debouncedText)
+    private async Task HandleIntervalElapsedAsync(string debouncedText)
     {
         if (string.IsNullOrEmpty(debouncedText))
         {   
