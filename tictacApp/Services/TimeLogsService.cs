@@ -28,7 +28,7 @@ public class TimeLogsService: TimelogObservation<TimeLog>
         using var context = _dbFactory.CreateDbContext();
         
         return await context.TimeLogs.
-                        Where(t => t.Description != null && t.Description.Contains(searchStrig)).
+                        Where(t => t.Description != null && t.Description.ToUpper().Contains(searchStrig.ToUpper())).
                         OrderByDescending(t => t.StartDate).
                         Take(50).
                         ToArrayAsync();
