@@ -67,6 +67,7 @@ builder.Services.AddSingleton<ItemSelectionService<ObjectiveView, TimeLogView>>(
 builder.Services.AddSingleton<ItemSelectionService<PlannedActivityView, TimeLogView>>();
 
 builder.Services.AddSingleton<ItemSelectionService<Characteristic, Observation>>();
+builder.Services.AddSingleton<INoteCRUDService, NoteCRUDService>();
 
 //Automapper
 var mapperConfiguration = new MapperConfiguration(configuration =>
@@ -79,6 +80,8 @@ var mapperConfiguration = new MapperConfiguration(configuration =>
     configuration.AddProfile(new MappingObjective());
     configuration.AddProfile(new MappingCharacteristic());
     configuration.AddProfile(new MappingComment());
+    configuration.AddProfile(new MappingNote());
+
 });
 
 var mapper = mapperConfiguration.CreateMapper();

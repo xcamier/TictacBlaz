@@ -13,6 +13,7 @@ public static class Constants
     public const int DescriptionFullLength = 510;
     public const int DescriptionMidLength = 140;
     public const int MaxBreadcrumReadeableItemTextLength = 20;
+    public const int MaxTextLength = 2500;
 }
 
 public static class AppIcons
@@ -41,6 +42,7 @@ public static class AppIcons
     public const string Fold = @Icons.Material.Filled.ArrowDropDown;
     public const string UnFold = @Icons.Material.Filled.ArrowDropUp;
     public const string Search = @Icons.Material.Filled.Search;
+    public const string Archive = @Icons.Material.Outlined.Archive;
 }
 
 public static class ProgressStatus

@@ -103,6 +103,11 @@ public class TictacDBContext : IdentityDbContext
         attachment.Property(a => a.Name).IsRequired();
         attachment.Property(a => a.Path).IsRequired();
         attachment.HasOne(a => a.Comment).WithMany(a => a.Attachments).HasForeignKey(a => a.CommentId);
+
+        var note = modelBuilder.Entity<Note>();
+        note.HasKey(n => n.Id);
+        note.Property(n => n.Description).IsRequired();
+        note.Property(n => n.Description).HasMaxLength(Constants.MaxTextLength);
    }
 
     public DbSet<Project> Projects { get; set; }
@@ -117,4 +122,5 @@ public class TictacDBContext : IdentityDbContext
     public DbSet<Setting> Settings { get; set; }
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Attachment> Attachments { get; set; }
+    public DbSet<Note> Notes { get; set; }
 }

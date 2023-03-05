@@ -1,0 +1,426 @@
+@page "/notes"
+
+@using tictacApp.Helpers
+@using tictacApp.ViewModels
+@using tictacApp.Interfaces
+@using tictacApp.Data
+@using AutoMapper
+@using tictacApp.DataAccess
+@using Microsoft.EntityFrameworkCore
+
+@inject INoteCRUDService CRUDService
+@inject IMapper Mapper
+@inject ISnackbar Snackbar
+
+
+<ListTemplate PageTitle="Notes" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
+    <ButtonsAreaContent>
+        <!-- It is not possible to add or archive notes when displaying the archived notes -->
+        @if (!_displayClosedOnly) 
+        {
+            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="@(async () => await AddNoteAsync(DateTime.Now))" Class="mr-2">
+                Add Note
+            </MudButton>
+        }
+        <MudButton StartIcon="@AppIcons.Delete" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small"  OnClick="DeleteNoteAsync">
+            Delete Note
+        </MudButton>
+        @if (!_displayClosedOnly)
+        {
+            <MudButton StartIcon="@AppIcons.Archive" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="ml-4" OnClick="ArchiveNoteAsync">
+                Archive Note
+            </MudButton>
+        }
+    </ButtonsAreaContent>
+
+    <FiltersAreaContent>
+        <MudSwitch T="bool" Color="Color.Primary" Label="Closed Only"
+                Checked="@_displayClosedOnly" CheckedChanged="@(async (e) => await DisplayClosedChangedAsync(this, e))"  />
+    </FiltersAreaContent>
+
+    <ListAreaContent>
+        <MudGrid>
+            <MudItem xs="4">
+                <MudPaper Class="ml-2">
+                    <MudList Clickable="true"  @bind-SelectedValue="_selectedValue" SelectedItemChanged="SelectedItemChanged">
+                        <MudListItem Text="All" Value="-1"/>
+                        @if (_notes != null)
+                        {
+                            @foreach (NoteView note in _notes)
+                            {
+                                <MudListItem Value="@note.Id">
+                                    <MudText Typo="Typo.subtitle2">@note.UpdateDateTime.ToString(@DATETIMEFORMAT)</MudText>
+                                    <MudText Typo="Typo.subtitle1">@GetStartOfNote(@note.Description)</MudText>
+                                </MudListItem>                        
+                            }
+                        }
+                    </MudList>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="8">
+                @if ((int)_selectedValue == -1)
+                {
+                    <MudPaper Class="mr-2 pa-2">
+                        @if (_notes != null && _notes.Any())
+                        {
+                            @for (int i = 0; i < _notes.Count(); i++)
+                            {
+                                NoteView note = _notes[i];
+                                <div>
+                                    <MudText Typo="Typo.subtitle2">
+                                        <b>Note created</b> @note.CreationDateTime.ToString(@DATETIMEFORMAT) - <b>Updated last time</b> @note.UpdateDateTime.ToString(@DATETIMEFORMAT)
+                                    </MudText>
+                                    <br>
+                                    <MudText Typo="Typo.body1" Style="white-space: pre-line">@note.Description</MudText>
+
+                                    @if (i < _notes.Count() - 1)
+                                    {
+                                        <MudDivider Class="mt-4 mb-4"></MudDivider>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <MudText>Create your first note !</MudText>
+                        }
+                    </MudPaper>
+                }
+                else if (_selectedNote is not null)
+                {
+                    <MudPaper Class="mr-2 pa-2">
+                        <MudIcon Color="Color.Success" Icon="@(@_selectedNote.IsUpToDateInDb ? @Icons.Material.Filled.Bookmark : @Icons.Material.Filled.BookmarkBorder)" Size="Size.Small"
+                                    Title="@(@_selectedNote.IsUpToDateInDb ? "Saved" : "Not yet saved (please wait up to 5 seconds)")" />
+
+                        <MudTextField T="string" Variant="Variant.Outlined" 
+                                        MaxLength="@Constants.MaxTextLength" Lines="25"
+                                        DebounceInterval="5000" OnDebounceIntervalElapsed="@(async () => await SaveNoteAsync(_selectedNote))"
+                                        TextChanged="TextHasChanged"
+                                        @bind-Value="@_selectedNote.Description"/>
+                    </MudPaper>
+                }
+            </MudItem>
+        </MudGrid>
+    </ListAreaContent>
+
+</ListTemplate>
+
+@code {
+    private const string DATETIMEFORMAT = "ddd d MMM yyyy - hh:mm:ss";
+    private const int LENTOKEEP = 40;
+
+    private TictacDBContext? _dbContext;
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    private bool _displayClosedOnly = false;
+    private bool _concurrencyError = false;
+    
+    private object _selectedValue = -1;
+    private NoteView? _selectedNote = null;
+    private Note? _selectedNoteEF = null;
+    private NoteView[]? _notes = null;
+    private bool _textHasChangedBecauseOfNewSelectionOrNewCreation = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _loading = true;
+            _dbContext  = CRUDService.GetNewDBContext(); 
+            await GetNotesAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetNotesAsync()
+    {
+        if (_dbContext != null)
+        {
+            Note[]? notes = await CRUDService.GetAllAsync(_dbContext, _displayClosedOnly);
+            _notes = Mapper.Map<NoteView[]>(notes);
+            foreach (var note in _notes)
+            {
+                note.IsUpToDateInDb = true;
+            }
+        }
+    }
+
+    private async Task DisplayClosedChangedAsync(object Sender, bool newValue)
+    {
+        _displayClosedOnly = newValue;
+        await GetNotesAsync();
+    }
+
+    private async Task AddNoteAsync(DateTime now)
+    {
+        if (_notes != null)
+        {
+            //Saves the previous note if one exists
+            if (_selectedNote is not null)
+            {
+                await SaveNoteAsync(_selectedNote);
+            }
+
+            //Creates a note
+            NoteView newNote = new NoteView
+            {
+                Id = 0, //Guid.NewGuid().GetHashCode(),
+                CreationDateTime = now,
+                UpdateDateTime = now,
+                Description = string.Empty,
+                IsNew = true,
+                IsUpToDateInDb = true
+            };
+
+            await SaveNoteAsync(newNote);
+
+            _textHasChangedBecauseOfNewSelectionOrNewCreation = true;
+            _notes = _notes.Append<NoteView>(newNote).ToArray();
+            _selectedValue = newNote.Id;
+            _selectedNote = newNote;
+        }
+    }
+
+    private async Task SaveNoteAsync(NoteView noteToSave)
+    {
+        if (noteToSave is not null)
+        {
+            //Creates or updates the note
+            if (noteToSave.IsNew)
+            {
+                await CreateNoteAsync(noteToSave);
+            }
+            else if (!noteToSave.IsUpToDateInDb)
+            {
+                await UpdateNoteAsync(noteToSave, false, DateTime.Now);
+            }
+
+            noteToSave.IsUpToDateInDb = true;
+            noteToSave.IsNew = false;
+        }
+    }
+
+    private async Task CreateNoteAsync(NoteView noteToCreate)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+            
+            bool res = false;
+            string msg = string.Empty;
+
+            noteToCreate.Id = 0;
+            Note newNote = Mapper.Map<NoteView, Note>(noteToCreate);
+            res = await CRUDService.AddAsync<Note>(newNote);
+            if (!res)
+            {
+                msg = "Could not create the note.";
+            }
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                noteToCreate.Id = newNote.Id;
+                _selectedNoteEF = newNote;
+            }
+            else
+            {
+                Snackbar.Add($"Error when creating the note: {msg}", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+
+    private async Task UpdateNoteAsync(NoteView noteToUpdate, bool archiveNote, DateTime updateDateTime)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true; 
+            ResetErrorMessage();
+
+            _selectedNoteEF = await GetNotIfNotInCache(noteToUpdate.Id);
+            _selectedNoteEF.UpdateDateTime = updateDateTime;
+            _selectedNoteEF.Description = noteToUpdate.Description;
+            _selectedNoteEF.IsClosed =  archiveNote; //closed notes that are updated are unclosed automatically, unless we decide to archive explicitly
+
+            bool savingRes = false;
+            if (_dbContext is not null)
+            {
+                savingRes = await _dbContext.SaveChangesAsync() > 0;
+            }
+
+            if (!savingRes)
+            {
+                Snackbar.Add($"Error when modifying the note", Severity.Warning);
+            }
+        }
+        catch (DbUpdateConcurrencyException dbex)
+        {
+            // concurrency issues!
+            _concurrencyError = true;
+
+            // get values from database
+            var dbValues = dbex.Entries[0].GetDatabaseValues();
+
+            if (dbValues is null)
+            {
+                // deleted - show note not found
+                Snackbar.Add($"The note could not be updated and is not found in DB. It was probably deleted before you saved.", Severity.Warning);
+                return;
+            }
+
+            ResetErrorMessage();
+            _busy = false;
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ArchiveNoteAsync()
+    {
+        if (_selectedNote is not null && (int)_selectedValue > 0)
+        {
+            await UpdateNoteAsync(_selectedNote, true, DateTime.Now);
+            await GetNotesAsync();
+        }
+    }
+
+    private async Task DeleteNoteAsync()
+    {
+        int selectedNoteId = (int)_selectedValue;
+        if (_busy || selectedNoteId < 0)
+        {
+            return;
+        }
+
+        try
+        {
+            _busy = true;
+
+            Note? noteToDelete = await GetNotIfNotInCache(selectedNoteId);
+            
+            bool res = false;
+            string msg = string.Empty;
+            if (noteToDelete is not null)
+            {
+                res = await CRUDService.DeleteAsync<Note>(noteToDelete);
+                if (!res)
+                {
+                    msg = "Could not delete the note.";
+                }
+            }
+            else
+            {
+                msg = "Could not find the note.";
+            }
+
+            ResetErrorMessage();
+
+            if (res )
+            {
+                Snackbar.Add("Note deleted successfully", Severity.Success);
+                await GetNotesAsync();
+                AssignToAll();
+            }
+            else
+            {
+                Snackbar.Add($"Error when deleting the note: {msg}", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void SelectedItemChanged(MudListItem item)
+    {
+        if (_notes != null && item != null && item.Value != null && (int)item.Value > 0)
+        {
+            _textHasChangedBecauseOfNewSelectionOrNewCreation = true;
+            _selectedNote = _notes.First(n => n.Id == (int)item.Value);
+            _selectedNoteEF = null; //lets the auto save feature retrieving the value
+        }
+    }
+
+    private async Task<Note?> GetNotIfNotInCache(int selectedNoteId)
+    {
+        if (_selectedNoteEF is null)
+        {
+            return await CRUDService.FindFromIdAsync<Note>(_dbContext, selectedNoteId);
+        }
+        else
+        {
+            return _selectedNoteEF;
+        }
+    }
+
+    private string GetStartOfNote(string description)
+    {
+        string startOfNote = (!string.IsNullOrEmpty(description) && description.Length > LENTOKEEP) ? 
+                                $"{description.Substring(0, LENTOKEEP)}..." : 
+                                description;
+
+        return startOfNote;
+    }
+
+    private void TextHasChanged()
+    {
+        if (!_textHasChangedBecauseOfNewSelectionOrNewCreation)
+        {
+            _selectedNote.IsUpToDateInDb = false;
+        }
+        _textHasChangedBecauseOfNewSelectionOrNewCreation = false;
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+
+    private void AssignToAll()
+    {
+        _selectedValue = -1;
+    }
+}
