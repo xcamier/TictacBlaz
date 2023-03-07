@@ -205,10 +205,10 @@
         _timeLogs = await TimeLogsService.GetTimeLogsAsync(_selectedDay);
         FinalizeTimeLogsDisplay();
 
-        _totalForDay = FormattersHelper.MinToString(_timeLogs.Sum(s => s.TimeSpentInMin));
+        _totalForDay = FormattersHelper.MinToHoursAndMinAsString(_timeLogs.Sum(s => s.TimeSpentInMin));
         
         int totalForWeek = await TimeLogsService.GetTimeSpentInWeekAsync(_selectedDay);
-        _totalForWeek = FormattersHelper.MinToString(totalForWeek);
+        _totalForWeek = FormattersHelper.MinToHoursAndMinAsString(totalForWeek);
     }
 
     private async Task GetTimeLogsAsync(string search)
@@ -220,7 +220,7 @@
     private void FinalizeTimeLogsDisplay()
     {
         _timeLogs = _timeLogs.OrderByDescending(tl => tl.StartDate).ToArray();
-        _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToString(tl.TimeSpentInMin));  
+        _timeLogs.ToList().ForEach(tl => tl.TimeSpentInHHMM = FormattersHelper.MinToHoursAndMinAsString(tl.TimeSpentInMin));  
     }
 
     private async Task SetupQuickLogAsync()
