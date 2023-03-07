@@ -68,6 +68,7 @@ builder.Services.AddSingleton<ItemSelectionService<PlannedActivityView, TimeLogV
 
 builder.Services.AddSingleton<ItemSelectionService<Characteristic, Observation>>();
 builder.Services.AddSingleton<INoteCRUDService, NoteCRUDService>();
+builder.Services.AddSingleton<ITimeShareService, TimeShareService>();
 
 //Automapper
 var mapperConfiguration = new MapperConfiguration(configuration =>

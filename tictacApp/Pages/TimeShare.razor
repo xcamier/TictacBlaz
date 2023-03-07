@@ -1,0 +1,291 @@
+@page "/timeshare"
+
+@using FluentValidation
+@using AutoMapper
+@using tictacApp.Helpers
+@using tictacApp.Interfaces
+@using tictacApp.ViewModels
+@using tictacApp.Data
+
+@inject IMapper Mapper
+@inject ITimeShareService TimeShareService
+@inject IPlannedActivityCRUDService PlannedActivitiesCRUDService
+
+<ListTemplate PageTitle="Time Share" Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
+
+    <ListAreaContent>
+        <MudGrid>
+            <!-- The row corresponding to the time spent on tags -->
+            <MudItem xs="12">
+                <MudPaper Class="mr-2 ml-2 pa-4">
+                    <MudForm Model="@_tsPerTag" 
+                        @ref="@_formPerTag" Validation="@(_tsPerTagValidator.ValidateValue)" ValidationDelay="0">
+
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.h6">Time spent on tags</MudText>
+                            </MudItem>
+
+                            <MudItem xs="2">
+                                <MudDatePicker Label="Between" Placeholder="Select Date"
+                                        Editable="true" DisableToolbar="true" 
+                                        @bind-Date="_tsPerTag.StartDate" For="@(() => _tsPerTag.StartDate)" />  
+                            </MudItem>
+                            <MudItem xs="2">
+                                <MudDatePicker Label="and" Placeholder="Select Date"
+                                        Editable="true" DisableToolbar="true"
+                                        @bind-Date="_tsPerTag.EndDate" For="@(() => _tsPerTag.EndDate)" />  
+                            </MudItem>
+                            <MudItem xs="3">
+                                <TagsSelectionComponent MultiSelection="false"
+                                                        OnTagsSelection="@(async (selectedTags) => OnTagsToIncludeChanged(selectedTags))">
+
+                                </TagsSelectionComponent>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <TagsSelectionComponent MultiSelection="true"
+                                                        OnTagsSelection="@(async (selectedTags) => OnTagsToExcludeChanged(selectedTags))">
+
+                                </TagsSelectionComponent>
+                            </MudItem>
+                            <MudItem xs="2">
+                                <MudButton StartIcon="@AppIcons.Calculate" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                                            OnClick="CalculateTags" Disabled="@_busy" >Process</MudButton>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudText>@_timeLogsMessage</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudPaper>
+            </MudItem>
+            <!-- The row corresponding to the time spent on activities -->
+            <MudItem xs="12">
+                <MudPaper Class="mr-2 ml-2 pa-4">
+                    <MudForm Model="@_tsPerActivity" 
+                        @ref="@_formPerActivity" Validation="@(_tsPerActivityValidator.ValidateValue)" ValidationDelay="0">
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.h6">Time spent on activities</MudText>
+                            </MudItem>
+
+                            <MudItem xs="2">
+                                <MudDatePicker Label="Between" Placeholder="Select Date"
+                                        Editable="true" DisableToolbar="true" 
+                                        @bind-Date="_tsPerActivity.StartDate" For="@(() => _tsPerActivity.StartDate)"/>  
+                            </MudItem>
+                            <MudItem xs="2">
+                                <MudDatePicker Label="and" Placeholder="Select Date"
+                                        Editable="true" DisableToolbar="true"
+                                        @bind-Date="_tsPerActivity.EndDate" For="@(() => _tsPerActivity.EndDate)" />  
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudRadioGroup @bind-SelectedOption="@_selectedOption">
+                                    <MudRadio Option="@("Objectives")" Color="Color.Primary">Objectives</MudRadio>
+                                    <MudRadio Option="@("Projects")" Color="Color.Primary">Projects</MudRadio>
+                                </MudRadioGroup>
+                            </MudItem>
+                            <MudItem xs="2">
+                                <MudButton StartIcon="@AppIcons.Calculate" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                                    OnClick="CalculateActivities">Process</MudButton>
+                            </MudItem>
+                            <MudItem xs="12">
+                                @if (_reportItems is null || _reportItems.Count == 0)
+                                {
+                                    <MudText>No value to display</MudText>
+                                }
+                                else
+                                {
+                                    <MudTable Items="@_reportItems">
+                                        <HeaderContent>
+                                            <MudTh>Label</MudTh>
+                                            <MudTh Style="text-align:right">Time Spent (min)</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd DataLabel="Label">
+                                                <!-- Dirty trick to manage the identation -->
+                                                <MudPaper Elevation="0" Class="@context.Level" 
+                                                            Style="@(@context.Level == "pl-0" ? "font-weight: bold;" : "")">
+                                                    @context.Label
+                                                </MudPaper>
+                                            </MudTd>
+                                            <MudTd DataLabel="Sum" Style="@(@context.Level == "pl-0" ? 
+                                                                                "font-weight: bold; text-align:right;" : 
+                                                                                "text-align:right;")">
+                                                @FormattersHelper.MinToHoursAndMinAsString(@context.Sum)
+                                            </MudTd>
+                                        </RowTemplate>
+                                    </MudTable>
+                                }
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </ListAreaContent>
+
+</ListTemplate>
+
+
+@code {
+    private bool _loading = false;
+    private bool _busy = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+
+    private TimeShareParams _tsPerTag = new TimeShareParams();
+    private MudForm _formPerTag;
+    private TimeShareModelFluentValidator _tsPerTagValidator = new TimeShareModelFluentValidator();
+
+    private TimeShareParams _tsPerActivity = new TimeShareParams();
+    private MudForm _formPerActivity;
+    private TimeShareModelFluentValidator _tsPerActivityValidator = new TimeShareModelFluentValidator();
+    private string _selectedOption = "Objectives";
+
+    private  List<ReportItem> _reportItems = new List<ReportItem>();
+
+    private string _timeLogsMessage = "No value to display.";
+
+
+    private void OnTagsToIncludeChanged(TagView[] selectedTags)
+    {
+        if (selectedTags is null || !selectedTags.Any())
+        {
+            _tsPerTag.SelectedTagToInclude = null;
+        }
+        else
+        {
+            _tsPerTag.SelectedTagToInclude = selectedTags[0];
+        }
+    }
+
+    private void OnTagsToExcludeChanged(TagView[] selectedTags)
+    {
+        if (selectedTags is null || !selectedTags.Any())
+        {
+            _tsPerTag.SelectedTagsToExclude = null;
+        }
+        else
+        {
+            _tsPerTag.SelectedTagsToExclude = selectedTags;
+        }
+    }
+
+    private async Task CalculateTags()
+    {
+        try
+        {
+            await _formPerTag.Validate();
+            if (_formPerTag.IsValid)
+            {
+
+                _busy = true;
+
+                DateTime startDate = FormattersHelper.GetStartDate(_tsPerTag.StartDate);
+                DateTime endDate = FormattersHelper.GetEndDate(_tsPerTag.EndDate);
+
+                int[]? tagsToExclude = null;
+                if (_tsPerTag.SelectedTagsToExclude is not null)
+                {
+                    tagsToExclude = _tsPerTag.SelectedTagsToExclude.Select(t => t.Id).ToArray();
+                }
+
+                int value = await TimeShareService.GetTimeSpendOnTags(startDate, endDate, 
+                                                                     _tsPerTag.SelectedTagToInclude?.Id, tagsToExclude);
+
+                var timeSpentAsString = FormattersHelper.MinToHoursAndMinAsString(value);
+                _timeLogsMessage = $"Total time spent: {timeSpentAsString}";
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CalculateActivities()
+    {
+        try
+        {
+            _busy = true;
+
+            _reportItems.Clear();
+
+            DateTime startDate = FormattersHelper.GetStartDate(_tsPerActivity.StartDate);
+            DateTime endDate = FormattersHelper.GetEndDate(_tsPerActivity.EndDate);
+
+            //Gets the sums for each relevant activity
+            Dictionary<PlannedActivity, int> valuesPerActivity = await TimeShareService.GetTimeSpentOnActivities(startDate, endDate, _selectedOption);
+            
+            Dictionary<PlannedActivityView, int> valuesPerActivityView = new Dictionary<PlannedActivityView, int>();
+            foreach (var valuePerActivity in valuesPerActivity)
+            {
+                PlannedActivityView view = Mapper.Map<PlannedActivity, PlannedActivityView>(valuePerActivity.Key);
+                valuesPerActivityView.Add(view, valuePerActivity.Value);
+            }
+
+            BuildPresentation(null, valuesPerActivityView, 0);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }  
+
+    private void BuildPresentation(int? parentId,
+                                    Dictionary<PlannedActivityView, int> valuesPerActivity, int level)
+    {  
+        var activities = valuesPerActivity.Where(vpa => vpa.Key.ParentId == parentId);
+        foreach (var activity in activities)
+        {
+            ReportItem item = new ReportItem()
+            {
+                ItemId = activity.Key.Id,
+                Label = activity.Key.Label,
+                Sum = activity.Value,
+                Level = $"pl-{level * 3}"
+            };
+            _reportItems.Add(item);
+
+            BuildPresentation(activity.Key.Id, valuesPerActivity, level + 1);
+        }
+    }
+
+    //Local class for the fluent validator
+    public class TimeShareModelFluentValidator : AbstractValidator<TimeShareParams>
+    {
+        public TimeShareModelFluentValidator()
+        {
+            RuleFor(ts => ts.StartDate).
+                            NotNull().WithMessage("Start date is mandatory");
+            RuleFor(ts => ts.EndDate).
+                            NotNull().WithMessage("End date is mandatory");
+		}
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<TimeShareParams>.CreateWithOptions((TimeShareParams)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    public class TimeShareParams
+    {
+        public DateTime? EndDate {get; set; }  = DateTime.Now;
+        public DateTime? StartDate {get; set; } = DateTime.Now;
+        public TagView? SelectedTagToInclude {get; set; } = null;
+        public TagView[]? SelectedTagsToExclude {get; set; } = null;
+    }
+
+    public class ReportItem
+    {
+        public int ItemId { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public int Sum { get; set;}
+        public string Level { get; set; } = string.Empty;
+    }
+
+}

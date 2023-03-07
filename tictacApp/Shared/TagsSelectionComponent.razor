@@ -1,0 +1,78 @@
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+@using tictacApp.Interfaces
+@using tictacApp.Data
+@using AutoMapper
+
+@inject IMapper Mapper
+@inject IGenericCRUDService CRUDService
+
+
+@if (MultiSelection)
+{
+    <MudSelect T="TagView" MultiSelection="true"
+                Label="Tags to exclude" AdornmentIcon="@AppIcons.Label" AnchorOrigin="Origin.BottomCenter"
+                @bind-SelectedValues="_selectedTags" Text="@_valToDisplay" 
+                OnClose="OnCloseTag">
+        @foreach (var tag in _tags)
+        {
+            <MudSelectItem Value="@tag">@tag.Label</MudSelectItem>
+        }
+    </MudSelect>
+}
+else
+{
+    <MudSelect T="TagView" MultiSelection="false"
+                Label="Tag to measure" AdornmentIcon="@AppIcons.Label" AnchorOrigin="Origin.BottomCenter"
+                Value="@_selectedTagToInclude" ValueChanged="OnSelectedTagChange">
+            @foreach (TagView tag in _tags)
+            {
+                <MudSelectItem Value="@tag">@tag.Label</MudSelectItem>
+            }
+    </MudSelect>  
+}
+
+
+@code {
+    [Parameter]
+    public bool MultiSelection { get; set; }
+
+    [Parameter]
+    public EventCallback<TagView[]> OnTagsSelection { get; set; }
+
+
+    private TagView? _selectedTagToInclude = null;
+    private IEnumerable<TagView> _selectedTags { get; set; } = new HashSet<TagView>();
+    private string _valToDisplay = string.Empty;
+    private TagView[]? _tags = null;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTagsAsync();
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetTagsAsync()
+    {
+        Tag[] dbTags = await CRUDService.GetAllAsync<Tag>();
+        dbTags = dbTags.OrderBy(t => t.Label).ToArray();
+
+        _tags = Mapper.Map<TagView[]>(dbTags);
+    }
+
+    private void OnSelectedTagChange(TagView newValue)
+    {
+        //trigger event
+        _selectedTagToInclude = newValue;
+        OnTagsSelection.InvokeAsync(new TagView[] { _selectedTagToInclude });
+    }
+
+    private void OnCloseTag()
+    {
+        _valToDisplay = FormattersHelper.GetListOfTagsAsString(_selectedTags);
+        OnTagsSelection.InvokeAsync(_selectedTags.ToArray());
+
+    }
+}

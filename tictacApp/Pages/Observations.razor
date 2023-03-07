@@ -124,9 +124,8 @@ else if (_observations == null)
 
             if (_areDependenciesOk)
             {
-                DateTime now = DateTime.Now;
-                SetEndDate(now);
-                SetStartDate(DateTime.Today.AddMonths(-1));
+                _endDate = FormattersHelper.GetEndDate(DateTime.Now);
+                _startDate = FormattersHelper.GetStartDate(DateTime.Today.AddMonths(-1));
 
                 await GetActorsAsync();
                 _selectedActorId = _actors.First().Id;
@@ -183,13 +182,13 @@ else if (_observations == null)
 
     private async Task OnStartDateChange(DateTime? newDate)
     {
-        SetStartDate(newDate);
+        _startDate = FormattersHelper.GetStartDate(newDate);
         await GetObservationAsync();
     }
 
     private async Task OnEndDateChange(DateTime? newDate)
     {
-        SetEndDate(newDate);
+        _endDate = FormattersHelper.GetEndDate(newDate);
         await GetObservationAsync();
     }
 
@@ -218,16 +217,6 @@ else if (_observations == null)
         await checker.CheckActorDependency();
         _areDependenciesOk = checker.AreDependenciesOk;
         _dependencies = checker.GetUnsatisfiedDependencies();
-    }
-
-    private void SetStartDate(DateTime? startDate)
-    {
-        _startDate = startDate.Value.Date;
-    }
-
-    private void SetEndDate(DateTime? endDate)
-    {
-        _endDate = new DateTime(endDate.Value.Year, endDate.Value.Month, endDate.Value.Day, 23, 59, 59);
     }
 
     private void ResetErrorMessage()

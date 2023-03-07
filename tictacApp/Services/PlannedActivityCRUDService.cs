@@ -93,4 +93,13 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
             GetSumOfCompletionOfChildren<T>(entity.Id, ref values);
         }
     }
+
+    public async Task<T[]> GetSubsetOfPlannedActivities<T>(int[] selectionOfActivities) where T: PlannedActivity
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Set<T>().
+                            Where(o => o.IsClosed == false || selectionOfActivities.Contains(o.Id)).
+                            ToArrayAsync();
+    }
 }

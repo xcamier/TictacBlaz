@@ -141,7 +141,7 @@
     protected override async Task OnInitializedAsync()
     { 
         await GetActorsAsync();
-        await GetTagsAsync();
+        _tags = await DefaultDataRetriversHelper.GetTagsAsync(CRUDService, Mapper);
 
         if (Observation is not null)
         {
@@ -188,14 +188,6 @@
     {
         Actor[] dbActors = await ActorsCRUDService.GetAllAsync(false);
         _actors = Mapper.Map<ActorView[]>(dbActors);
-    }
-
-    private async Task GetTagsAsync()
-    {
-        Tag[] dbTags = await CRUDService.GetAllAsync<Tag>();
-        dbTags = dbTags.OrderBy(t => t.Label).ToArray();
-        
-        _tags = Mapper.Map<TagView[]>(dbTags);
     }
 
     private async Task HasOpenCharacteriticsSelector()
@@ -246,10 +238,8 @@
 
     private void OnCloseTag()
     {
-        _valToDisplay = $"Selected tag{(_selectedTags.Count() > 1 ? "s" : "")}: {string.Join(", ", _selectedTags.Select(x => x.Label))}";
+        _valToDisplay = FormattersHelper.GetListOfTagsAsString(_selectedTags);
     }
-
-
 
     private int? activeVal;
 

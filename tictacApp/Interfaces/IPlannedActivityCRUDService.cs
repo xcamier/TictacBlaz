@@ -18,4 +18,6 @@ public interface IPlannedActivityCRUDService: IGenericCRUDServiceWithParents
     Task<bool> DeleteCommentAsync(TictacDBContext? dbContext, Comment commentToDelete);
 
     void GetSumOfCompletionOfChildren<T>(int? startId, ref Tuple<int, int> values) where T: PlannedActivity;
+
+    Task<T[]> GetSubsetOfPlannedActivities<T>(int[] selectionOfActivities) where T: PlannedActivity;
 }
