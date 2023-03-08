@@ -33,12 +33,14 @@
                         <MudItem xs="4">
                             <MudDatePicker Label="Date of the log" Placeholder="Select Date"
                                             Editable="true" DisableToolbar="true"
-                                            @bind-Date="TimeLog.StartDate" For="@(() => TimeLog.StartDate)" />                                
+                                            Date="TimeLog.StartDate" DateChanged="DateChanged"
+                                            For="@(() => TimeLog.StartDate)" />                                
                         </MudItem>
                         <MudItem xs="4">
                             <MudTimePicker Label="Time of the log" Placeholder="Select Time"
                                             Editable="true" DisableToolbar="true" Class = "ml-2"
-                                            @bind-Time="TimeLog.TimeSpan" For="@(() => TimeLog.TimeSpan)" />                                
+                                            Time="@TimeLog.TimeSpan" TimeChanged="TimeChanged"
+                                            For="@(() => TimeLog.TimeSpan)" />                                
                         </MudItem>
                         <MudItem xs="4">
                             <MudTextField Label="Time spent" 
@@ -191,13 +193,6 @@
          _form.Validate();
         if (_form.IsValid)
         {
-            int value = _selectedTags.Count();
-
-            if (TimeLog.StartDate.HasValue)
-            {
-                TimeLog.StartDate = TimeLog.StartDate.Value.Date + TimeLog.TimeSpan;
-            }
-
             AssignTags();
 
             return ValidationResult.InvokeAsync(true);
@@ -263,6 +258,34 @@
         _valToDisplay = FormattersHelper.GetListOfTagsAsString(_selectedTags);
     }
 
+    private void TimeChanged(TimeSpan? newTime)
+    {
+        if (TimeLog is not null)
+        {
+            TimeLog.TimeSpan = newTime;
+
+            MergeStartDateAndTimeSpan();
+        }
+    }
+
+    private void DateChanged(DateTime? newDate)
+    {
+        if (TimeLog is not null)
+        {
+            TimeLog.StartDate = newDate;
+
+            MergeStartDateAndTimeSpan();
+        }
+    }
+
+    private void MergeStartDateAndTimeSpan()
+    {
+        if (TimeLog is not null && TimeLog.TimeSpan.HasValue && TimeLog.StartDate.HasValue)
+        {
+            TimeLog.StartDate = TimeLog.StartDate.Value.Date + TimeLog.TimeSpan;
+        }
+    }
+
     //Local class for the fluent validator
     public class TimeLogModelFluentValidator : AbstractValidator<TimeLogView>
     {
@@ -272,6 +295,9 @@
             RuleFor(timeLog => timeLog.StartDate).
                             NotNull().WithMessage("Please specify a date for the timelog").
                             GreaterThan(new DateTime(now.Year - 1, now.Month, now.Day, 0, 0, 0));
+
+            RuleFor(timeLog => timeLog.TimeSpan).
+                            NotNull().WithMessage("Please specify a time for the timelog");
 
             RuleFor(timeLog =>timeLog.TimeSpentInMin).GreaterThan(0);
 		}

@@ -39,7 +39,6 @@ public class TimeLogView : TimelogObservation, INotifyPropertyChanged
     }
 
     //Calculated fields, for display only
-    public string TimeSpentInHHMM { get; set; } = string.Empty;
     public TimeSpan? TimeSpan { get; set; } 
     public string ProjectAsText { get; private set; } = string.Empty;
     public string ObjectiveAsText { get; private set; } = string.Empty;
