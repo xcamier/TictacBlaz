@@ -52,4 +52,9 @@ public class FormattersHelper
 
         throw new NullReferenceException("The end date shall have a value");
     }
+
+    public static string GetQuarterNameFromNumber(int number)
+    {
+        return $"Q{number}";
+    }
 }

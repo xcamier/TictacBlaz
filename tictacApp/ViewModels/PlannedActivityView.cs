@@ -7,6 +7,7 @@ public class PlannedActivityView: IIdLabel, IDescription, IParent
     public int Id { get; set; }
     public string? Label { get; set; }
     public string? Description { get; set; }
+    public int? StartupQuarter { get; set; }
     public DateTime? TargetDate { get; set; }
     public bool IsBehind { get; set; }
     public int CompletionPercent { get; set; }

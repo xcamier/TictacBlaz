@@ -1,0 +1,230 @@
+@using System.Globalization
+@using tictacApp.ViewModels
+@using tictacApp.Helpers
+
+<MudGrid Class="pa-2">
+    <!-- header -->
+    @foreach (var header in _headers)
+    {
+        <MudItem xs="@header.Item1">
+            <MudPaper Height="30px" Elevation="1" Class="d-flex align-center justify-center" 
+                        Style="@(IsCurrentMonthOrQuarter(header.Item2) ? @ISCURRENTSTYLE : "")">
+                <MudText Align="Align.Center">@header.Item2</MudText>
+            </MudPaper>
+        </MudItem>
+    }
+
+    <!-- activities -->
+    @foreach (var item in _ganttItems)
+    {
+        @if (item.Offset != 0)
+        {
+            <MudItem xs="@item.Offset" />
+        } 
+        
+        <MudItem xs=@item.Duration>
+            <MudPaper Height="30px" Elevation="1" Class="d-flex align-center justify-center"
+                        Style="@($"background-color: {@item.BackColor};")">
+                <MudText Typo="Typo.body2">@TruncateOnDuration(item.Label, item.Duration)</MudText>
+                <MudIconButton Icon="@Icons.Material.Outlined.RemoveRedEye" Size="Size.Small" aria-label="view"
+                                OnClick="@(async () => await OpenDetails(item))">
+                </MudIconButton>
+            </MudPaper>
+        </MudItem>
+
+        @if (item.Offset + item.Duration < 12)
+        {
+            int endOfRowOffset = 12 - item.Offset - item.Duration;
+            <MudItem xs="@endOfRowOffset" />
+        }
+    }
+</MudGrid>
+
+@code {    
+    [Inject] private IDialogService DialogService { get; set; }
+
+    [Parameter]
+    public PlannedActivityView[]? PlannedActivities { get; set; }
+
+    //xs, quarter, iscurrent
+    private IEnumerable<Tuple<int, string>> _headers = new List<Tuple<int, string>>() 
+    {
+        new Tuple<int, string>(3, FormattersHelper.GetQuarterNameFromNumber(1)),
+        new Tuple<int, string>(3, FormattersHelper.GetQuarterNameFromNumber(2)),
+        new Tuple<int, string>(3, FormattersHelper.GetQuarterNameFromNumber(3)),
+        new Tuple<int, string>(3, FormattersHelper.GetQuarterNameFromNumber(4))
+    };
+
+    private string[] _palette = new string[] 
+    {
+        "#d6f5f5",
+        "#ffffb3",
+        "#d6f5d6",
+        "#ffe6f0",
+        "#ffe0cc",
+        "#f5e6ff",
+    };
+
+    private const string COLORFINALIZED = "#f2f2f2";
+    private const string COLORCURRENTPERIOD = "#ffe6ff";
+    private const string ISCURRENTSTYLE = "background-color: #fcf6fc;";
+
+    private List<GanttItem> _ganttItems = new List<GanttItem>();
+
+
+
+    protected override Task OnInitializedAsync()
+    {
+        BuildMonthHeader();
+        BuildActivitiesDiagram(PlannedActivities.Where(pa =>pa.ParentId == null), -1);
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task OpenDetails(GanttItem item)
+    {
+        string content = $"{item.Label}<br/>";
+        if (!string.IsNullOrEmpty(item.Description))
+        {
+            content = $"{content}<br/>{item.Description}<br/>";
+        }
+        content = $"{content}<br/><b>Status: </b>{item.IsBehind}";
+        content = $"{content}<br/><b>Completion: </b>{item.CompletionPercent}%";
+        content = $"{content}<br/><b>Finalization: </b>{item.IsFinalized}";
+        if (!string.IsNullOrEmpty(item.FinalizationDate))
+        {
+            content = $"{content}<br/><b>Finalization date: </b>{item.FinalizationDate}";
+        }
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Objective Details", 
+            (MarkupString) content);
+        StateHasChanged();
+    }
+
+    private void BuildMonthHeader()
+    {
+        string[] names = DateTimeFormatInfo.CurrentInfo.MonthNames;
+        string currentName = DateTimeFormatInfo.CurrentInfo.GetMonthName(DateTime.Today.Month);
+
+        foreach(string name in names)
+        {
+            if (!string.IsNullOrEmpty(name))
+            {
+                _headers = _headers.Append(new Tuple<int, string>(1, GetShortenedMonth(name)));
+            }
+        }
+    }
+
+    private void BuildActivitiesDiagram(IEnumerable<PlannedActivityView> subsetOfActivities, int colorIndex)
+    {     
+        int newColorIndex = colorIndex;
+        foreach (var activity in subsetOfActivities)
+        {
+            newColorIndex = activity.ParentId.HasValue ? newColorIndex : newColorIndex + 1;
+            string color = _palette[newColorIndex % _palette.Length];  //circular array
+
+            int offset = activity.StartupQuarter.HasValue ? GetOffset(activity.StartupQuarter.Value) : 0;
+            int duration = GetDuration(activity, offset);
+
+            _ganttItems.Add(new GanttItem {
+                                Label = activity.Label,
+                                Description = activity.Description,
+                                IsBehind = activity.IsBehind ? "Behind" : "On track",
+                                CompletionPercent = activity.CompletionPercent,
+                                IsFinalized = activity.IsFinalized ? "Finalized" : "Not yet finalized",
+                                FinalizationDate = activity.FinalizationDate.HasValue ? activity.FinalizationDate.Value.ToString("") : string.Empty,
+                                BackColor = activity.IsFinalized ? COLORFINALIZED : color,
+                                Offset = offset,
+                                Duration = duration
+            });
+
+            BuildActivitiesDiagram(PlannedActivities.Where(pa => pa.ParentId == activity.Id), newColorIndex);
+        }
+    }
+
+    private int GetOffset(int quarter)
+    {
+        return (quarter - 1) * 3 ;
+    }
+
+    private int GetNumberOfMonthsBetween(int startupQuarter, DateTime? targetDate)
+    {
+        int month = 12;
+        if (targetDate.HasValue)
+        {
+            DateTime now = DateTime.Now;
+            if (targetDate.Value.Year < now.Year)
+            {
+                //as the date is in the past, the objective is already late => 
+                //is assigned to this month
+                month = DateTime.Now.Month;
+            }
+            else if (targetDate.Value.Year == now.Year)
+            {
+                month = targetDate.Value.Month;
+            }
+        }
+
+        return month - GetOffset(startupQuarter);
+    }
+
+    private int GetDuration(PlannedActivityView? activity, int offset)
+    {
+        //
+        if (activity.TargetDate.HasValue)
+        {
+            //no quarter => considers that it starts at Q1 then, until the target date
+            return GetNumberOfMonthsBetween(activity.StartupQuarter ?? 1, activity.TargetDate);
+        }
+        else
+        {
+            //no quarter set and no date => all the year, else, only the selected quarter
+            return activity.StartupQuarter.HasValue ? 3 : 12;
+        }
+    }
+
+    private string TruncateOnDuration(string value, int duration)
+    {
+        int calcLength = (duration * 7);    //7 characters per month
+        int extraChar = (duration - 1) * 2; //2 characters per space between the months
+        int totalSpace = calcLength + extraChar;
+        int finalValue = Math.Min(value.Length, totalSpace);
+
+        if (duration > 1 && finalValue > 14 && totalSpace < value.Length)
+        {
+            return $"{value.Substring(0, finalValue - 3)}...";
+        }
+
+        return value.Substring(0, finalValue);
+    }
+
+    private bool IsCurrentMonthOrQuarter(string value)
+    {
+        int month = DateTime.Today.Month;
+        int quarter = (month + 2) / 3;
+
+        string currentMonth = GetShortenedMonth(DateTimeFormatInfo.CurrentInfo.GetMonthName(month));
+        string currentQuarter = FormattersHelper.GetQuarterNameFromNumber(quarter);
+
+        return value.CompareTo(currentMonth) == 0 || value.CompareTo(currentQuarter) == 0;
+    }
+
+    private static string GetShortenedMonth(string month)
+    {
+        return month.Substring(0,3);
+    }
+
+    private class GanttItem
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string IsBehind { get; set; } = string.Empty;
+        public int CompletionPercent { get; set; }
+        public string IsFinalized { get; set; } = string.Empty;
+        public string FinalizationDate { get; set; } = string.Empty;
+        public string BackColor { get; set; }
+        public int Offset { get; set; }
+        public int Duration { get; set; }
+    }
+}

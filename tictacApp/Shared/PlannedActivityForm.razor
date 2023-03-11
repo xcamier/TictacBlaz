@@ -35,9 +35,23 @@
                                     @bind-Value="PlannedActivity.Description" For="@(() => PlannedActivity.Description)" 
                                     Immediate="true"/>
 
-                    <MudDatePicker Label="Target date" Placeholder="Select Date"
-                                Editable="true" DisableToolbar="true"
-                                @bind-Date="PlannedActivity.TargetDate" For="@(() => PlannedActivity.TargetDate)" />
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudSelect  Label="Select a quarter" Placeholder="Startup quarter"
+                                                @bind-Value="PlannedActivity.StartupQuarter" For="@(() => PlannedActivity.StartupQuarter)">
+                                <MudSelectItem T="int?" Value=null>None</MudSelectItem>
+                                <MudSelectItem T="int?" Value=1>@FormattersHelper.GetQuarterNameFromNumber(1)</MudSelectItem>
+                                <MudSelectItem T="int?" Value=2>@FormattersHelper.GetQuarterNameFromNumber(2)</MudSelectItem>
+                                <MudSelectItem T="int?" Value=3>@FormattersHelper.GetQuarterNameFromNumber(3)</MudSelectItem>
+                                <MudSelectItem T="int?" Value=4>@FormattersHelper.GetQuarterNameFromNumber(4)</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudDatePicker Label="Target date" Placeholder="Select Date"
+                                        Editable="true" DisableToolbar="true"
+                                        @bind-Date="PlannedActivity.TargetDate" For="@(() => PlannedActivity.TargetDate)" />
+                        </MudItem>
+                    </MudGrid>
 
                     <MudGrid Class="mt-4">
                         <MudItem xs="6">

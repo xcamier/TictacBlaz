@@ -1,0 +1,62 @@
+@page "/objectivesasgantt"
+
+@using tictacApp.ViewModels
+@using tictacApp.Data
+@using tictacApp.Interfaces
+@using AutoMapper
+
+@inject IPlannedActivityCRUDService PlannedActivitiesService
+@inject IMapper Mapper
+
+<ListTemplate PageTitle="Objectives as Gantt" Loading="@_loading" Error="@_error" ErrorMessage="@_errorMessage">
+
+    <ListAreaContent>
+        <ObjectivesAsGanttComponent
+            PlannedActivities=@_allOpenObjectives>
+        </ObjectivesAsGanttComponent>
+    </ListAreaContent>
+
+</ListTemplate>
+
+@code {
+    private PlannedActivityView[]? _allOpenObjectives;
+    private bool _loading = false;
+    private bool _error = false;
+    private string _errorMessage = string.Empty;
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllPlannedActivitiesAsync();
+        await base.OnInitializedAsync();   
+    }
+
+    private async Task GetAllPlannedActivitiesAsync()
+    {
+        try
+        {
+            _loading = true;
+
+            ResetErrorMessage();
+
+            Objective[] dbPlannedActivities = await PlannedActivitiesService.GetAllNotClosedAsync<Objective>();
+            _allOpenObjectives = Mapper.Map<PlannedActivityView[]>(dbPlannedActivities);
+        }
+        catch(Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ResetErrorMessage()
+    {
+        _error = false;
+        _errorMessage = string.Empty;
+    }
+}
+

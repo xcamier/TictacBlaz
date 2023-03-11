@@ -5,19 +5,17 @@
 @using tictacApp.Data
 @using tictacApp.Helpers
 @using tictacApp.ViewModels
-
 @using AutoMapper
 
 @inject IPlannedActivityCRUDService PlannedActivitiesService
 @inject ISettingsService SettingsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-
 @inject IMapper Mapper
 
 @inject ItemSelectionService<PlannedActivityView, TimeLogView> ItemSelectionService
 
-<ListTemplate PageTitle=@_pageTitle Loading=@_loading Error=@_error ErrorMessage=@_errorMessage>
+<ListTemplate PageTitle="@_pageTitle" Loading="@_loading" Error="@_error" ErrorMessage="@_errorMessage" ShowFilterArea="@(!_displayAsGantt)">
 
     <BreadcrumbContent>
         <MudBreadcrumbs Items="_path">
@@ -35,10 +33,22 @@
         }
         else
         {
-            <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
-                    OnClick="@(() => AddActivity(ParentActivityId))" Class="d-inline-flex">Add @Context</MudButton>
+            <MudGrid>
+                <MudItem xs="2">
+                    <MudButton StartIcon="@AppIcons.Add" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" 
+                            OnClick="@(() => AddActivity(ParentActivityId))" Class="d-inline-flex">Add @Context</MudButton>
+                </MudItem>
+                @if (Context == "Objectives")
+                {
+                    <MudItem xs="4">
+                        <MudCheckBox T="bool" Checked="@_displayAsGantt" CheckedChanged="@(async (e) => await DisplayAsGanttChange(this, e))" 
+                                                Label="Display as Gantt"></MudCheckBox>
+                    </MudItem>
+                }
+            </MudGrid>     
         }
     </ButtonsAreaContent>
+
 
     <FiltersAreaContent>
         <MudSwitch T="bool" Color="Color.Primary" Label="Closed Only"
@@ -47,19 +57,27 @@
 
     <ListAreaContent>
 
-        <PlannedActivityListOnlyComponent
-            PlannedActivities=@_plannedActivities
-            PlannedActivitiesWithChildren=@_activitiesWithChildren
-            ActivitiesSettings=@_activitiesSettings
-            Loading=@_loading
-            IsInSelection=@IsInSelection
-            Context=@Context
-            SelectEventAsync="@((selected) => Select(selected))"
-            GoToSubActivityEventAsync="@((id) => GoToSubActivity(id))"
-            EditPlannedActivityEventAsync="@((activityToEdit) => EditActivity(activityToEdit))"
-            DeletePlannedActivityEventAsync="@(async (activityToDelete) => await DeletePlannedActivityAsync(activityToDelete))">
-        </PlannedActivityListOnlyComponent>
-
+        @if (_displayAsGantt)
+        {
+            <ObjectivesAsGanttComponent
+                PlannedActivities=@_allPlannedActivities>
+            </ObjectivesAsGanttComponent>
+        }
+        else
+        {
+            <PlannedActivityListOnlyComponent
+                PlannedActivities=@_plannedActivities
+                PlannedActivitiesWithChildren=@_activitiesWithChildren
+                ActivitiesSettings=@_activitiesSettings
+                Loading=@_loading
+                IsInSelection=@IsInSelection
+                Context=@Context
+                SelectEventAsync="@((selected) => Select(selected))"
+                GoToSubActivityEventAsync="@((id) => GoToSubActivity(id))"
+                EditPlannedActivityEventAsync="@((activityToEdit) => EditActivity(activityToEdit))"
+                DeletePlannedActivityEventAsync="@(async (activityToDelete) => await DeletePlannedActivityAsync(activityToDelete))">
+            </PlannedActivityListOnlyComponent>
+        }
         <DeleteBoxComponent @ref="_mbox" />
     </ListAreaContent>
 
@@ -94,6 +112,7 @@
     private bool _displayClosedOnly = false;
     private List<BreadcrumbItem> _path = new List<BreadcrumbItem>();
     private PlannedActivityView[]? _plannedActivities;
+    private PlannedActivityView[]? _allPlannedActivities;
     private TPlannedActivity[]? _dbPlannedActivities;
     private bool _loading = false;
     private bool _busy = false;
@@ -105,6 +124,8 @@
     private IEnumerable<int> _activitiesWithChildren = new List<int>();
 
     private DeleteBoxComponent _mbox;
+
+    private bool _displayAsGantt = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -137,6 +158,20 @@
             _loading = true;
             _dbPlannedActivities = await PlannedActivitiesService.GetAllAsync<TPlannedActivity>(ParentActivityId, _displayClosedOnly);
             _plannedActivities = Mapper.Map<PlannedActivityView[]>(_dbPlannedActivities);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task GetAllPlannedActivitiesAsync()
+    {
+        try
+        {
+            _loading = true;
+            TPlannedActivity[] dbPlannedActivities = await PlannedActivitiesService.GetAllNotClosedAsync<TPlannedActivity>();
+            _allPlannedActivities = Mapper.Map<PlannedActivityView[]>(dbPlannedActivities);
         }
         finally
         {
@@ -194,6 +229,12 @@
         {
             _busy = false;
         }
+    }
+
+    private async Task DisplayAsGanttChange(object sender, bool newValue)
+    {
+        _displayAsGantt = newValue;
+        await GetAllPlannedActivitiesAsync();
     }
 
     private void ResetErrorMessage()
