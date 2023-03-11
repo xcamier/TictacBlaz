@@ -86,4 +86,42 @@ public class TimeLogsService: TimelogObservation<TimeLog>
                     timelog.Description != null &&
                     timelog.Description.Contains(DefaultTexts.QuickTimelog));
     }
+
+    public async Task<int> CountLogsForObjective(int objectiveId)
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.TimeLogs.CountAsync(tl => tl.ObjectiveId == objectiveId);
+    }
+
+    public async Task<int> CountLogsForProject(int projectId)
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.TimeLogs.CountAsync(tl => tl.ProjectId == projectId);
+    }
+
+    public async Task DetachFromActivity<T>(TictacDBContext? dbContext, int activityIdToDetach, Type type)
+    {
+        TimeLog[] timelogsToUpdate;
+
+        if (type == typeof(Objective))
+        {
+            timelogsToUpdate = await dbContext.TimeLogs.Where(tl => tl.ObjectiveId == activityIdToDetach).ToArrayAsync();
+            foreach (TimeLog tl in timelogsToUpdate)
+            {
+                tl.ObjectiveId = null;
+            }
+        }
+        else if (type == typeof(Project))
+        {
+            timelogsToUpdate = await dbContext.TimeLogs.Where(tl => tl.ProjectId == activityIdToDetach).ToArrayAsync();
+            foreach (TimeLog tl in timelogsToUpdate)
+            {
+                tl.ProjectId = null;
+            }
+        }
+        else
+            throw new NotImplementedException($"Type should be either objective or Project. Type is {type.Name}");
+    }
 }

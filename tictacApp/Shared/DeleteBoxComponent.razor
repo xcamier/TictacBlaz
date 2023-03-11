@@ -2,7 +2,12 @@
 
 <MudMessageBox @ref="_mbox" Title="Warning" CancelText="Cancel">
     <MessageContent>
-        Deleting can <b><i>not</i></b> be undone.
+        <MudText Typo="Typo.body2"> Deleting can <b><i>not</i></b> be undone.</MudText>
+
+        @if (!string.IsNullOrEmpty(AdditionalWarning))
+        {
+            <MudText Typo="Typo.body2">@AdditionalWarning</MudText>
+        }
     </MessageContent>
     <YesButton>
         <MudButton Class="ml-2" Variant="Variant.Filled" Color="Color.Error" StartIcon="@AppIcons.Delete">Delete</MudButton>
@@ -10,6 +15,9 @@
 </MudMessageBox>
 
 @code {
+    [Parameter]
+    public string AdditionalWarning { get; set; } = string.Empty;
+
     private MudMessageBox _mbox;
 
     public async Task<bool?> ShowAsync()

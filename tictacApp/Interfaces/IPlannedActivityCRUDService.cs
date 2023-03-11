@@ -20,4 +20,10 @@ public interface IPlannedActivityCRUDService: IGenericCRUDServiceWithParents
     void GetSumOfCompletionOfChildren<T>(int? startId, ref Tuple<int, int> values) where T: PlannedActivity;
 
     Task<T[]> GetSubsetOfPlannedActivities<T>(int[] selectionOfActivities) where T: PlannedActivity;
+
+    Task DeleteAllCommentsOfActivityAsync(TictacDBContext? dbContext, int plannedActivityId);
+
+    Task DeleteAsync<T>(TictacDBContext? dbContext, T itemToDelete) where T : PlannedActivity;
+
+    Task<bool> HasSubActivities<T>(int activityToCheck) where T : PlannedActivity;
 }

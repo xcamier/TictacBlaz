@@ -7,8 +7,11 @@ namespace tictacApp.Services;
 
 public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlannedActivityCRUDService
 {
-    public PlannedActivityCRUDService(IDbContextFactory<TictacDBContext> dbFactory): base(dbFactory)
+    private TimeLogsService _timelogsService;
+
+    public PlannedActivityCRUDService(IDbContextFactory<TictacDBContext> dbFactory, TimeLogsService timelogsService): base(dbFactory)
     {
+        _timelogsService = timelogsService;
     }
 
     public async Task<T[]> GetAllAsync<T>(DateTime limitDate) where T: PlannedActivity
@@ -79,6 +82,20 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
         return false;
     }
 
+    public async Task DeleteAllCommentsOfActivityAsync(TictacDBContext? dbContext, int plannedActivityId)
+    {
+        if (dbContext is not null)
+        {
+            Comment[] allComments = await dbContext.Comments.Where(c => c.PlannedActivityId == plannedActivityId).ToArrayAsync();
+            int[] allCommentsIds = allComments.Select(c => c.Id).ToArray();
+
+            Attachment[] allAttachments = await dbContext.Attachments.Where(a => allCommentsIds.Contains(a.CommentId)).ToArrayAsync();
+
+            dbContext.RemoveRange(allAttachments);
+            dbContext.RemoveRange(allComments);
+        }
+    }
+
     public void GetSumOfCompletionOfChildren<T>(int? startId, ref Tuple<int, int> values) where T: PlannedActivity
     {
         using var context = _dbFactory.CreateDbContext();
@@ -101,5 +118,23 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
         return await context.Set<T>().
                             Where(o => o.IsClosed == false || selectionOfActivities.Contains(o.Id)).
                             ToArrayAsync();
+    }
+
+    public async Task DeleteAsync<T>(TictacDBContext? dbContext, T itemToDelete) where T : PlannedActivity
+    {
+        if (dbContext is not null)
+        {
+            await DeleteAllCommentsOfActivityAsync(dbContext, itemToDelete.Id);
+            await _timelogsService.DetachFromActivity<T>(dbContext, itemToDelete.Id, typeof(T));
+
+            dbContext.Set<T>().Remove(itemToDelete);
+        }
+    }
+
+    public async Task<bool> HasSubActivities<T>(int activityToCheck) where T : PlannedActivity
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Set<T>().AnyAsync(a => a.ParentId == activityToCheck);
     }
 }

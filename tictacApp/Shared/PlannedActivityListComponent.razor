@@ -8,6 +8,7 @@
 @using AutoMapper
 
 @inject IPlannedActivityCRUDService PlannedActivitiesService
+@inject TimeLogsService TimeLogsService
 @inject ISettingsService SettingsService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -78,13 +79,15 @@
                 DeletePlannedActivityEventAsync="@(async (activityToDelete) => await DeletePlannedActivityAsync(activityToDelete))">
             </PlannedActivityListOnlyComponent>
         }
-        <DeleteBoxComponent @ref="_mbox" />
+        <DeleteBoxComponent AdditionalWarning="@_additionalDeletionWarnings" @ref="_mbox" />
     </ListAreaContent>
 
 </ListTemplate>
 
 
 @code {
+    [Inject] private IDialogService DialogService { get; set; }
+
     [Parameter]
     public int? ParentActivityId { get; set; } = null;
 
@@ -126,6 +129,8 @@
     private DeleteBoxComponent _mbox;
 
     private bool _displayAsGantt = false;
+
+    private string _additionalDeletionWarnings = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -192,11 +197,20 @@
 
         try
         {
-            bool? result = await _mbox.ShowAsync();
-            StateHasChanged();
+            //Checks the dependencies. We don't want to delete if there are subitems: in that case delete manually
+            //then we check the timelogs that are associated
+            bool shallStopDeletion = await CheckIfActivityHasSubItems(activityToRemove.Id);
+            if (shallStopDeletion) return;
+            
+            int nbOfAssociatedTimelogs = await CheckTimelogsDependencies(activityToRemove.Id);            
+            if (nbOfAssociatedTimelogs > 0)
+            {
+                _additionalDeletionWarnings = $"Warning: {nbOfAssociatedTimelogs} timelogs are attached to that activity. The link will be deleted but the timelogs won't be removed.";
+            }
 
-            if (result == null)
-                return;
+            bool? hasConfirmedDeletion = await _mbox.ShowAsync();
+            StateHasChanged();
+            if (hasConfirmedDeletion == null) return;
 
             _busy = true;
 
@@ -205,7 +219,10 @@
             bool res = false;
             if (dbActivityToRemove is not null)
             {
-                res = await PlannedActivitiesService.DeleteAsync<TPlannedActivity>(dbActivityToRemove);
+                var dbContext = PlannedActivitiesService.GetNewDBContext();
+                await PlannedActivitiesService.DeleteAsync<TPlannedActivity>(dbContext, dbActivityToRemove);
+
+                res = await dbContext.SaveChangesAsync() > 0;
             }
 
             ResetErrorMessage();
@@ -229,6 +246,34 @@
         {
             _busy = false;
         }
+    }
+
+    private async Task<int> CheckTimelogsDependencies(int activityToRemoveId)
+    {
+        if (Context == "Objectives")
+        {
+            return  await TimeLogsService.CountLogsForObjective(activityToRemoveId);
+        }
+        else if (Context == "Projects")
+        {
+            return await TimeLogsService.CountLogsForProject(activityToRemoveId);
+        }
+        else
+            throw new NotImplementedException($"The context should have been Projects or Objectives, {Context} context was provided.");
+    }
+
+    private async Task<bool> CheckIfActivityHasSubItems(int activityToRemoveId)
+    {
+        bool hasFoundOne = await PlannedActivitiesService.HasSubActivities<TPlannedActivity>(activityToRemoveId);
+
+        if (hasFoundOne)
+        {
+            await DialogService.ShowMessageBox("Warning", 
+                                                "Deleting is not possible because there are sub activities. Please delete them manually.");
+            StateHasChanged();
+        }
+
+        return hasFoundOne;
     }
 
     private async Task DisplayAsGanttChange(object sender, bool newValue)
