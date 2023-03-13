@@ -124,4 +124,20 @@ public class TimeLogsService: TimelogObservation<TimeLog>
         else
             throw new NotImplementedException($"Type should be either objective or Project. Type is {type.Name}");
     }
+
+    public async Task<TimeLog[]> GetTimelogsOfObjectivesBetweenDates(int?[] objectivesIds, DateTime startDate, DateTime endDate)
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.TimeLogs.Where(tl => tl.StartDate >= startDate && tl.StartDate <= endDate &&
+                                                    objectivesIds.Contains(tl.ObjectiveId)).ToArrayAsync();
+    }
+
+    public async Task<TimeLog[]> GetTimelogsOfProjectsBetweenDates(int?[] objectivesIds, DateTime startDate, DateTime endDate)
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.TimeLogs.Where(tl => tl.StartDate >= startDate && tl.StartDate <= endDate &&
+                                                    objectivesIds.Contains(tl.ProjectId)).ToArrayAsync();
+    }
 }

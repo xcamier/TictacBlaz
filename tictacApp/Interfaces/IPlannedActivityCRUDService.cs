@@ -23,7 +23,11 @@ public interface IPlannedActivityCRUDService: IGenericCRUDServiceWithParents
 
     Task DeleteAllCommentsOfActivityAsync(TictacDBContext? dbContext, int plannedActivityId);
 
-    Task DeleteAsync<T>(TictacDBContext? dbContext, T itemToDelete) where T : PlannedActivity;
+    Task DeleteAsync<T>(TictacDBContext? dbContext, T itemToDelete) where T: PlannedActivity;
 
-    Task<bool> HasSubActivities<T>(int activityToCheck) where T : PlannedActivity;
+    Task<bool> HasSubActivities<T>(int activityToCheck) where T: PlannedActivity;
+
+    Task<T[]> GetPlannedActivitiesExpectedForQuarter<T>(DateTime startDate, DateTime endDate) where T: PlannedActivity;
+
+    Task<T[]> GetPlannedActivitiesBehind<T>(DateTime today) where T: PlannedActivity;
 }

@@ -137,4 +137,18 @@ public class PlannedActivityCRUDService : GenericCRUDServiceWithParents, IPlanne
 
         return await context.Set<T>().AnyAsync(a => a.ParentId == activityToCheck);
     }
+
+    public async Task<T[]> GetPlannedActivitiesExpectedForQuarter<T>(DateTime startDate, DateTime endDate) where T: PlannedActivity
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Set<T>().Where(a => a.TargetDate != null && a.TargetDate >= startDate && a.TargetDate <= endDate).ToArrayAsync();
+    }
+
+    public async Task<T[]> GetPlannedActivitiesBehind<T>(DateTime today) where T: PlannedActivity
+    {
+        using var context = _dbFactory.CreateDbContext();
+
+        return await context.Set<T>().Where(a => a.TargetDate < today || a.IsBehind).ToArrayAsync();
+    }
 }

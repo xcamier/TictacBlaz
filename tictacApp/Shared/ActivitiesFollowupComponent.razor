@@ -1,0 +1,148 @@
+@using tictacApp.ViewModels
+    
+<ListTemplate PageTitle=@PageTitle Loading=@Loading Error=@Error ErrorMessage=@ErrorMessage>
+
+    <FiltersAreaContent>
+        <MudGrid>
+            <MudItem xs="4">
+                <MudSelect T="int" Label="Report to display" Placeholder="Please Select" 
+                        Value=@_reportIdx ValueChanged="OnReportChanged">
+                    <MudSelectItem Value=1>Activities at risk</MudSelectItem>
+                    <MudSelectItem Value=2>Expected this quarter and no time spent on it</MudSelectItem>
+                    <MudSelectItem Value=3>Expected this month and no time spent on it</MudSelectItem>
+                    <MudSelectItem Value=4>Behind (based on dates and status)</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            @if (_displayDays)
+            {
+                <MudItem xs="3">
+                    <MudSelect T="int" Label="Select period" Placeholder="Please Select" 
+                          Value=@_numberOfDays ValueChanged="OnNumberOfDaysChanged">
+                        @if (ActivitiesSettings is not null && ActivitiesSettings.OrangeHigh.HasValue)
+                        {
+                            <MudSelectItem Value=ActivitiesSettings.OrangeHigh.Value>Based on settings</MudSelectItem>
+                        }
+                        <MudSelectItem Value=1>Today</MudSelectItem>
+                        <MudSelectItem Value=7>Within 7 days</MudSelectItem>
+                        <MudSelectItem Value=15>Within 15 days</MudSelectItem>
+                        <MudSelectItem Value=30>Within 30 days</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
+        </MudGrid>
+    </FiltersAreaContent>
+
+    <ListAreaContent>
+        @if (Objectives is null || !Objectives.Any())
+        {
+            <MudPaper Class="mr-2 ml-2 pa-2 mb-4">
+                <MudText Typo="Typo.h6">Objectives</MudText>
+                <MudText>No objective identified.</MudText>
+            </MudPaper>
+        }  
+        else
+        {
+            <MudText Class="ml-2" Typo="Typo.h6">Objectives</MudText>
+            <PlannedActivityListOnlyComponent 
+                    PlannedActivities=@Objectives
+                    PlannedActivitiesWithChildren=@PlannedActivitiesWithChildren
+                    DisplayPath=true
+                    Loading=@Loading
+                    Context="Activities at risk"
+                    ActivitiesSettings=@ActivitiesSettings
+                    GoToActivityInListAsync="@(async (activityToSelect)  => await GoToActivityInListAsync.InvokeAsync(activityToSelect))">
+            </PlannedActivityListOnlyComponent>
+        }
+
+        @if (Projects is null || !Projects.Any())
+        {
+            <MudPaper Class="mr-2 ml-2 pa-2 mb-4">
+                <MudText Typo="Typo.h6">Projects</MudText>
+                <MudText>No project identified.</MudText>
+            </MudPaper>
+        }  
+        else
+        {
+            <MudText Class="ml-2 mt-4" Typo="Typo.h6">Projects</MudText>
+            <PlannedActivityListOnlyComponent 
+                PlannedActivities=@Projects
+                PlannedActivitiesWithChildren=@PlannedActivitiesWithChildren
+                DisplayPath=true
+                Loading=@Loading
+                Context="Activities at risk"
+                ActivitiesSettings=@ActivitiesSettings
+                GoToActivityInListAsync="@(async (activityToSelect)  => await GoToActivityInListAsync.InvokeAsync(activityToSelect))">
+            </PlannedActivityListOnlyComponent>
+        }
+    </ListAreaContent>
+
+</ListTemplate>
+
+
+
+@code {
+    [Parameter]
+    public EventCallback<PlannedActivityView> GoToActivityInListAsync { get; set; }
+
+    [Parameter]
+    public EventCallback<ReportParams> OnFilterChangedAsync { get; set; }
+
+    [Parameter]
+    public PlannedActivityView[]? Projects { get; set; }
+
+    [Parameter]
+    public PlannedActivityView[]? Objectives { get; set; }
+
+    [Parameter]
+    public IEnumerable<int> PlannedActivitiesWithChildren { get; set; }
+
+    [Parameter]
+    public PlannedActivitySettingsView ActivitiesSettings { get; set; }
+
+    [Parameter]
+    public string PageTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public bool Error { get; set; }
+
+    [Parameter]
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    private int _numberOfDays = 1;
+
+    private int _reportIdx = 1;
+
+    private bool _displayDays = true;
+    
+    private void OnReportChanged(int reportIdx)
+    {
+        _reportIdx = reportIdx;
+        _displayDays = reportIdx == 1;
+
+        if (reportIdx == 1 && _numberOfDays < 1)
+        {
+            return;
+        }
+
+        OnFilterChangedAsync.InvokeAsync(new ReportParams()
+                                        {
+                                            ReportIdx = reportIdx, 
+                                            NumberOfDays = _numberOfDays
+                                        });
+        
+    }
+
+    private void OnNumberOfDaysChanged(int numberOfDays)
+    {
+        _numberOfDays = numberOfDays;
+        OnFilterChangedAsync.InvokeAsync(new ReportParams()
+                                        {
+                                            ReportIdx = _reportIdx, 
+                                            NumberOfDays = numberOfDays
+                                        });
+    }
+}
